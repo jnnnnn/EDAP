@@ -13,6 +13,9 @@ namespace EDAP
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
+        private Timer timer;
+        private bool enabled = false; 
+
         public Form1()
         {
             InitializeComponent();
@@ -20,9 +23,14 @@ namespace EDAP
 
         private void button1_Click(object sender, EventArgs e)
         {
+            enabled = !enabled;   
+        }
+
+        private void WhereAmI()
+        {
             var t0 = DateTime.UtcNow;
-            var settings = Properties.Settings.Default;
-            Process proc = Process.GetProcessesByName(settings.ProcName).FirstOrDefault();
+            var ss = Properties.Settings.Default;
+            Process proc = Process.GetProcessesByName(ss.ProcName).FirstOrDefault();
             if (proc == null)
             {
                 Console.WriteLine("Could not find main window. Run in Administrator mode, and check settings.");
@@ -31,38 +39,41 @@ namespace EDAP
             IntPtr hwnd = proc.MainWindowHandle;
             using (Bitmap screenshot = Screenshot.PrintWindow(hwnd))
             {
-                double scale = Properties.Settings.Default.Scale;
-                Rectangle cropArea = new Rectangle(
-                    (int)(scale * settings.x1),
-                    (int)(scale * settings.y1),
-                    (int)(scale * (settings.x2-settings.x1)),
-                    (int)(scale * (settings.y2-settings.y1)));
-                if (!new Rectangle(0, 0, screenshot.Width, screenshot.Height).Contains(cropArea))
-                {
-                    pictureBox1.Image = screenshot;
-                    Console.WriteLine("Screenshot invalid");
-                    return;
-                }
-                Bitmap compass = screenshot.Clone(cropArea, screenshot.PixelFormat);                
-                pictureBox1.Image = compass;
                 try
                 {
+                    double scale = Properties.Settings.Default.Scale;
+                    if (Math.Abs(screenshot.Height - 1080 * scale) > 10)
+                        throw new ArgumentException("Error: screenshot resultion wrong");
+                    Bitmap compass = CompassRecognizer.Crop(screenshot,
+                    ss.x1 * scale, ss.y1 * scale, ss.x2 * scale, ss.y2 * scale);
+
                     CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
                     AForge.Point vector = recognizer.GetOrientation(compass);
+                    pictureBox1.Image = compass;
                     label1.Text = vector.ToString();
-                } catch (ArgumentException)
+                }
+                catch (ArgumentException err)
                 {
-                    label1.Text = "Error: target not found";
+                    label1.Text = "Error: " + err.ToString();
                 }
             }
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            
+
             SwitchToThisWindow(hwnd, true);
-    }
+        }
 
-        private void pictureBox2_Click(object sender, EventArgs e)
+        private void Form1_Load(object sender, EventArgs e)
         {
+            timer = new Timer();
+            timer.Interval = 300;
+            timer.Tick += Timer_Tick;
+            timer.Start();
+        }
 
+        private void Timer_Tick(object sender, EventArgs e)
+        {
+            if (enabled)
+                WhereAmI();
         }
     }
 }

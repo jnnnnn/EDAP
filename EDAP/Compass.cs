@@ -2,6 +2,7 @@
 using AForge.Imaging;
 using AForge.Imaging.Filters;
 using AForge.Math.Geometry;
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
@@ -35,6 +36,14 @@ namespace EDAP
             }
         }
 
+        public static Bitmap Crop(Bitmap input, double x1, double y1, double x2, double y2)
+        {
+            Rectangle cropArea = new Rectangle((int)x1, (int)y1, (int)(x2-x1), (int)(y2-y1));
+            if (!new Rectangle(0, 0, input.Width, input.Height).Contains(cropArea))
+                throw new ArgumentException("Rectangle outside!");
+            return input.Clone(cropArea, input.PixelFormat);
+        }
+
         // based on the article http://www.aforgenet.com/articles/shape_checker/            
         private AForge.Point FindCircle(Bitmap image, Color color, int colorRange, double minRadius, double maxRadius)
         {
@@ -43,6 +52,7 @@ namespace EDAP
             filter.Green = new IntRange(clamp(color.G - colorRange), clamp(color.G + colorRange));
             filter.Blue = new IntRange(clamp(color.B - colorRange), clamp(color.B + colorRange));
             Bitmap filteredImage = filter.Apply(image);
+
             pictureBox2.Image = filteredImage;
             Application.DoEvents();
             BlobCounter blobCounter = new BlobCounter();
@@ -70,22 +80,26 @@ namespace EDAP
 
         // returns the normalized vector from the compass center to the blue dot
         public AForge.Point GetOrientation(Bitmap compassImage)
-        {            
+        {
+            float s = Properties.Settings.Default.Scale;
             // work out where the center of the crosshair is
             AForge.Point crosshair = FindCircle(
                 image: compassImage,
                 color: Color.FromArgb(230, 98, 29), // default orange HUD 
                 colorRange: 100,
-                minRadius: 23 * Properties.Settings.Default.Scale, 
-                maxRadius: 30 * Properties.Settings.Default.Scale);
-
+                minRadius: 23 * s, 
+                maxRadius: 30 * s);
+            
             // work out where the target indicator is
             AForge.Point target = FindCircle(
-                image: compassImage,
+                image: Crop(compassImage, crosshair.X - 30 * s, crosshair.Y - 30 * s, crosshair.X + 30 * s, crosshair.Y + 30 * s),
                 color: Color.FromArgb(104, 180, 249) /* pale blue dot */,
-                colorRange: 20,
-                minRadius: 1.5 * Properties.Settings.Default.Scale,
-                maxRadius: 5 * Properties.Settings.Default.Scale);
+                colorRange: 200,
+                minRadius: 1.5 * s,
+                maxRadius: 5 * s);
+
+            target.X += crosshair.X - 30 * s;
+            target.Y += crosshair.Y - 30 * s;
 
             Graphics g = Graphics.FromImage(compassImage);
             g.DrawLine(new Pen(Color.FromName("red"), width: 2), crosshair.X, crosshair.Y, target.X, target.Y);
