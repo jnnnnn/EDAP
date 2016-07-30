@@ -34,7 +34,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("690")]
+        [global::System.Configuration.DefaultSettingValueAttribute("600")]
         public int x1 {
             get {
                 return ((int)(this["x1"]));
@@ -43,7 +43,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("785")]
+        [global::System.Configuration.DefaultSettingValueAttribute("850")]
         public int x2 {
             get {
                 return ((int)(this["x2"]));
@@ -52,7 +52,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("755")]
+        [global::System.Configuration.DefaultSettingValueAttribute("650")]
         public int y1 {
             get {
                 return ((int)(this["y1"]));
@@ -61,7 +61,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("847")]
+        [global::System.Configuration.DefaultSettingValueAttribute("950")]
         public int y2 {
             get {
                 return ((int)(this["y2"]));
@@ -71,9 +71,9 @@ namespace EDAP.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1")]
-        public double Scale {
+        public float Scale {
             get {
-                return ((double)(this["Scale"]));
+                return ((float)(this["Scale"]));
             }
         }
     }
