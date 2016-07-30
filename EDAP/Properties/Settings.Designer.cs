@@ -25,10 +25,46 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("**process name here**")]
+        [global::System.Configuration.DefaultSettingValueAttribute("**process name**")]
         public string ProcName {
             get {
                 return ((string)(this["ProcName"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("690")]
+        public int x1 {
+            get {
+                return ((int)(this["x1"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("785")]
+        public int x2 {
+            get {
+                return ((int)(this["x2"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("755")]
+        public int y1 {
+            get {
+                return ((int)(this["y1"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("847")]
+        public int y2 {
+            get {
+                return ((int)(this["y2"]));
             }
         }
     }

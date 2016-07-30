@@ -21,28 +21,21 @@ namespace EDAP
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Timer t = new Timer();
-            t.Start();
-
-            Bitmap screenshot = new Bitmap(1920, 1080);
-            try
-            {
-                IntPtr hwnd;
-
-                Process proc = Process.GetProcessesByName(Properties.Settings.Default.ProcName)[0];
-                hwnd = proc.MainWindowHandle;
-
-                screenshot = Screenshot.PrintWindow(hwnd);
-            } catch
+            var t0 = DateTime.UtcNow;
+            var settings = Properties.Settings.Default;
+            Process proc = Process.GetProcessesByName(settings.ProcName).FirstOrDefault();
+            if (proc == null)
             {
                 Console.WriteLine("Could not find main window. Run in Administrator mode, and check settings.");
+                return;
             }
-
-            pictureBox1.Image = screenshot;
-            t.Stop();
-
-            Text = t.ToString();
-        }
-        
+                
+            IntPtr hwnd = proc.MainWindowHandle;
+            Bitmap screenshot = Screenshot.PrintWindow(hwnd);
+            Rectangle cropArea = new Rectangle(settings.x1, settings.y1, settings.x2 - settings.x1, settings.y2 - settings.y1);
+            Bitmap compass = screenshot.Clone(cropArea, screenshot.PixelFormat);
+            pictureBox1.Image = compass;
+            Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
+        }        
     }
 }
