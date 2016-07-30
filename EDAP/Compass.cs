@@ -1,7 +1,5 @@
-﻿using AForge;
-using AForge.Imaging;
-using AForge.Imaging.Filters;
-using AForge.Math.Geometry;
+﻿using OpenCvSharp;
+using OpenCvSharp.Extensions;
 using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -18,12 +16,15 @@ namespace EDAP
         {
             this.pictureBox2 = pictureBox2;
         }
-
+        
+        private int clamp(int value, int min, int max)
+        {
+            return (value < min) ? min : (value > max) ? max : value;
+        }
         private int clamp(int value)
         {
-            return (value < 0) ? 0 : (value > 255) ? 255 : value;
+            return clamp(value, 0, 255);
         }
-
         private void DrawRectangle(Bitmap image, Rectangle rect)
         {
             using (Graphics gr = Graphics.FromImage(image))
@@ -39,72 +40,60 @@ namespace EDAP
         public static Bitmap Crop(Bitmap input, double x1, double y1, double x2, double y2)
         {
             Rectangle cropArea = new Rectangle((int)x1, (int)y1, (int)(x2-x1), (int)(y2-y1));
+            return Crop(input, cropArea);
+        }
+
+        public static Bitmap Crop(Bitmap input, Rectangle cropArea)
+        {
             if (!new Rectangle(0, 0, input.Width, input.Height).Contains(cropArea))
                 throw new ArgumentException("Rectangle outside!");
             return input.Clone(cropArea, input.PixelFormat);
         }
 
-        // based on the article http://www.aforgenet.com/articles/shape_checker/            
-        private AForge.Point FindCircle(Bitmap image, Color color, int colorRange, double minRadius, double maxRadius)
+        private System.Drawing.Point FindCircle(Bitmap image)
         {
-            ColorFiltering filter = new ColorFiltering();            
-            filter.Red = new IntRange(clamp(color.R - colorRange), clamp(color.R + colorRange));
-            filter.Green = new IntRange(clamp(color.G - colorRange), clamp(color.G + colorRange));
-            filter.Blue = new IntRange(clamp(color.B - colorRange), clamp(color.B + colorRange));
-            Bitmap filteredImage = filter.Apply(image);
+            Mat source = BitmapConverter.ToMat(image);
+            Mat matchtarget = new Mat("compass_template.png", ImreadModes.Color);
+            Mat res = new Mat(source.Rows - matchtarget.Rows + 1, source.Cols - matchtarget.Cols + 1, MatType.CV_32FC1);
 
-            pictureBox2.Image = filteredImage;
-            Application.DoEvents();
-            BlobCounter blobCounter = new BlobCounter();
-            blobCounter.ProcessImage(filteredImage);
-            Blob[] blobs = blobCounter.GetObjectsInformation();
-            SimpleShapeChecker shapeChecker = new SimpleShapeChecker();
+            //Convert input images to gray
+            Mat gref = source.CvtColor(ColorConversionCodes.BGR2GRAY);
+            Mat gtpl = matchtarget.CvtColor(ColorConversionCodes.BGR2GRAY);
 
-            AForge.Point centerPoint = new AForge.Point();
-            Graphics g = Graphics.FromImage(image);
-            foreach (var blob in blobs)
+            Cv2.MatchTemplate(gref, gtpl, res, TemplateMatchModes.CCoeffNormed);
+            Cv2.Threshold(res, res, 0.8, 1.0, ThresholdTypes.Tozero);
+
+            while (true)
             {
-                AForge.Point center;
-                float radius;
-                if (shapeChecker.IsCircle(blobCounter.GetBlobsEdgePoints(blob), out center, out radius))
-                {
-                    g.DrawRectangle(new Pen(Color.FromName("green"), 2), blob.Rectangle);
-                    pictureBox2.Image = filteredImage;
-                    Application.DoEvents();
-                    if (radius > minRadius && radius < maxRadius)
-                        return centerPoint = center;
-                }
+                double minval, maxval, threshold = 0.8;
+                OpenCvSharp.Point minloc, maxloc;
+                Cv2.MinMaxLoc(res, out minval, out maxval, out minloc, out maxloc);
+
+                if (maxval >= threshold)
+                    return new System.Drawing.Point(maxloc.X + 40, maxloc.Y + 43);
             }
             throw new System.ArgumentException("Couldn't find crosshair or dot.");
         }
-
+        
         // returns the normalized vector from the compass center to the blue dot
-        public AForge.Point GetOrientation(Bitmap compassImage)
+        public PointF GetOrientation(Bitmap compassImage)
         {
             float s = Properties.Settings.Default.Scale;
-            // work out where the center of the crosshair is
-            AForge.Point crosshair = FindCircle(
-                image: compassImage,
-                color: Color.FromArgb(230, 98, 29), // default orange HUD 
-                colorRange: 100,
-                minRadius: 23 * s, 
-                maxRadius: 30 * s);
-            
+            Graphics g = Graphics.FromImage(compassImage);
+            System.Drawing.Point crosshair = FindCircle(compassImage);
+            Rectangle compassRect = new Rectangle(crosshair.X - 27, crosshair.Y - 27, 54, 54);
+
             // work out where the target indicator is
-            AForge.Point target = FindCircle(
-                image: Crop(compassImage, crosshair.X - 30 * s, crosshair.Y - 30 * s, crosshair.X + 30 * s, crosshair.Y + 30 * s),
-                color: Color.FromArgb(104, 180, 249) /* pale blue dot */,
-                colorRange: 200,
-                minRadius: 1.5 * s,
-                maxRadius: 5 * s);
-
-            target.X += crosshair.X - 30 * s;
-            target.Y += crosshair.Y - 30 * s;
-
+            pictureBox2.Image = Crop(compassImage, compassRect);
+            
+            g.DrawRectangle(new Pen(Color.FromName("blue"), 2), compassRect);
+            /*
             Graphics g = Graphics.FromImage(compassImage);
             g.DrawLine(new Pen(Color.FromName("red"), width: 2), crosshair.X, crosshair.Y, target.X, target.Y);
 
             return (target - crosshair) / 13;
+            */
+            return new PointF(0, 0);
         }
     }
 }

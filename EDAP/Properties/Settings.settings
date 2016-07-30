@@ -3,7 +3,7 @@
   <Profiles />
   <Settings>
     <Setting Name="ProcName" Type="System.String" Scope="Application">
-      <Value Profile="(Default)" />
+      <Value Profile="(Default)">EliteDangerous64</Value>
     </Setting>
     <Setting Name="x1" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">600</Value>

@@ -25,7 +25,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        [global::System.Configuration.DefaultSettingValueAttribute("EliteDangerous64")]
         public string ProcName {
             get {
                 return ((string)(this["ProcName"]));

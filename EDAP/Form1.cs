@@ -48,18 +48,19 @@ namespace EDAP
                     ss.x1 * scale, ss.y1 * scale, ss.x2 * scale, ss.y2 * scale);
 
                     CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
-                    AForge.Point vector = recognizer.GetOrientation(compass);
+                    PointF vector = recognizer.GetOrientation(compass);
                     pictureBox1.Image = compass;
                     label1.Text = vector.ToString();
                 }
-                catch (ArgumentException err)
+                catch (Exception err)
                 {
                     label1.Text = "Error: " + err.ToString();
+                    Console.WriteLine(err.ToString());
                 }
             }
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
 
-            SwitchToThisWindow(hwnd, true);
+            //SwitchToThisWindow(hwnd, true);
         }
 
         private void Form1_Load(object sender, EventArgs e)
