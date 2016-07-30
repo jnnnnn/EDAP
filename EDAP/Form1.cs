@@ -14,6 +14,9 @@ namespace EDAP
 {
     public partial class Form1 : Form
     {
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
+
         public Form1()
         {
             InitializeComponent();
@@ -36,6 +39,8 @@ namespace EDAP
             Bitmap compass = screenshot.Clone(cropArea, screenshot.PixelFormat);
             pictureBox1.Image = compass;
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-        }        
+
+            SwitchToThisWindow(hwnd, true);
+    }
     }
 }
