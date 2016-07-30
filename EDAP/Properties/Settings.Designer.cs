@@ -25,7 +25,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("**process name**")]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string ProcName {
             get {
                 return ((string)(this["ProcName"]));
@@ -65,6 +65,15 @@ namespace EDAP.Properties {
         public int y2 {
             get {
                 return ((int)(this["y2"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public double Scale {
+            get {
+                return ((double)(this["Scale"]));
             }
         }
     }
