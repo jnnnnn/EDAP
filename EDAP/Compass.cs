@@ -53,22 +53,30 @@ namespace EDAP
         private System.Drawing.Point FindCircle(Bitmap image)
         {
             Mat source = BitmapConverter.ToMat(image);
-            Mat matchtarget = new Mat("compass_template.png", ImreadModes.Color);
-            Mat res = new Mat(source.Rows - matchtarget.Rows + 1, source.Cols - matchtarget.Cols + 1, MatType.CV_32FC1);
-
             //Convert input images to gray
-            Mat gref = source.CvtColor(ColorConversionCodes.BGR2GRAY);
-            Mat gtpl = matchtarget.CvtColor(ColorConversionCodes.BGR2GRAY);
-                        
-            var circles = Cv2.HoughCircles(gref, HoughMethods.Gradient, 2, 5, 200, 100, 20, 30);
-
-            Graphics g = Graphics.FromImage(image);
-            foreach (var circle in circles)
+            Mat imgGray = source.CvtColor(ColorConversionCodes.BGR2GRAY);
+            CircleSegment[] circles = new CircleSegment[] { };
+            float dp = 1.5f;
+            for (; dp > 1f && circles.Length < 1; dp -= 0.1f)
             {
-                g.DrawEllipse(new Pen(Color.FromName("red"), 1), circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Radius * 2, circle.Radius * 2);
-                return new System.Drawing.Point((int)circle.Center.X, (int)circle.Center.Y);
+                circles = Cv2.HoughCircles(imgGray, HoughMethods.Gradient, dp, minDist: 30, param1: 200, param2: 100, minRadius: 22, maxRadius: 28);
             }
+            Console.WriteLine(string.Format("dp = {0}", dp));
+            if (circles.Length > 1)
+                throw new System.ArgumentException("More than one valid circle...");
+            if (circles.Length < 1)
+                throw new System.ArgumentException("No valid circles");
+            var c = circles[0];
+            Graphics g = Graphics.FromImage(image);
+            g.DrawEllipse(new Pen(Color.FromName("green"), 2), c.Center.X - c.Radius, c.Center.Y - c.Radius, c.Radius * 2, c.Radius * 2);
+            return new System.Drawing.Point((int)c.Center.X, (int)c.Center.Y);
+            
+            /* looking for circle works better than matching template */
+            /*
+            Mat matchtarget = new Mat("compass_template.png", ImreadModes.Color);
+            Mat gtpl = matchtarget.CvtColor(ColorConversionCodes.BGR2GRAY);
 
+            Mat res = new Mat(source.Rows - matchtarget.Rows + 1, source.Cols - matchtarget.Cols + 1, MatType.CV_32FC1);
             Cv2.MatchTemplate(source, matchtarget, res, TemplateMatchModes.CCoeffNormed);
             Cv2.Threshold(res, res, 0.8, 1.0, ThresholdTypes.Tozero);
 
@@ -80,9 +88,29 @@ namespace EDAP
 
                 if (maxval >= threshold)
                     return new System.Drawing.Point(maxloc.X + 40, maxloc.Y + 43);
-            }
+            }+
             throw new System.ArgumentException("Couldn't find crosshair or dot.");
+            */
         }
+
+        private System.Drawing.Point FindTarget(Bitmap croppedCompass)
+        {
+            Mat source = BitmapConverter.ToMat(croppedCompass);
+            //Convert input images to gray
+            Mat imgGray = source.CvtColor(ColorConversionCodes.BGR2GRAY);
+            int threshold = 80;
+            //imgGray = imgGray.Blur(new OpenCvSharp.Size(5, 5)).Canny(threshold, threshold * 3);
+            var circles = Cv2.HoughCircles(imgGray, HoughMethods.Gradient, 5, minDist: 30, param1: 200, param2: 100, minRadius: 1, maxRadius: 8);
+            new Window("Hough_line_standard", WindowMode.AutoSize, imgGray);
+
+            if (circles.Length > 1)
+                throw new System.ArgumentException("More than one valid circle...");
+            if (circles.Length < 1)
+                throw new System.ArgumentException("No valid circles");
+            var c = circles[0];
+            return new System.Drawing.Point((int)c.Center.X, (int)c.Center.Y);
+        }
+
         
         // returns the normalized vector from the compass center to the blue dot
         public PointF GetOrientation(Bitmap compassImage)
@@ -90,18 +118,17 @@ namespace EDAP
             float s = Properties.Settings.Default.Scale;
             Graphics g = Graphics.FromImage(compassImage);
             System.Drawing.Point crosshair = FindCircle(compassImage);
-            Rectangle compassRect = new Rectangle(crosshair.X - 27, crosshair.Y - 27, 54, 54);
+            int outerRadius = 35;
+            Rectangle compassRect = new Rectangle(crosshair.X - outerRadius, crosshair.Y - outerRadius, outerRadius*2, outerRadius*2);
 
+            Bitmap croppedCompass = Crop(compassImage, compassRect);
             // work out where the target indicator is
-            pictureBox2.Image = Crop(compassImage, compassRect);
-            
-            g.DrawRectangle(new Pen(Color.FromName("blue"), 2), compassRect);
-            /*
-            Graphics g = Graphics.FromImage(compassImage);
-            g.DrawLine(new Pen(Color.FromName("red"), width: 2), crosshair.X, crosshair.Y, target.X, target.Y);
+            pictureBox2.Image = croppedCompass;
 
-            return (target - crosshair) / 13;
-            */
+            System.Drawing.Point target = FindTarget(croppedCompass);
+            Graphics g2 = Graphics.FromImage(croppedCompass);
+            g2.DrawRectangle(new Pen(Color.FromName("red"), 3), target.X - 3, target.Y - 3, 6, 6);
+            g.DrawRectangle(new Pen(Color.FromName("red"), 2), compassRect);
             return new PointF(0, 0);
         }
     }
