@@ -95,20 +95,15 @@ namespace EDAP
 
         private System.Drawing.Point FindTarget(Bitmap croppedCompass)
         {
-            Mat source = BitmapConverter.ToMat(croppedCompass);
-            //Convert input images to gray
-            Mat imgGray = source.CvtColor(ColorConversionCodes.BGR2GRAY);
-            int threshold = 80;
-            //imgGray = imgGray.Blur(new OpenCvSharp.Size(5, 5)).Canny(threshold, threshold * 3);
-            var circles = Cv2.HoughCircles(imgGray, HoughMethods.Gradient, 5, minDist: 30, param1: 200, param2: 100, minRadius: 1, maxRadius: 8);
-            new Window("Hough_line_standard", WindowMode.AutoSize, imgGray);
 
-            if (circles.Length > 1)
-                throw new System.ArgumentException("More than one valid circle...");
-            if (circles.Length < 1)
-                throw new System.ArgumentException("No valid circles");
-            var c = circles[0];
-            return new System.Drawing.Point((int)c.Center.X, (int)c.Center.Y);
+            double minval, maxval, threshold = 0.8;
+            OpenCvSharp.Point minloc, maxloc;
+            
+            // blur then blue/brightness filter then blob detection is probably the way to go here
+            Mat source = BitmapConverter.ToMat(croppedCompass);
+            
+            source.Blur(new OpenCvSharp.Size(5, 5)).CvtColor(ColorConversionCodes.BGR2GRAY).MinMaxLoc(out minval, out maxval, out minloc, out maxloc);
+            return new System.Drawing.Point((int)maxloc.X, (int)maxloc.Y);
         }
 
         
