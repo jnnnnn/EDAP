@@ -39,12 +39,13 @@ namespace EDAP
             IntPtr hwnd = proc.MainWindowHandle;
             using (Bitmap screenshot = Screenshot.PrintWindow(hwnd))
             {
+                Bitmap compass = new Bitmap(10, 10);
                 try
                 {
                     double scale = Properties.Settings.Default.Scale;
                     if (Math.Abs(screenshot.Height - 1080 * scale) > 10)
                         throw new ArgumentException("Error: screenshot resultion wrong");
-                    Bitmap compass = CompassRecognizer.Crop(screenshot,
+                    compass = CompassRecognizer.Crop(screenshot,
                     ss.x1 * scale, ss.y1 * scale, ss.x2 * scale, ss.y2 * scale);
 
                     CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
@@ -54,6 +55,7 @@ namespace EDAP
                 }
                 catch (Exception err)
                 {
+                    pictureBox1.Image = compass;
                     label1.Text = "Error: " + err.ToString();
                     Console.WriteLine(err.ToString());
                 }

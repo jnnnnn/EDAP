@@ -59,11 +59,20 @@ namespace EDAP
             //Convert input images to gray
             Mat gref = source.CvtColor(ColorConversionCodes.BGR2GRAY);
             Mat gtpl = matchtarget.CvtColor(ColorConversionCodes.BGR2GRAY);
+                        
+            var circles = Cv2.HoughCircles(gref, HoughMethods.Gradient, 2, 5, 200, 100, 20, 30);
 
-            Cv2.MatchTemplate(gref, gtpl, res, TemplateMatchModes.CCoeffNormed);
+            Graphics g = Graphics.FromImage(image);
+            foreach (var circle in circles)
+            {
+                g.DrawEllipse(new Pen(Color.FromName("red"), 1), circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Radius * 2, circle.Radius * 2);
+                return new System.Drawing.Point((int)circle.Center.X, (int)circle.Center.Y);
+            }
+
+            Cv2.MatchTemplate(source, matchtarget, res, TemplateMatchModes.CCoeffNormed);
             Cv2.Threshold(res, res, 0.8, 1.0, ThresholdTypes.Tozero);
 
-            while (true)
+            for(int i =0; i < 1; i++)
             {
                 double minval, maxval, threshold = 0.8;
                 OpenCvSharp.Point minloc, maxloc;
