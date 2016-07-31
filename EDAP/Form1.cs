@@ -65,6 +65,8 @@ namespace EDAP
             //SwitchToThisWindow(hwnd, true);
         }
 
+        
+
         private void Form1_Load(object sender, EventArgs e)
         {
             timer = new Timer();
@@ -77,6 +79,13 @@ namespace EDAP
         {
             if (enabled)
                 WhereAmI();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
+            recognizer.FindTarget((Bitmap)Image.FromFile("compass_tests.png"));
+
         }
     }
 }

@@ -34,7 +34,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("680")]
+        [global::System.Configuration.DefaultSettingValueAttribute("600")]
         public int x1 {
             get {
                 return ((int)(this["x1"]));
@@ -43,7 +43,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("800")]
+        [global::System.Configuration.DefaultSettingValueAttribute("900")]
         public int x2 {
             get {
                 return ((int)(this["x2"]));
@@ -52,7 +52,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("650")]
+        [global::System.Configuration.DefaultSettingValueAttribute("550")]
         public int y1 {
             get {
                 return ((int)(this["y1"]));
@@ -61,7 +61,7 @@ namespace EDAP.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("950")]
+        [global::System.Configuration.DefaultSettingValueAttribute("1050")]
         public int y2 {
             get {
                 return ((int)(this["y2"]));

@@ -50,60 +50,51 @@ namespace EDAP
             return input.Clone(cropArea, input.PixelFormat);
         }
 
+        public static Mat Levels(Mat input, int channel = 0/*default blue of OpenCV's BGR format*/)
+        {
+            Mat[] channels = input.Split();
+            channels[channel].ConvertTo(channels[channel], -1, alpha: 2, beta: -255); // value -> value * 2 - 255
+            return channels[channel];
+        }
+
         private System.Drawing.Point FindCircle(Bitmap image)
         {
             Mat source = BitmapConverter.ToMat(image);
             //Convert input images to gray
-            Mat imgGray = source.CvtColor(ColorConversionCodes.BGR2GRAY);
-            CircleSegment[] circles = new CircleSegment[] { };
-            float dp = 1.5f;
-            for (; dp > 1f && circles.Length < 1; dp -= 0.1f)
-            {
-                circles = Cv2.HoughCircles(imgGray, HoughMethods.Gradient, dp, minDist: 30, param1: 200, param2: 100, minRadius: 22, maxRadius: 28);
-            }
-            Console.WriteLine(string.Format("dp = {0}", dp));
+            Mat reds = Levels(source, channel: 2);
+            CircleSegment[] circles = Cv2.HoughCircles(reds, 
+                HoughMethods.Gradient, 
+                dp:2f, 
+                minDist: 500 /* this is huge so we only find the best one */, 
+                param1: 200, 
+                param2: 50, /* this is really low so we usually find something */
+                minRadius: 22, 
+                maxRadius: 28);
+
             if (circles.Length > 1)
                 throw new System.ArgumentException("More than one valid circle...");
             if (circles.Length < 1)
                 throw new System.ArgumentException("No valid circles");
             var c = circles[0];
-            Graphics g = Graphics.FromImage(image);
-            g.DrawEllipse(new Pen(Color.FromName("green"), 2), c.Center.X - c.Radius, c.Center.Y - c.Radius, c.Radius * 2, c.Radius * 2);
+            //Graphics g = Graphics.FromImage(image);
+            //g.DrawEllipse(new Pen(Color.FromName("green"), 2), c.Center.X - c.Radius, c.Center.Y - c.Radius, c.Radius * 2, c.Radius * 2);
             return new System.Drawing.Point((int)c.Center.X, (int)c.Center.Y);
-            
-            /* looking for circle works better than matching template */
-            /*
-            Mat matchtarget = new Mat("compass_template.png", ImreadModes.Color);
-            Mat gtpl = matchtarget.CvtColor(ColorConversionCodes.BGR2GRAY);
-
-            Mat res = new Mat(source.Rows - matchtarget.Rows + 1, source.Cols - matchtarget.Cols + 1, MatType.CV_32FC1);
-            Cv2.MatchTemplate(source, matchtarget, res, TemplateMatchModes.CCoeffNormed);
-            Cv2.Threshold(res, res, 0.8, 1.0, ThresholdTypes.Tozero);
-
-            for(int i =0; i < 1; i++)
-            {
-                double minval, maxval, threshold = 0.8;
-                OpenCvSharp.Point minloc, maxloc;
-                Cv2.MinMaxLoc(res, out minval, out maxval, out minloc, out maxloc);
-
-                if (maxval >= threshold)
-                    return new System.Drawing.Point(maxloc.X + 40, maxloc.Y + 43);
-            }+
-            throw new System.ArgumentException("Couldn't find crosshair or dot.");
-            */
         }
 
-        private System.Drawing.Point FindTarget(Bitmap croppedCompass)
-        {
-
-            double minval, maxval, threshold = 0.8;
-            OpenCvSharp.Point minloc, maxloc;
-            
+        public System.Drawing.Point FindTarget(Bitmap croppedCompass)
+        {            
+            // todo: use blue/white threshold then opencvsharp.blob. or try to figure out the circle detector.
+            //cv::HoughCircles(mat, circles, CV_HOUGH_GRADIENT, 2, 50, 100, 8, 2, 8);
+            // Parameters 1 and 2 don't affect accuracy as such, more reliability. Param 1 will set the sensitivity; how strong the edges of the circles need to be. Too high and it won't detect anything, too low and it will find too much clutter. Param 2 will set how many edge points it needs to find to declare that it's found a circle. Again, too high will detect nothing, too low will declare anything to be a circle. The ideal value of param 2 will be related to the circumference of the circles.
             // blur then blue/brightness filter then blob detection is probably the way to go here
             Mat source = BitmapConverter.ToMat(croppedCompass);
-            
-            source.Blur(new OpenCvSharp.Size(5, 5)).CvtColor(ColorConversionCodes.BGR2GRAY).MinMaxLoc(out minval, out maxval, out minloc, out maxloc);
-            return new System.Drawing.Point((int)maxloc.X, (int)maxloc.Y);
+            Mat blue = Levels(source, channel: 0);
+            Window w = new Window("Blues", blue);
+            // Binary search threshold until we get only one circle..
+            var circles = Cv2.HoughCircles(blue, HoughMethods.Gradient, 0.1, minDist: 30, param1: 200, param2: 100, minRadius: 3, maxRadius: 3);
+
+            //.CvtColor(ColorConversionCodes.BGR2GRAY).MinMaxLoc(out minval, out maxval, out minloc, out maxloc);
+            return new System.Drawing.Point(0, 0);
         }
 
         
