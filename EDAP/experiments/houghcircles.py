@@ -9,8 +9,9 @@ def nothing_asCallback(x):
     pass
 
 def GUI_openCV_circles():
-    frame = cv2.imread(  "../compass_tests_red.png" )
+    frame = cv2.imread(  "../compass_tests_blue.png" )
     demo  = frame[:800,:800,:]
+    print("\n\nPress escape to exit...\n")
     cv2.namedWindow( "DEMO.IN",           )
     cv2.namedWindow( "DEMO.Canny",        )
     cv2.namedWindow( "DEMO.Canny.Circles",)
@@ -21,25 +22,25 @@ def GUI_openCV_circles():
     aCanny_HiTreshold                               = 255
     aCanny_HiTreshold_PREVIOUS                      =  -1
 
-    aHough_dp                                       =   1
+    aHough_dp                                       =   100
     aHough_dp_PREVIOUS                              =  -1
-    aHough_minDistance                              =  10
+    aHough_minDistance                              =  50
     aHough_minDistance_PREVIOUS                     =  -1
-    aHough_param1_aCannyHiTreshold                  = 255
+    aHough_param1_aCannyHiTreshold                  = 500
     aHough_param1_aCannyHiTreshold_PREVIOUS         =  -1
-    aHough_param2_aCentreDetectTreshold             =  20
+    aHough_param2_aCentreDetectTreshold             =  7
     aHough_param2_aCentreDetectTreshold_PREVIOUS    =  -1
-    aHough_minRadius                                =  10
+    aHough_minRadius                                =  3
     aHough_minRadius_PREVIOUS                       =  -1
-    aHough_maxRadius                                =  30
+    aHough_maxRadius                                =  6
     aHough_maxRadius_PREVIOUS                       =  -1
     cv2.createTrackbar( "Lo_Treshold",          "DEMO.Canny",          aCanny_LoTreshold,                      1000, nothing_asCallback )
     cv2.createTrackbar( "Hi_Treshold",          "DEMO.Canny",          aCanny_HiTreshold,                      1000, nothing_asCallback )
 
-    cv2.createTrackbar( "dp",                   "DEMO.Canny.Circles",  aHough_dp,                              100, nothing_asCallback )
+    cv2.createTrackbar( "dp",                   "DEMO.Canny.Circles",  aHough_dp,                              1000, nothing_asCallback )
     cv2.createTrackbar( "minDistance",          "DEMO.Canny.Circles",  aHough_minDistance,                     100, nothing_asCallback )
     cv2.createTrackbar( "param1_HiTreshold",    "DEMO.Canny.Circles",  aHough_param1_aCannyHiTreshold,         1000, nothing_asCallback )
-    cv2.createTrackbar( "param2_CentreDetect",  "DEMO.Canny.Circles",  aHough_param2_aCentreDetectTreshold,    255, nothing_asCallback )
+    cv2.createTrackbar( "param2_CentreDetect",  "DEMO.Canny.Circles",  aHough_param2_aCentreDetectTreshold,    50, nothing_asCallback )
     cv2.createTrackbar( "minRadius",            "DEMO.Canny.Circles",  aHough_minRadius,                       40, nothing_asCallback )
     cv2.createTrackbar( "maxRadius",            "DEMO.Canny.Circles",  aHough_maxRadius,                       40, nothing_asCallback )
 
@@ -59,7 +60,7 @@ def GUI_openCV_circles():
         else:
             aCannyRefreshFLAG           = False
 
-        aHough_dp                           = 0.1*cv2.getTrackbarPos( "dp",                 "DEMO.Canny.Circles" )
+        aHough_dp                           = 0.01*cv2.getTrackbarPos( "dp",                 "DEMO.Canny.Circles" )
         aHough_minDistance                  = cv2.getTrackbarPos( "minDistance",        "DEMO.Canny.Circles" )
         aHough_param1_aCannyHiTreshold      = cv2.getTrackbarPos( "param1_HiTreshold",  "DEMO.Canny.Circles" )
         aHough_param2_aCentreDetectTreshold = cv2.getTrackbarPos( "param2_CentreDetect","DEMO.Canny.Circles" )
@@ -103,8 +104,8 @@ def GUI_openCV_circles():
                 for aCircle in circles[0]:
                     cv2.circle( demoWithCircles,    ( int( aCircle[0] ), int( aCircle[1] ) ),
                                                     aCircle[2],
-                                                    (0,255,0),
-                                                    1
+                                                    (0,0,255),
+                                                    2
                                 )                
                 cv2.imshow( "DEMO.Canny.Circles2", demoWithCircles )
             except Exception as e:

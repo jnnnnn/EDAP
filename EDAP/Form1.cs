@@ -70,7 +70,7 @@ namespace EDAP
         private void Form1_Load(object sender, EventArgs e)
         {
             timer = new Timer();
-            timer.Interval = 300;
+            timer.Interval = 100;
             timer.Tick += Timer_Tick;
             timer.Start();
         }
@@ -84,8 +84,9 @@ namespace EDAP
         private void button2_Click(object sender, EventArgs e)
         {
             CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
-            recognizer.FindTarget((Bitmap)Image.FromFile("compass_tests.png"));
-
+            Bitmap image = (Bitmap)Image.FromFile("compass_tests.png");
+            recognizer.FindTargetsTest(image);
+            pictureBox2.Image = image;
         }
     }
 }
