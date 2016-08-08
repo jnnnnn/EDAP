@@ -1,6 +1,4 @@
-﻿using AForge;
-using AForge.Imaging.Filters;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -64,8 +62,6 @@ namespace EDAP
 
             //SwitchToThisWindow(hwnd, true);
         }
-
-        
 
         private void Form1_Load(object sender, EventArgs e)
         {
