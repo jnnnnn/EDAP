@@ -25,21 +25,21 @@ namespace EDAP
         public void Respond(System.Drawing.PointF compass)
         {
             double progress = (DateTime.UtcNow - last_jump_time).TotalSeconds;
-            if (progress < 5)
+            if (progress < 15)
                 return; // charging friendship drive
 
-            if (progress < 15)
-                return; // witchspace
+            if (progress < 25)
+                return; // witchspace 10..15s
 
-            if (progress < 20)
+            if (progress < 35)
             {
-                keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up for five seconds on arrival to avoid star.
+                keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up for five to ten seconds on arrival to avoid star.
                 return;
             }
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start charging to jump until 10 seconds after witchspace ends, but we can start aligning.
 
-            if (Align(compass) && progress > 25)
+            if (Align(compass) && progress > 35 && jumps_remaining > 0)
                 Jump();
         }
 

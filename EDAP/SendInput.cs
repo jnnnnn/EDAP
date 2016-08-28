@@ -6,11 +6,14 @@ namespace EDAP.SendInput
     class SendInputWrapper
     {
         [DllImport("user32.dll", SetLastError = true)]
-        public static extern UInt32 SendInput(UInt32 numberOfInputs, INPUT[] inputs, Int32 sizeOfInputStructure);
+        public static extern uint SendInput(uint numberOfInputs, INPUT[] inputs, int sizeOfInputStructure);
+        
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
         public static void SendInput(INPUT input)
         {
-            SendInput((UInt32)1, new INPUT[] { input }, Marshal.SizeOf(typeof(INPUT)));
+            SendInput(1, new INPUT[] { input }, Marshal.SizeOf(typeof(INPUT)));
         }
     }
 
@@ -60,8 +63,116 @@ namespace EDAP.SendInput
         public uint Time;
         public IntPtr ExtraInfo;
     }
+    
+    public enum ScanCode : ushort
+    {
+        // from http://www.philipstorr.id.au/pcbook/book3/scancode.htm
+        // see also https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
 
-    public enum KeyCode : ushort
+        // 29 	` 	~ 	
+        KEY_1 = 0x02, // ! 	
+        KEY_2 = 0x03, // @
+        KEY_3 = 0x04, // # 	
+        KEY_4 = 0x05, // $ 	
+        KEY_5 = 0x06, // %
+        KEY_6 = 0x07, // ^ 	
+        KEY_7 = 0x08, // & 	
+        KEY_8 = 0x09, // *
+        KEY_9 = 0x0A, // ( 	
+        KEY_0 = 0x0B, // ) 	
+        // 0C 	- 	_
+        // 0D 	= 	+ 	
+        // 0E 	Backspace 	Backspace 	
+        TAB = 0x0F, // Back Tab
+        KEY_Q = 0x10,
+        KEY_W = 0x11,
+        KEY_E = 0x12,
+        KEY_R = 0x13,
+        KEY_T = 0x14,
+        KEY_Y = 0x15,
+        KEY_U = 0x16,
+        KEY_I = 0x17,
+        KEY_O = 0x18,
+        KEY_P = 0x19,
+        // 1A 	[ 	{ 	
+        // 1B 	] 	}
+        // 2B 	\ 	| 	
+        // 3A note 1 	Caps Lock 	na 	
+        KEY_A = 0x1E,
+        KEY_S = 0x1F,
+        KEY_D = 0x20,
+        KEY_F = 0x21,
+        KEY_G = 0x22,
+        KEY_H = 0x23,
+        KEY_J = 0x24,
+        KEY_K = 0x25,
+        KEY_L = 0x26,
+        // 27 	; 	:
+        // 28 	' 	" 	
+        // 2B note 2 	# 	~ 	
+        ENTER = 0x1C, // Enter
+        // 2A note 1 	Left Shift 	na 	
+        // D5 note 2 	\ 	| 	
+        KEY_Z = 0x2C,
+        KEY_X = 0x2D,
+        KEY_C = 0x2E,
+        KEY_V = 0x2F,
+        KEY_B = 0x30,
+        KEY_N = 0x31,
+        KEY_M = 0x32,
+        // 33 	, 	< 	
+        // 34 	. 	> 	
+        // 35 	/ 	?
+        // 36 note 1 	Right shift 	na 	
+        // 1D note 1 	Left Ctrl 	na 	
+        // 38 note 1 	Left Alt 	na
+        SPACEBAR = 0x39, // Spacebar
+        // E0,38 note 1 	Right Alt 	na 	
+        // E0,1D note 1 	Right Ctrl 	na
+        // E0,52 	Insert 	na 	
+        // E0,53 	Delete 	na 	
+        // E0,4B 	Left Arrow 	na
+        // E0,47 	Home 	na 	
+        // E0,4F 	End 	na 	
+        // E0,48 	Up Arrow 	na
+        // E0,49 	Pg Up 	na 	
+        // E0,51 	Pg Dn 	na 	
+        // E0,4D 	Right Arrow 	na
+        // 45,C5 note 1 	Num Lock 	na 	
+        NUMPAD_7 = 0x47, // Home 	
+        NUMPAD_4 = 0x4B, // Left Arrow
+        NUMPAD_1 = 0x4F, // End 	
+        // E0,35 	Keypad / 	Keypad / 	
+        NUMPAD_8 = 0x48, // Up Arrow
+        NUMPAD_5 = 0x4C, // na 	
+        NUMPAD_2 = 0x50, // Dn Arrow 	
+        NUMPAD_0 = 0x52, // Insert
+        // E0,37 	Keypad * 	Keypad * 	
+        NUMPAD_9 = 0x49, // Pg Up 	
+        NUMPAD_6 = 0x4D, // Right Arrow
+        NUMPAD_3 = 0x51, // Pg Dn 	
+        // 53 	Keypad . 	Delete 	
+        // 4A 	Keypad - 	Keypad -
+        // 4E 	Keypad + 	Keypad + 	
+        // E0,1C 	Keypad Enter 	Keypad Enter 	
+        // 01 	Escape 	Escape
+        // 3B 	F1 	note 3 	
+        // 3C 	F2 	note 3 	
+        // 3D 	F3 	note 3
+        // 3E 	F4 	note 3 	
+        // 3F 	F5 	note 3 	
+        // 40 	F6 	note 3
+        // 41 	F7 	note 3 	
+        // 42 	F8 	note 3 	
+        // 43 	F9 	note 3
+        // 44 	F10 	note 3 	
+        // D9 	F11 	note 3 	
+        // DA 	F12 	note 3
+        // 2A,37 	Prnt, Scrn 	na 	
+        // 46 	Scroll Lock 	na 	
+    }
+
+    public enum VKeyCode : ushort
     {
         ADD = 0x6b,
         ALT = 0x12,

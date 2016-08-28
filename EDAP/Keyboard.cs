@@ -25,15 +25,7 @@ namespace EDAP
         const int WM_KEYUP = 0x101;
         const int WM_SYSCOMMAND = 0x018;
         const int SC_CLOSE = 0x053;
-
-        const int VK_A = 0x41;
-        const int VK_SPACE = 0x20;
-        const int VK_0 = 0x30;
-        const int VK_NUMPAD0 = 0x60;
-        const int VK_SHIFT = 0x10;
-        const int VK_CONTROL = 0x11;
-        const int VK_ALT = 0x12;
-
+        
         public Keyboard()
         {
             pressed_keys = new HashSet<int>();
@@ -44,12 +36,47 @@ namespace EDAP
         /// </summary>
         public static int LetterToKey(char letter)
         {
-            if (letter >= 'A' && letter <= 'Z')
-                return letter;
-            if (letter >= '0' && letter <= '9')
-                return letter;
-
-            throw new Exception("Unrecognized letter or number");
+            switch (letter)
+            {
+                case '0': return (int)ScanCode.KEY_0;
+                case '1': return (int)ScanCode.KEY_1;
+                case '2': return (int)ScanCode.KEY_2;
+                case '3': return (int)ScanCode.KEY_3;
+                case '4': return (int)ScanCode.KEY_4;
+                case '5': return (int)ScanCode.KEY_5;
+                case '6': return (int)ScanCode.KEY_6;
+                case '7': return (int)ScanCode.KEY_7;
+                case '8': return (int)ScanCode.KEY_8;
+                case '9': return (int)ScanCode.KEY_9;
+                case 'A': return (int)ScanCode.KEY_A;
+                case 'B': return (int)ScanCode.KEY_B;
+                case 'C': return (int)ScanCode.KEY_C;
+                case 'D': return (int)ScanCode.KEY_D;
+                case 'E': return (int)ScanCode.KEY_E;
+                case 'F': return (int)ScanCode.KEY_F;
+                case 'G': return (int)ScanCode.KEY_G;
+                case 'H': return (int)ScanCode.KEY_H;
+                case 'I': return (int)ScanCode.KEY_I;
+                case 'J': return (int)ScanCode.KEY_J;
+                case 'K': return (int)ScanCode.KEY_K;
+                case 'L': return (int)ScanCode.KEY_L;
+                case 'M': return (int)ScanCode.KEY_M;
+                case 'N': return (int)ScanCode.KEY_N;
+                case 'O': return (int)ScanCode.KEY_O;
+                case 'P': return (int)ScanCode.KEY_P;
+                case 'Q': return (int)ScanCode.KEY_Q;
+                case 'R': return (int)ScanCode.KEY_R;
+                case 'S': return (int)ScanCode.KEY_S;
+                case 'T': return (int)ScanCode.KEY_T;
+                case 'U': return (int)ScanCode.KEY_U;
+                case 'V': return (int)ScanCode.KEY_V;
+                case 'W': return (int)ScanCode.KEY_W;
+                case 'X': return (int)ScanCode.KEY_X;
+                case 'Y': return (int)ScanCode.KEY_Y;
+                case 'Z': return (int)ScanCode.KEY_Z;
+                default:
+                    throw new Exception("Unrecognized letter or number");
+            }
         }
 
         /// <summary>
@@ -59,16 +86,27 @@ namespace EDAP
         /// <returns></returns>
         public static int NumpadToKey(char letter)
         {
-            if (letter >= '0' && letter <= '9')
-                return VK_NUMPAD0 + (letter - VK_0);
-
-            throw new Exception("Invalid numpad key");
+            switch (letter)
+            {
+                case '0': return (int)ScanCode.NUMPAD_0;
+                case '1': return (int)ScanCode.NUMPAD_1;
+                case '2': return (int)ScanCode.NUMPAD_2;
+                case '3': return (int)ScanCode.NUMPAD_3;
+                case '4': return (int)ScanCode.NUMPAD_4;
+                case '5': return (int)ScanCode.NUMPAD_5;
+                case '6': return (int)ScanCode.NUMPAD_6;
+                case '7': return (int)ScanCode.NUMPAD_7;
+                case '8': return (int)ScanCode.NUMPAD_8;
+                case '9': return (int)ScanCode.NUMPAD_9;
+                default:
+                    throw new Exception("Invalid numpad key");
+            }            
         }
 
         /// <summary>
         /// Start pressing down on a key. Sends a "keydown" event to the game.
         /// </summary>
-        /// <param name="key">The VK_ keycode of the key to press.</param>
+        /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to press.</param>
         public void Keydown(int key)
         {
             if (pressed_keys.Contains(key))
@@ -79,6 +117,8 @@ namespace EDAP
             // program doesn't recognize this.. need to use sendinput instead
             // PostMessage(hWnd, WM_KEYDOWN, ((IntPtr)key), (IntPtr)0);
 
+            // program also doesn't recognize virtual key codes.. need to use scan codes
+
             SendInputWrapper.SendInput(new INPUT
             {
                 Type = (uint)InputType.Keyboard,
@@ -86,9 +126,9 @@ namespace EDAP
                 {
                     Keyboard = new KEYBDINPUT
                     {
-                        Vk = (ushort) key,
-                        Scan = 0,
-                        Flags = 0,
+                        Vk = 0,
+                        Scan = (ushort) key,
+                        Flags = (uint)KeyboardFlag.ScanCode,
                         Time = 0,
                         ExtraInfo = IntPtr.Zero
                     }
@@ -99,14 +139,13 @@ namespace EDAP
         /// <summary>
         /// Immediately release a key.
         /// </summary>
-        /// <param name="key">The VK_ keycode of the key to release.</param>
+        /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to release.</param>
         public void Keyup(int key)
         {
             if (!pressed_keys.Contains(key))
                 return;
 
             pressed_keys.Remove(key);
-            //PostMessage(hWnd, WM_KEYUP, ((IntPtr)key), (IntPtr)0);
             SendInputWrapper.SendInput(new INPUT
             {
                 Type = (uint)InputType.Keyboard,
@@ -114,9 +153,9 @@ namespace EDAP
                 {
                     Keyboard = new KEYBDINPUT
                     {
-                        Vk = (ushort) key,
-                        Scan = 0,
-                        Flags = (uint)KeyboardFlag.KeyUp,
+                        Vk = 0,
+                        Scan = (ushort) key,
+                        Flags = (uint)KeyboardFlag.ScanCode | (uint)KeyboardFlag.KeyUp,
                         Time = 0,
                         ExtraInfo = IntPtr.Zero
                     }
