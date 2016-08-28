@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EDAP
@@ -173,6 +174,7 @@ namespace EDAP
         public void Tap(int key)
         {
             Keydown(key);
+            Thread.Sleep(10); // make sure the game recognizes the keypress!
             Keyup(key);
         }
 

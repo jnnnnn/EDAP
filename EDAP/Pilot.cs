@@ -13,7 +13,7 @@ namespace EDAP
     /// </summary>
     class PilotJumper
     {
-        private DateTime last_jump_time = DateTime.Today.Date; // time since the "J" key was pressed        
+        private DateTime last_jump_time = DateTime.UtcNow.AddHours(-1); // time since the "J" key was pressed        
         public Keyboard keyboard;
         public int jumps_remaining = 0;
         public bool bFirstJump = false;
@@ -74,6 +74,12 @@ namespace EDAP
             {
                 // cruise away from the star for a few seconds to make it less likely that we hit it after alignment
                 keyboard.Clear();
+                return;
+            }
+
+            //cruise away from the star for at least ten seconds to make it less likely for us to hit it
+            if (SecondsSinceLastJump < 50)
+            {
                 return;
             }
 
