@@ -33,6 +33,11 @@ namespace EDAP
         const uint VK_CONTROL = 0x11;
         const uint VK_ALT = 0x12;
 
+        public Keyboard()
+        {
+            pressed_keys = new HashSet<int>();
+        }
+
         /// <summary>
         /// Returns the VK_ keycode of a given letter or number on the keyboard.
         /// </summary>

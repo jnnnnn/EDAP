@@ -14,12 +14,15 @@ namespace EDAP
         private Timer timer;
         private bool enabled = false;
 
-        Keyboard keyboard;
-        PilotJumper pilot;
+        private Keyboard keyboard;
+        private PilotJumper pilot;
 
         public Form1()
         {
             InitializeComponent();
+            keyboard = new Keyboard();
+            pilot = new PilotJumper();
+            pilot.keyboard = keyboard;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -54,7 +57,7 @@ namespace EDAP
                     CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
                     PointF vector = recognizer.GetOrientation(compass);
                     pictureBox1.Image = compass;
-                    label1.Text = vector.ToString();
+                    label1.Text = String.Format("{0:0.0},{1:0.0}", vector.X, vector.Y);
                     pilot.Respond(vector);
                 }
                 catch (Exception err)
