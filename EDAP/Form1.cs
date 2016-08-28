@@ -17,8 +17,16 @@ namespace EDAP
 
         private Keyboard keyboard;
         private PilotJumper pilot;
+        private bool StopAtEnd = true;
 
         private DateTime lastFrame = DateTime.UtcNow;
+        private DateTime lastClick = DateTime.UtcNow;
+        
+        private void Focusize()
+        {
+            SwitchToThisWindow(keyboard.hWnd, true);
+            Thread.Sleep(10);
+        }
 
         public Form1()
         {
@@ -33,6 +41,10 @@ namespace EDAP
             enabled = !enabled;
             keyboard.Clear();
             pilot.jumps_remaining = 0;
+            
+            Focusize();
+
+            lastClick = DateTime.UtcNow;
         }
 
         private void WhereAmI()
@@ -73,13 +85,19 @@ namespace EDAP
                     label1.Text = "Error: " + err.ToString();
                     Console.WriteLine(err.ToString());
 
-                    if ((DateTime.UtcNow - lastFrame).TotalSeconds > 1)
+                    if ((DateTime.UtcNow - lastFrame).TotalSeconds > 0.5)
                         keyboard.Clear();
                 }
             }
+            
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = pilot.jumps_remaining.ToString() + " " + string.Join(", ", keyboard.pressed_keys);
-            //SwitchToThisWindow(hwnd, true);
+            label2.Text = pilot.jumps_remaining.ToString() + (StopAtEnd ? " " : "C ") + string.Join(", ", keyboard.pressed_keys);
+            if (pilot.jumps_remaining < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
+            {
+                // finished! stop.
+                keyboard.Tap(Keyboard.LetterToKey('X'));
+                enabled = false;
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -106,9 +124,16 @@ namespace EDAP
 
         private void button3_Click(object sender, EventArgs e)
         {
-            SwitchToThisWindow(keyboard.hWnd, true);
-            Thread.Sleep(10);
+            Focusize();
             pilot.QueueJump();
+            StopAtEnd = true;
+            lastClick = DateTime.UtcNow;
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            StopAtEnd = false;
+            lastClick = DateTime.UtcNow;
         }
     }
 }
