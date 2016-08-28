@@ -68,7 +68,7 @@ namespace EDAP
                 }
             }
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-
+            label2.Text = pilot.jumps_remaining.ToString();
             //SwitchToThisWindow(hwnd, true);
         }
 
