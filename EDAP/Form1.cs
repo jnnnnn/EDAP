@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace EDAP
@@ -11,12 +12,14 @@ namespace EDAP
         [System.Runtime.InteropServices.DllImport("user32.dll")]
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
-        private Timer timer;
+        private System.Windows.Forms.Timer timer;
         private bool enabled = false;
 
         private Keyboard keyboard;
         private PilotJumper pilot;
-        
+
+        private DateTime lastFrame = DateTime.UtcNow;
+
         public Form1()
         {
             InitializeComponent();
@@ -29,6 +32,7 @@ namespace EDAP
         {
             enabled = !enabled;
             keyboard.Clear();
+            pilot.jumps_remaining = 0;
         }
 
         private void WhereAmI()
@@ -57,7 +61,10 @@ namespace EDAP
                     CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
                     PointF vector = recognizer.GetOrientation(compass);
                     pictureBox1.Image = compass;
-                    label1.Text = String.Format("{0:0.0},{1:0.0}", vector.X, vector.Y);
+                    label1.Text = string.Format("{0:0.0},{1:0.0}", vector.X, vector.Y);
+
+                    lastFrame = DateTime.UtcNow;
+
                     pilot.Respond(vector);
                 }
                 catch (Exception err)
@@ -65,6 +72,9 @@ namespace EDAP
                     pictureBox1.Image = compass;
                     label1.Text = "Error: " + err.ToString();
                     Console.WriteLine(err.ToString());
+
+                    if ((DateTime.UtcNow - lastFrame).TotalSeconds > 1)
+                        keyboard.Clear();
                 }
             }
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
@@ -74,7 +84,7 @@ namespace EDAP
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            timer = new Timer();
+            timer = new System.Windows.Forms.Timer();
             timer.Interval = 100;
             timer.Tick += Timer_Tick;
             timer.Start();
@@ -96,6 +106,8 @@ namespace EDAP
 
         private void button3_Click(object sender, EventArgs e)
         {
+            SwitchToThisWindow(keyboard.hWnd, true);
+            Thread.Sleep(10);
             pilot.QueueJump();
         }
     }
