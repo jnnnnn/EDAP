@@ -144,22 +144,29 @@ namespace EDAP
         
         private System.Drawing.PointF ComputeAngles(CircleSegment c, OpenCvSharp.Point t/*target*/, bool forward)
         {
-            var x = (t.X - c.Center.X) / c.Radius;
-            var y = (t.Y - c.Center.Y) / c.Radius;
+            double x = (t.X - c.Center.X);
+            double y = (t.Y - c.Center.Y);
+            var maxRadius = Math.Max(c.Radius, Math.Sqrt(x * x + y * y));
+            x /= maxRadius;
+            y /= maxRadius;
 
-            var rollangle = Math.Atan2(x, -y); // wrong order on purpose so that up is 0 degrees roll.
-
-            var target_radius = Math.Sqrt(x * x + y * y);
-            target_radius = Math.Min(1, target_radius);
-            var pitchangle = Math.Asin(target_radius);
+            // could return ship pitch and roll here ...
+            /*
+            var rollangle = Math.Atan2(x, -y); // wrong order on purpose so that up is 0 degrees roll.            
+            var pitchangle = Math.Asin(Math.Sqrt(x*x + y*y) / maxRadius);
             if (!forward)
                 pitchangle = Math.PI - pitchangle;
             return new PointF((float)pitchangle, (float)rollangle);
+            */
+
+            // but x/y is actually easier to handle since we are only doing a crude alignment, and not computing angular velocities or anything
+            if (!forward)
+                y += (y > 0) ? 1 : -1;
+            return new PointF((float)x, (float)y);
         }
 
         public void FindTargetsTest(Bitmap compasses)
-        {
-            
+        {            
             Mat source = BitmapConverter.ToMat(compasses);
             /*
             Mat blues = Levels(source, channel: 0);

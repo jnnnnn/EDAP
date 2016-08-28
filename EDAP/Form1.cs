@@ -12,7 +12,10 @@ namespace EDAP
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
         private Timer timer;
-        private bool enabled = false; 
+        private bool enabled = false;
+
+        Keyboard keyboard;
+        PilotJumper pilot;
 
         public Form1()
         {
@@ -21,7 +24,8 @@ namespace EDAP
 
         private void button1_Click(object sender, EventArgs e)
         {
-            enabled = !enabled;   
+            enabled = !enabled;
+            keyboard.Clear();
         }
 
         private void WhereAmI()
@@ -35,6 +39,7 @@ namespace EDAP
                 return;
             }
             IntPtr hwnd = proc.MainWindowHandle;
+            keyboard.hWnd = hwnd;
             using (Bitmap screenshot = Screenshot.PrintWindow(hwnd))
             {
                 Bitmap compass = new Bitmap(10, 10);
@@ -50,6 +55,7 @@ namespace EDAP
                     PointF vector = recognizer.GetOrientation(compass);
                     pictureBox1.Image = compass;
                     label1.Text = vector.ToString();
+                    pilot.Respond(vector);
                 }
                 catch (Exception err)
                 {
@@ -83,6 +89,11 @@ namespace EDAP
             Bitmap image = (Bitmap)Image.FromFile("compass_tests.png");
             recognizer.FindTargetsTest(image);
             pictureBox2.Image = image;
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            pilot.jumps_remaining += 1;
         }
     }
 }
