@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EDAP.SendInput;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -20,18 +21,18 @@ namespace EDAP
         [DllImport("user32.dll")]
         public static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
-        const uint WM_KEYDOWN = 0x100;
-        const uint WM_KEYUP = 0x101;
-        const uint WM_SYSCOMMAND = 0x018;
-        const uint SC_CLOSE = 0x053;
+        const int WM_KEYDOWN = 0x100;
+        const int WM_KEYUP = 0x101;
+        const int WM_SYSCOMMAND = 0x018;
+        const int SC_CLOSE = 0x053;
 
-        const uint VK_A = 0x41;
-        const uint VK_SPACE = 0x20;
-        const uint VK_0 = 0x30;
-        const uint VK_NUMPAD0 = 0x60;
-        const uint VK_SHIFT = 0x10;
-        const uint VK_CONTROL = 0x11;
-        const uint VK_ALT = 0x12;
+        const int VK_A = 0x41;
+        const int VK_SPACE = 0x20;
+        const int VK_0 = 0x30;
+        const int VK_NUMPAD0 = 0x60;
+        const int VK_SHIFT = 0x10;
+        const int VK_CONTROL = 0x11;
+        const int VK_ALT = 0x12;
 
         public Keyboard()
         {
@@ -44,9 +45,9 @@ namespace EDAP
         public static int LetterToKey(char letter)
         {
             if (letter >= 'A' && letter <= 'Z')
-                return (int)letter;
+                return letter;
             if (letter >= '0' && letter <= '9')
-                return (int)letter;
+                return letter;
 
             throw new Exception("Unrecognized letter or number");
         }
@@ -59,7 +60,7 @@ namespace EDAP
         public static int NumpadToKey(char letter)
         {
             if (letter >= '0' && letter <= '9')
-                return (int)VK_NUMPAD0 + ((int)letter - (int)VK_0);
+                return VK_NUMPAD0 + (letter - VK_0);
 
             throw new Exception("Invalid numpad key");
         }
@@ -74,7 +75,25 @@ namespace EDAP
                 return;
 
             pressed_keys.Add(key);
-            PostMessage(hWnd, WM_KEYDOWN, ((IntPtr)key), (IntPtr)0);
+
+            // program doesn't recognize this.. need to use sendinput instead
+            // PostMessage(hWnd, WM_KEYDOWN, ((IntPtr)key), (IntPtr)0);
+
+            SendInputWrapper.SendInput(new INPUT
+            {
+                Type = (uint)InputType.Keyboard,
+                Data =
+                {
+                    Keyboard = new KEYBDINPUT
+                    {
+                        Vk = (ushort) key,
+                        Scan = 0,
+                        Flags = 0,
+                        Time = 0,
+                        ExtraInfo = IntPtr.Zero
+                    }
+                }
+            });
         }
 
         /// <summary>
@@ -87,7 +106,22 @@ namespace EDAP
                 return;
 
             pressed_keys.Remove(key);
-            PostMessage(hWnd, WM_KEYUP, ((IntPtr)key), (IntPtr)0);
+            //PostMessage(hWnd, WM_KEYUP, ((IntPtr)key), (IntPtr)0);
+            SendInputWrapper.SendInput(new INPUT
+            {
+                Type = (uint)InputType.Keyboard,
+                Data =
+                {
+                    Keyboard = new KEYBDINPUT
+                    {
+                        Vk = (ushort) key,
+                        Scan = 0,
+                        Flags = (uint)KeyboardFlag.KeyUp,
+                        Time = 0,
+                        ExtraInfo = IntPtr.Zero
+                    }
+                }
+            });
         }
 
         /// <summary>

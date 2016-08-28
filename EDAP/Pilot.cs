@@ -8,11 +8,19 @@ namespace EDAP
 {
     class PilotJumper
     {
-        private DateTime last_jump_time; // time since the "J" key was pressed
-        
+        private DateTime last_jump_time; // time since the "J" key was pressed        
         public Keyboard keyboard;
-
         public int jumps_remaining = 0;
+
+        public void QueueJump()
+        {
+            if (jumps_remaining < 1)
+            {
+                last_jump_time = DateTime.UtcNow;
+                jumps_remaining = 0;
+            }
+            jumps_remaining += 1;
+        }
 
         public void Respond(System.Drawing.PointF compass)
         {
@@ -37,7 +45,7 @@ namespace EDAP
 
         private bool Align(System.Drawing.PointF compass)
         {
-            if (compass.X < 0.1 && compass.Y < 0.1)
+            if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) < 0.1)
             {
                 keyboard.Clear();
                 return true;

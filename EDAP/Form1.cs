@@ -68,7 +68,7 @@ namespace EDAP
                 }
             }
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = pilot.jumps_remaining.ToString();
+            label2.Text = pilot.jumps_remaining.ToString() + " " + string.Join(", ", keyboard.pressed_keys);
             //SwitchToThisWindow(hwnd, true);
         }
 
@@ -96,7 +96,7 @@ namespace EDAP
 
         private void button3_Click(object sender, EventArgs e)
         {
-            pilot.jumps_remaining += 1;
+            pilot.QueueJump();
         }
     }
 }
