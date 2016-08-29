@@ -66,6 +66,7 @@ namespace EDAP
             Mat source = BitmapConverter.ToMat(image);
             //Convert input images to gray
             Mat reds = Levels(source, channel: 2);
+            // these parameters were tuned using the test functionality
             CircleSegment[] circles = Cv2.HoughCircles(reds, 
                 HoughMethods.Gradient, 
                 dp:2f, 
@@ -159,9 +160,9 @@ namespace EDAP
             return new PointF((float)pitchangle, (float)rollangle);
             */
 
-            // but x/y is actually easier to handle since we are only doing a crude alignment, and not computing angular velocities or anything
+            // but x/y is actually easier to handle since we are only doing a crude alignment, and not computing angular velocities or anything            
             if (!forward)
-                y += (y > 0) ? 1 : -1;
+                y = (y > 0) ? 2-y : -2-y; // if target is behind, add lots of pitch offset so that exactly wrong direction is 2/-2.
             return new PointF((float)x, (float)y);
         }
 

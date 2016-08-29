@@ -32,7 +32,7 @@ namespace EDAP
         }
 
         /// <summary>
-        /// Returns the VK_ keycode of a given letter or number on the keyboard.
+        /// Returns the scan keycode of a given letter or number on the keyboard.
         /// </summary>
         public static int LetterToKey(char letter)
         {
@@ -80,7 +80,7 @@ namespace EDAP
         }
 
         /// <summary>
-        /// Returns the VK_ keycode of one of the numbers on the numpad.
+        /// Returns the scan keycode of one of the numbers on the numpad.
         /// </summary>
         /// <param name="letter"></param>
         /// <returns></returns>
@@ -114,10 +114,13 @@ namespace EDAP
 
             pressed_keys.Add(key);
 
-            // program doesn't recognize this.. need to use sendinput instead
+            // program doesn't recognize this.. 
             // PostMessage(hWnd, WM_KEYDOWN, ((IntPtr)key), (IntPtr)0);
 
-            // program also doesn't recognize virtual key codes.. need to use scan codes
+            // need to use sendinput instead
+            // this means the target program must be the foreground window :(
+
+            // program also doesn't recognize virtual key codes.. 
 
             SendInputWrapper.SendInput(new INPUT
             {

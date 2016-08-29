@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
+/// <summary>
+/// These structs and dll calls allow us to tell Windows which keyboard keys are pressed
+/// </summary>
 namespace EDAP.SendInput
 {    
     class SendInputWrapper
