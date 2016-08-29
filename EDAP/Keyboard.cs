@@ -174,7 +174,7 @@ namespace EDAP
         public void Tap(int key)
         {
             Keydown(key);
-            Thread.Sleep(10); // make sure the game recognizes the keypress!
+            Thread.Sleep(100); // make sure the game recognizes the keypress!
             Keyup(key);
         }
 

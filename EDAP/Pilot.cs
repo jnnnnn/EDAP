@@ -76,11 +76,13 @@ namespace EDAP
                 keyboard.Clear();
                 return;
             }
-            
+
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start charging to jump until 10 seconds after witchspace ends, but we can start aligning.
 
             if (Align(compass) && jumps_remaining > 0)
                 Jump();
+            else if (jumps_remaining < 1)
+                Cruise();
         }
 
         /// <summary>
@@ -127,6 +129,23 @@ namespace EDAP
                 keyboard.Keyup(Keyboard.NumpadToKey('6'));
             
             return false;
+        }
+
+        /// <summary>
+        /// This handles cruising behaviour. The main function is already keeping us aligned; 
+        /// we just need to drop to 75% speed.
+        /// This function could also do the final part: 
+        ///  1. press G when the "SAFE DISENGAGE" graphic is detected
+        ///  2. Wait 5 seconds
+        ///  3. Press Tab, X, 1,E,E,Space,S,Space so the docking computer takes over.
+        /// </summary>
+        private void Cruise()
+        {
+            if (SecondsSinceLastJump < 50.3 && SecondsSinceLastJump > 50)
+            {
+                keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
+                keyboard.Tap(Keyboard.LetterToKey('Q')); // drop 25% throttle
+            }
         }
     }
 }
