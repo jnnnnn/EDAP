@@ -60,7 +60,7 @@ namespace EDAP
             if (SecondsSinceLastJump < 30)
                 return; // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
 
-            if (SecondsSinceLastJump < 45)
+            if (SecondsSinceLastJump < 40)
             {
                 // maybe in witchspace, maybe facing star
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
@@ -70,19 +70,13 @@ namespace EDAP
                 return;
             }
             
-            if (SecondsSinceLastJump < 50)
+            if (SecondsSinceLastJump < 45)
             {
                 // cruise away from the star for a few seconds to make it less likely that we hit it after alignment
                 keyboard.Clear();
                 return;
             }
-
-            //cruise away from the star for at least ten seconds to make it less likely for us to hit it
-            if (SecondsSinceLastJump < 50)
-            {
-                return;
-            }
-
+            
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start charging to jump until 10 seconds after witchspace ends, but we can start aligning.
 
             if (Align(compass) && jumps_remaining > 0)

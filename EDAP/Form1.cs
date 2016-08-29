@@ -18,10 +18,11 @@ namespace EDAP
         private Keyboard keyboard;
         private PilotJumper pilot;
         private bool StopAtEnd = true;
-
+        
         private DateTime lastFrame = DateTime.UtcNow;
         private DateTime lastClick = DateTime.UtcNow;
-        
+        private DateTime lastClear = DateTime.UtcNow;
+
         private void Focusize()
         {
             SwitchToThisWindow(keyboard.hWnd, true);
@@ -76,7 +77,11 @@ namespace EDAP
                     label1.Text = string.Format("{0:0.0},{1:0.0}", vector.X, vector.Y);
 
                     lastFrame = DateTime.UtcNow;
-
+                    if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
+                    {
+                        keyboard.Clear(); // in case a click meant the right window was not focused for a keydown event, reset the keyboard state frequently
+                        lastClear = DateTime.UtcNow;
+                    }
                     pilot.Respond(vector);
                 }
                 catch (Exception err)
@@ -132,6 +137,7 @@ namespace EDAP
 
         private void button4_Click(object sender, EventArgs e)
         {
+            Focusize();
             StopAtEnd = false;
             lastClick = DateTime.UtcNow;
         }
