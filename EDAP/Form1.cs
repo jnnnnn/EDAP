@@ -19,11 +19,13 @@ namespace EDAP
         private PilotJumper pilot;
         private bool StopAtEnd = true;
 
+        private IntPtr hwnd;
+
         private DateTime lastClick = DateTime.UtcNow;
 
         private void Focusize()
         {
-            SwitchToThisWindow(keyboard.hWnd, true);
+            SwitchToThisWindow(hwnd, true);
             Thread.Sleep(10);
         }
 
@@ -56,8 +58,15 @@ namespace EDAP
                 Console.WriteLine("Could not find main window. Run in Administrator mode, and check settings.");
                 return;
             }
-            IntPtr hwnd = proc.MainWindowHandle;
+            hwnd = proc.MainWindowHandle;
             keyboard.hWnd = hwnd;
+
+            if (pilot.jumps_remaining < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
+            {
+                // finished! stop.
+                keyboard.Tap(Keyboard.LetterToKey('X'));
+            }
+
             using (Bitmap screenshot = Screenshot.PrintWindow(hwnd))
             {
                 Bitmap compass = new Bitmap(10, 10);
@@ -78,6 +87,7 @@ namespace EDAP
                 }
                 catch (Exception err)
                 {
+                    pilot.Respond(null);
                     pictureBox1.Image = compass;
                     label1.Text = "Error: " + err.ToString();
                     Console.WriteLine(err.ToString());                    
@@ -85,13 +95,7 @@ namespace EDAP
             }
             
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = pilot.jumps_remaining.ToString() + (StopAtEnd ? " " : "C ") + string.Join(", ", keyboard.pressed_keys);
-            if (pilot.jumps_remaining < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
-            {
-                // finished! stop.
-                keyboard.Tap(Keyboard.LetterToKey('X'));
-                enabled = false;
-            }
+            label2.Text = pilot.jumps_remaining.ToString() + (StopAtEnd ? " " : "C ") + string.Join(", ", keyboard.pressed_keys);            
         }
 
         private void Form1_Load(object sender, EventArgs e)

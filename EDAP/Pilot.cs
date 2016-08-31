@@ -26,9 +26,10 @@ namespace EDAP
             None            = 0,
             firstjump       = 1 << 0,
             clearedJump     = 1 << 1,
-            swoopStart      = 1 << 2,
-            swoopEnd        = 1 << 3,
-            cruiseStart     = 1 << 4,
+            jumpTick        = 1 << 2,
+            swoopStart      = 1 << 3,
+            swoopEnd        = 1 << 4,
+            cruiseStart     = 1 << 5,
         }
 
         public PilotState state;
@@ -67,13 +68,14 @@ namespace EDAP
             jumps_remaining -= 1;
             state = PilotState.None;
             // open system map / screenshot here ? 
+            keyboard.Tap(Keyboard.LetterToKey('6')); // open system map
         }
 
         /// <summary>
         /// Handle an input frame by setting which keys are pressed.
         /// </summary>
         /// <param name="compass"></param>
-        public void Respond(System.Drawing.PointF compass)
+        public void Respond(System.Drawing.PointF? compass)
         {
             // perform the first alignment/jump immediately
             if (state.HasFlag(PilotState.firstjump))
@@ -82,9 +84,16 @@ namespace EDAP
                     Jump();
                 return;
             }
-            
+
+            // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
             if (SecondsSinceLastJump < 30)
-                return; // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
+            {
+                if (SecondsSinceLastJump > 10 && OncePerJump(PilotState.jumpTick))
+                {
+                    keyboard.Tap((int)ScanCode.F12); // screenshot the system map
+                }
+                return; 
+            }
 
             if (OncePerJump(PilotState.clearedJump))
                 keyboard.Clear();
@@ -127,8 +136,16 @@ namespace EDAP
         /// </summary>
         /// <param name="compass">The normalized vector pointing from the centre of the compass to the blue dot</param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool Align(System.Drawing.PointF compass)
+        private bool Align(System.Drawing.PointF? compass_a)
         {
+            if (!compass_a.HasValue)
+            {
+                ClearAlignKeys();
+                alignFrames = 0;
+                return false;
+            }
+
+            System.Drawing.PointF compass = compass_a.GetValueOrDefault();
             if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) < 0.1)
             {
                 ClearAlignKeys();
@@ -191,12 +208,12 @@ namespace EDAP
                 return;
             }
 
-            if (SecondsSinceLastJump < 45)
+            if (SecondsSinceLastJump < 50)
             {
                 if (OncePerJump(PilotState.swoopEnd))
                 { 
                     keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle                    
-                    keyboard.Keydown((int)ScanCode.CTRL_R); // hooooooooooooonk
+                    keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
                 }
 
                 // cruise away from the star for a few seconds to make it less likely that we hit it after alignment
