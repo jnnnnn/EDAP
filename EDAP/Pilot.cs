@@ -88,9 +88,12 @@ namespace EDAP
             // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
             if (SecondsSinceLastJump < 30)
             {
+                if (SecondsSinceLastJump > 6 && SecondsSinceLastJump < 8)
+                    keyboard.Tap(Keyboard.LetterToKey('K')); // scroll right on system map
+
                 if (SecondsSinceLastJump > 10 && OncePerJump(PilotState.jumpTick))
                 {
-                    keyboard.Tap((int)ScanCode.F12); // screenshot the system map
+                    keyboard.Tap((int)ScanCode.F10); // screenshot the system map
                 }
                 return; 
             }
