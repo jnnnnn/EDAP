@@ -64,6 +64,7 @@ namespace EDAP
         {
             ClearAlignKeys();
             keyboard.Tap(Keyboard.LetterToKey('G')); // jump
+            keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
             last_jump_time = DateTime.UtcNow;
             jumps_remaining -= 1;
             state = PilotState.None;
@@ -88,7 +89,7 @@ namespace EDAP
             // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
             if (SecondsSinceLastJump < 30)
             {
-                if (SecondsSinceLastJump > 6 && SecondsSinceLastJump < 8)
+                if (SecondsSinceLastJump > 6 && SecondsSinceLastJump < 7)
                     keyboard.Tap(Keyboard.LetterToKey('K')); // scroll right on system map
 
                 if (SecondsSinceLastJump > 10 && OncePerJump(PilotState.jumpTick))
@@ -98,7 +99,7 @@ namespace EDAP
                 return; 
             }
 
-            if (OncePerJump(PilotState.clearedJump))
+            if (OncePerJump(PilotState.clearedJump))            
                 keyboard.Clear();
 
             if (SecondsSinceLastJump < 45)
