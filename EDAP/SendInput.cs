@@ -113,8 +113,8 @@ namespace EDAP.SendInput
         // 27 	; 	:
         // 28 	' 	" 	
         // 2B note 2 	# 	~ 	
-        ENTER = 0x1C, // Enter
-        // 2A note 1 	Left Shift 	na 	
+        ENTER = 0x1C,
+        SHIFT_L = 0x2A,
         // D5 note 2 	\ 	| 	
         KEY_Z = 0x2C,
         KEY_X = 0x2D,
@@ -126,12 +126,12 @@ namespace EDAP.SendInput
         // 33 	, 	< 	
         // 34 	. 	> 	
         // 35 	/ 	?
-        // 36 note 1 	Right shift 	na 	
-        // 1D note 1 	Left Ctrl 	na 	
-        // 38 note 1 	Left Alt 	na
-        SPACEBAR = 0x39, // Spacebar
-        // E0,38 note 1 	Right Alt 	na 	
-        // E0,1D note 1 	Right Ctrl 	na
+        SHIFT_R = 0x36,
+        CTRL_L = 0x1D,
+        ALT_L = 0x38, 
+        SPACEBAR = 0x39,
+        ALT_R = 0xE038,
+        CTRL_R = 0xE01D,
         // E0,52 	Insert 	na 	
         // E0,53 	Delete 	na 	
         // E0,4B 	Left Arrow 	na
@@ -158,19 +158,19 @@ namespace EDAP.SendInput
         // 4A 	Keypad - 	Keypad -
         // 4E 	Keypad + 	Keypad + 	
         // E0,1C 	Keypad Enter 	Keypad Enter 	
-        // 01 	Escape 	Escape
-        // 3B 	F1 	note 3 	
-        // 3C 	F2 	note 3 	
-        // 3D 	F3 	note 3
-        // 3E 	F4 	note 3 	
-        // 3F 	F5 	note 3 	
-        // 40 	F6 	note 3
-        // 41 	F7 	note 3 	
-        // 42 	F8 	note 3 	
-        // 43 	F9 	note 3
-        // 44 	F10 	note 3 	
-        // D9 	F11 	note 3 	
-        // DA 	F12 	note 3
+        ESC = 0x01,
+        F1  = 0x3B,
+        F2  = 0x3C,
+        F3  = 0x3D,
+        F4  = 0x3E,
+        F5  = 0x3F,
+        F6  = 0x40,
+        F7  = 0x41,
+        F8  = 0x42,
+        F9  = 0x43,
+        F10 = 0x44,
+        F11 = 0xD9,
+        F12 = 0xDA,
         // 2A,37 	Prnt, Scrn 	na 	
         // 46 	Scroll Lock 	na 	
     }
