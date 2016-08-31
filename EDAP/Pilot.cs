@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EDAP.SendInput;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,19 +20,30 @@ namespace EDAP
         public int jumps_remaining = 0;
         private uint alignFrames = 0;
 
+        [Flags]
         public enum PilotState
         {
-            None = 0,
-            firstjump = 1 << 0,
-            swoopStart = 1 << 1,
-            swoopEnd = 1 << 2,
-            cruiseStart = 1 << 3,
+            None            = 0,
+            firstjump       = 1 << 0,
+            clearedJump     = 1 << 1,
+            swoopStart      = 1 << 2,
+            swoopEnd        = 1 << 3,
+            cruiseStart     = 1 << 4,
         }
 
         public PilotState state;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
 
+        private bool OncePerJump(PilotState flag)
+        {
+            if (!state.HasFlag(flag))
+            {
+                state |= flag;
+                return true;
+            }
+            return false;
+        }
         /// <summary>
         /// Add another jump to the queue. If this is the first jump, don't wait for all the cooldowns before jumping.
         /// </summary>
@@ -49,11 +61,12 @@ namespace EDAP
         
         private void Jump()
         {
-            keyboard.Clear();
+            ClearAlignKeys();
             keyboard.Tap(Keyboard.LetterToKey('G')); // jump
             last_jump_time = DateTime.UtcNow;
             jumps_remaining -= 1;
             state = PilotState.None;
+            // open system map / screenshot here ? 
         }
 
         /// <summary>
@@ -73,6 +86,9 @@ namespace EDAP
             if (SecondsSinceLastJump < 30)
                 return; // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
 
+            if (OncePerJump(PilotState.clearedJump))
+                keyboard.Clear();
+
             if (SecondsSinceLastJump < 45)
             {
                 Swoop();
@@ -82,14 +98,17 @@ namespace EDAP
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
 
+
             if (jumps_remaining < 1)
             {
                 Align(compass);
-            }
-                if (Align(compass) && jumps_remaining > 0)
-                Jump();
-            else 
                 Cruise();
+            }
+            else
+            {
+                if (Align(compass))
+                    Jump();
+            }            
         }
 
         private void ClearAlignKeys()
@@ -161,12 +180,9 @@ namespace EDAP
         {
             if (SecondsSinceLastJump < 40)
             {
-                if (!state.HasFlag(PilotState.swoopStart))
-                {
+                if (OncePerJump(PilotState.swoopStart))
                     keyboard.Tap(Keyboard.LetterToKey('P')); // set throttle to 50%
-                    state |= PilotState.swoopStart;
-                }
-
+            
                 // maybe in witchspace, maybe facing star
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
                 Thread.Sleep(10);
@@ -177,14 +193,14 @@ namespace EDAP
 
             if (SecondsSinceLastJump < 45)
             {
-                if (!state.HasFlag(PilotState.swoopEnd))
-                {
-                    keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
-                    state |= PilotState.swoopEnd;
-                }    
+                if (OncePerJump(PilotState.swoopEnd))
+                { 
+                    keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle                    
+                    keyboard.Keydown((int)ScanCode.CTRL_R); // hooooooooooooonk
+                }
 
                 // cruise away from the star for a few seconds to make it less likely that we hit it after alignment
-                keyboard.Clear();
+                ClearAlignKeys();
                 return;
             }
         }
@@ -200,11 +216,10 @@ namespace EDAP
         /// </summary>
         private void Cruise()
         {
-            if (SecondsSinceLastJump > 60 && !state.HasFlag(PilotState.cruiseStart))
+            if (SecondsSinceLastJump > 60 && OncePerJump(PilotState.cruiseStart))
             {
                 keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
                 keyboard.Tap(Keyboard.LetterToKey('Q')); // drop 25% throttle
-                state |= PilotState.cruiseStart;
             }
         }
     }
