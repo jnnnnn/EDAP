@@ -82,10 +82,25 @@ namespace EDAP
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
 
-            if (Align(compass) && jumps_remaining > 0)
+            if (jumps_remaining < 1)
+            {
+                Align(compass);
+            }
+                if (Align(compass) && jumps_remaining > 0)
                 Jump();
-            else if (jumps_remaining < 1)
+            else 
                 Cruise();
+        }
+
+        private void ClearAlignKeys()
+        {
+            keyboard.Keyup(Keyboard.NumpadToKey('7'));
+            keyboard.Keyup(Keyboard.NumpadToKey('9'));
+            keyboard.Keyup(Keyboard.NumpadToKey('5'));
+            keyboard.Keyup(Keyboard.NumpadToKey('8'));
+            keyboard.Keyup(Keyboard.NumpadToKey('4'));
+            keyboard.Keyup(Keyboard.NumpadToKey('6'));
+            lastClear = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -97,24 +112,16 @@ namespace EDAP
         {
             if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) < 0.1)
             {
-                keyboard.Clear();
+                ClearAlignKeys();
                 alignFrames += 1;
                 return alignFrames > 10;
             }
+            else
+                alignFrames = 0;
 
-            alignFrames = 0;
-
+            // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
-            {
-                // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
-                keyboard.Keyup(Keyboard.NumpadToKey('7'));
-                keyboard.Keyup(Keyboard.NumpadToKey('9'));
-                keyboard.Keyup(Keyboard.NumpadToKey('5'));
-                keyboard.Keyup(Keyboard.NumpadToKey('8'));
-                keyboard.Keyup(Keyboard.NumpadToKey('4'));
-                keyboard.Keyup(Keyboard.NumpadToKey('6'));
-                lastClear = DateTime.UtcNow;
-            }
+                ClearAlignKeys();
 
             if (compass.X < -0.3)
                 keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
