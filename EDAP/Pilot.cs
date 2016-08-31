@@ -14,15 +14,16 @@ namespace EDAP
     class PilotJumper
     {
         private DateTime last_jump_time = DateTime.UtcNow.AddHours(-1); // time since the jump key was pressed        
+        private DateTime lastClear = DateTime.UtcNow.AddHours(-1);
         public Keyboard keyboard;
         public int jumps_remaining = 0;
         private uint alignFrames = 0;
-        
+
         public enum PilotState
         {
             None = 0,
             firstjump = 1 << 0,
-            swoopStart = 1 << 1,            
+            swoopStart = 1 << 1,
             swoopEnd = 1 << 2,
             cruiseStart = 1 << 3,
         }
@@ -49,7 +50,7 @@ namespace EDAP
         private void Jump()
         {
             keyboard.Clear();
-            keyboard.Tap(Keyboard.LetterToKey('G')); // jump            
+            keyboard.Tap(Keyboard.LetterToKey('G')); // jump
             last_jump_time = DateTime.UtcNow;
             jumps_remaining -= 1;
             state = PilotState.None;
@@ -102,6 +103,18 @@ namespace EDAP
             }
 
             alignFrames = 0;
+
+            if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
+            {
+                // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
+                keyboard.Keyup(Keyboard.NumpadToKey('7'));
+                keyboard.Keyup(Keyboard.NumpadToKey('9'));
+                keyboard.Keyup(Keyboard.NumpadToKey('5'));
+                keyboard.Keyup(Keyboard.NumpadToKey('8'));
+                keyboard.Keyup(Keyboard.NumpadToKey('4'));
+                keyboard.Keyup(Keyboard.NumpadToKey('6'));
+                lastClear = DateTime.UtcNow;
+            }
 
             if (compass.X < -0.3)
                 keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
