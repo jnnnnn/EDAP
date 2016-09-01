@@ -179,6 +179,8 @@ namespace EDAP
         /// <returns>true if we are pointing at the target</returns>
         private bool Align(System.Drawing.PointF? compass_a)
         {
+            // todo: if we miss more than ten frames in a row, start rolling? 
+            // this will usually remove the sunlight on the compass which sometimes confuses the circle detectors
             if (!compass_a.HasValue)
             {
                 ClearAlignKeys();
@@ -249,7 +251,7 @@ namespace EDAP
             {
                 ClearAlignKeys();
                 alignFrames += 1;
-                return alignFrames > 10;
+                return alignFrames > 3; // antialign doesn't need much accuracy... this will just stop accidental noise
             }
             else
                 alignFrames = 0;
@@ -300,6 +302,7 @@ namespace EDAP
                     keyboard.Tap(Keyboard.LetterToKey('P')); // set throttle to 50%
             
                 // maybe in witchspace, maybe facing star
+                // todo: better detection of the end of witchspace (sometimes it's way longer and antialign has trouble seeing the compass to turn away from the star)
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
                 Thread.Sleep(10);
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up for ~10 seconds on arrival to avoid star.
