@@ -42,6 +42,7 @@ namespace EDAP
             enabled = !enabled;
             StopAtEnd = true;
             keyboard.Clear();
+            pilot.state = PilotJumper.PilotState.firstjump; // reset pilot state
             
             Focusize();
 

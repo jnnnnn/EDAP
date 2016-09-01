@@ -30,6 +30,8 @@ namespace EDAP
             swoopStart      = 1 << 3,
             swoopEnd        = 1 << 4,
             cruiseStart     = 1 << 5,
+            AwayFromStar    = 1 << 6,
+            SelectStar = 1 << 7,
         }
 
         public PilotState state;
@@ -105,10 +107,42 @@ namespace EDAP
             if (OncePerJump(PilotState.clearedJump))            
                 keyboard.Clear();
 
-            if (SecondsSinceLastJump < 45)
+            if (SecondsSinceLastJump < 40)
             {
                 Swoop();
                 return;
+            }
+
+            if (OncePerJump(PilotState.swoopEnd))
+            {
+                keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle                    
+                keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
+            }
+
+            // make sure we are travelling directly away from the star so that even if our destination is behind it our turn will parallax it out of the way.
+            // don't do it for the supercruise at the end because we can't reselect the in-system destination with the "N" key.
+            if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
+            {
+                if (OncePerJump(PilotState.SelectStar))
+                {    // select star
+                    keyboard.Tap(Keyboard.LetterToKey('1'));
+                    Thread.Sleep(100); // game takes a while to catch up with this.
+                    keyboard.Tap(Keyboard.LetterToKey('D'));
+                    keyboard.Tap((int)ScanCode.SPACEBAR);
+                    Thread.Sleep(100);
+                    keyboard.Tap((int)ScanCode.SPACEBAR);
+                    Thread.Sleep(100);
+                    keyboard.Tap(Keyboard.LetterToKey('1'));
+                }
+
+                // 45 because we want the honk to finish before opening the system map
+                if (AntiAlign(compass) && SecondsSinceLastJump > 45)
+                {
+                    state |= PilotState.AwayFromStar;
+                    keyboard.Tap(Keyboard.LetterToKey('N')); // select the next destination
+                }
+                else
+                    return;
             }
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
@@ -192,10 +226,68 @@ namespace EDAP
                 keyboard.Keydown(Keyboard.NumpadToKey('6')); // yaw right
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('6'));
-            
+
             return false;
         }
-        
+
+        /// <summary>
+        /// Press whichever keys will make us point more away from the target.
+        /// </summary>
+        /// <param name="compass">The normalized vector pointing from the centre of the compass to the blue dot</param>
+        /// <returns>true if we are pointing directly away from the target</returns>
+        private bool AntiAlign(System.Drawing.PointF? compass_a)
+        {
+            if (!compass_a.HasValue)
+            {
+                ClearAlignKeys();
+                alignFrames = 0;
+                return false;
+            }
+
+            System.Drawing.PointF compass = compass_a.GetValueOrDefault();
+            if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) > 1.9)
+            {
+                ClearAlignKeys();
+                alignFrames += 1;
+                return alignFrames > 10;
+            }
+            else
+                alignFrames = 0;
+
+            // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
+            if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
+                ClearAlignKeys();
+
+            if (compass.X < -0.3)
+                keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('7'));
+            if (compass.X > 0.3)
+                keyboard.Keydown(Keyboard.NumpadToKey('9')); // roll right
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('9'));
+
+            if (compass.Y > 0 && compass.Y < 1.9)
+                keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('5'));
+            if (compass.Y < 0 && compass.Y > -1.8)
+                keyboard.Keydown(Keyboard.NumpadToKey('8')); // pitch down
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('8'));
+
+            if (compass.X < -0.1)
+                keyboard.Keydown(Keyboard.NumpadToKey('6')); // yaw right
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('6'));
+            if (compass.X > 0.1)
+                keyboard.Keydown(Keyboard.NumpadToKey('4')); // yaw left
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('4'));
+
+            return false;
+        }
+
         /// <summary>
         /// At the end of a jump we are always just about to crash into the star. FFS. Pitch up for 5-15 seconds 
         /// (depending on how long witchspace took) at 50% throttle to avoid it.
@@ -213,20 +305,7 @@ namespace EDAP
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up for ~10 seconds on arrival to avoid star.
                 Thread.Sleep(100);
                 return;
-            }
-
-            if (SecondsSinceLastJump < 50)
-            {
-                if (OncePerJump(PilotState.swoopEnd))
-                { 
-                    keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle                    
-                    keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
-                }
-
-                // cruise away from the star for a few seconds to make it less likely that we hit it after alignment
-                ClearAlignKeys();
-                return;
-            }
+            }            
         }
 
         /// <summary>
