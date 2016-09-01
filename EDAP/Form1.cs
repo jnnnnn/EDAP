@@ -40,8 +40,8 @@ namespace EDAP
         private void button1_Click(object sender, EventArgs e)
         {
             enabled = !enabled;
+            StopAtEnd = true;
             keyboard.Clear();
-            pilot.jumps_remaining = 0;
             
             Focusize();
 
@@ -61,7 +61,9 @@ namespace EDAP
             hwnd = proc.MainWindowHandle;
             keyboard.hWnd = hwnd;
 
-            if (pilot.jumps_remaining < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
+            numericUpDown1.Value = pilot.Jumps;
+
+            if (pilot.Jumps < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
             {
                 // finished! stop.
                 keyboard.Tap(Keyboard.LetterToKey('X'));
@@ -95,7 +97,7 @@ namespace EDAP
             }
             
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = pilot.jumps_remaining.ToString() + (StopAtEnd ? " " : "C ") + string.Join(", ", keyboard.pressed_keys);            
+            label2.Text = (StopAtEnd ? "(stop) " : "(cruise) ") + string.Join(", ", keyboard.pressed_keys);            
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -119,20 +121,17 @@ namespace EDAP
             recognizer.FindTargetsTest(image);
             pictureBox2.Image = image;
         }
-
-        private void button3_Click(object sender, EventArgs e)
-        {
-            Focusize();
-            pilot.QueueJump();
-            StopAtEnd = true;
-            lastClick = DateTime.UtcNow;
-        }
-
+        
         private void button4_Click(object sender, EventArgs e)
         {
             Focusize();
             StopAtEnd = false;
             lastClick = DateTime.UtcNow;
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+            pilot.Jumps = (int)numericUpDown1.Value;
         }
     }
 }

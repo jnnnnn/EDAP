@@ -17,7 +17,7 @@ namespace EDAP
         private DateTime last_jump_time = DateTime.UtcNow.AddHours(-1); // time since the jump key was pressed        
         private DateTime lastClear = DateTime.UtcNow.AddHours(-1);
         public Keyboard keyboard;
-        public int jumps_remaining = 0;
+        private int jumps_remaining = 0;
         private uint alignFrames = 0;
 
         [Flags]
@@ -35,6 +35,23 @@ namespace EDAP
         public PilotState state;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
+        
+        public int Jumps
+        {
+            get { return jumps_remaining; }
+            set
+            {
+                // If this is the first jump, don't wait for all the cooldowns before jumping.
+                if (jumps_remaining < 1 && SecondsSinceLastJump > 50 && value > 0)
+                {
+                    last_jump_time = DateTime.UtcNow;
+                    jumps_remaining = 0;
+                    state = PilotState.None;
+                    state |= PilotState.firstjump;
+                }
+                jumps_remaining = value;
+            }
+        }
 
         private bool OncePerJump(PilotState flag)
         {
@@ -44,20 +61,6 @@ namespace EDAP
                 return true;
             }
             return false;
-        }
-        /// <summary>
-        /// Add another jump to the queue. If this is the first jump, don't wait for all the cooldowns before jumping.
-        /// </summary>
-        public void QueueJump()
-        {
-            if (jumps_remaining < 1 && SecondsSinceLastJump > 50)
-            {
-                last_jump_time = DateTime.UtcNow;
-                jumps_remaining = 0;
-                state = PilotState.None;
-                state |= PilotState.firstjump;
-            }
-            jumps_remaining += 1;
         }
         
         private void Jump()
@@ -121,7 +124,7 @@ namespace EDAP
             {
                 if (Align(compass))
                     Jump();
-            }            
+            }
         }
 
         private void ClearAlignKeys()
@@ -225,7 +228,6 @@ namespace EDAP
                 return;
             }
         }
-
 
         /// <summary>
         /// This handles cruising behaviour. The main function is already keeping us aligned; 
