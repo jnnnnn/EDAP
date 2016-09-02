@@ -119,6 +119,9 @@ namespace EDAP
                 keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
             }
 
+            if (SecondsSinceLastJump > 50)
+                keyboard.Keyup(Keyboard.LetterToKey('O')); // stop honking
+
             // make sure we are travelling directly away from the star so that even if our destination is behind it our turn will parallax it out of the way.
             // don't do it for the supercruise at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
@@ -174,6 +177,7 @@ namespace EDAP
 
         /// <summary>
         /// Press whichever keys will make us point more towards the target.
+        /// When rolling, try to keep the target down so that when we turn around the sun it doesn't shine on our compass.
         /// </summary>
         /// <param name="compass">The normalized vector pointing from the centre of the compass to the blue dot</param>
         /// <returns>true if we are pointing at the target</returns>
@@ -193,7 +197,7 @@ namespace EDAP
             {
                 ClearAlignKeys();
                 alignFrames += 1;
-                return alignFrames > 10;
+                return alignFrames > 5;
             }
             else
                 alignFrames = 0;
@@ -203,13 +207,13 @@ namespace EDAP
                 ClearAlignKeys();
 
             if (compass.X < -0.3)
-                keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('7'));
-            if (compass.X > 0.3)
                 keyboard.Keydown(Keyboard.NumpadToKey('9')); // roll right
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('9'));
+            if (compass.X > 0.3)
+                keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
+            else
+                keyboard.Keyup(Keyboard.NumpadToKey('7'));
 
             if (compass.Y < -0.1)
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
