@@ -56,9 +56,9 @@ namespace EDAP
             this.button1.ForeColor = System.Drawing.Color.Coral;
             this.button1.Location = new System.Drawing.Point(12, 12);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 52);
+            this.button1.Size = new System.Drawing.Size(89, 52);
             this.button1.TabIndex = 0;
-            this.button1.Text = "JMP";
+            this.button1.Text = "AUTO";
             this.button1.UseVisualStyleBackColor = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
@@ -121,14 +121,14 @@ namespace EDAP
             this.numericUpDown1.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.numericUpDown1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.numericUpDown1.ForeColor = System.Drawing.Color.Coral;
-            this.numericUpDown1.Location = new System.Drawing.Point(93, 15);
+            this.numericUpDown1.Location = new System.Drawing.Point(107, 15);
             this.numericUpDown1.Maximum = new decimal(new int[] {
             10000,
             0,
             0,
             0});
             this.numericUpDown1.Name = "numericUpDown1";
-            this.numericUpDown1.Size = new System.Drawing.Size(74, 27);
+            this.numericUpDown1.Size = new System.Drawing.Size(60, 27);
             this.numericUpDown1.TabIndex = 8;
             this.numericUpDown1.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.numericUpDown1.ValueChanged += new System.EventHandler(this.numericUpDown1_ValueChanged);
