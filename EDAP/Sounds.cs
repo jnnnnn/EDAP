@@ -13,7 +13,7 @@ namespace EDAP
         public static void Play(string name)
         {
             mciSendString(@"close temp_alias", null, 0, 0);
-            string playcommand = string.Format(@"open ""{0}"" alias temp_alias", name);
+            string playcommand = string.Format(@"open ""{0}"" alias temp_alias", "res3/" + name);
             mciSendString(playcommand, null, 0, 0);
             mciSendString("play temp_alias", null, 0, 0);
         }
