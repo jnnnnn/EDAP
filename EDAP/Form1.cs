@@ -39,6 +39,10 @@ namespace EDAP
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (!enabled)
+                Sounds.Play("autopilot engaged.mp3");
+            else
+                Sounds.Play("autopilot disengaged.mp3");
             enabled = !enabled;
             StopAtEnd = true;
             keyboard.Clear();
@@ -49,8 +53,11 @@ namespace EDAP
             lastClick = DateTime.UtcNow;
         }
 
-        private void WhereAmI()
+        private void Timer_Tick(object sender, EventArgs e)
         {
+            if (!enabled)
+                return;
+
             var t0 = DateTime.UtcNow;
             var ss = Properties.Settings.Default;
             Process proc = Process.GetProcessesByName(ss.ProcName).FirstOrDefault();
@@ -108,13 +115,7 @@ namespace EDAP
             timer.Tick += Timer_Tick;
             timer.Start();
         }
-
-        private void Timer_Tick(object sender, EventArgs e)
-        {
-            if (enabled)
-                WhereAmI();
-        }
-
+        
         private void button2_Click(object sender, EventArgs e)
         {
             CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
