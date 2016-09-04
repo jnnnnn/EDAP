@@ -55,9 +55,6 @@ namespace EDAP
 
         private void Timer_Tick(object sender, EventArgs e)
         {
-            if (!enabled)
-                return;
-
             var t0 = DateTime.UtcNow;
             var ss = Properties.Settings.Default;
             Process proc = Process.GetProcessesByName(ss.ProcName).FirstOrDefault();
@@ -93,11 +90,13 @@ namespace EDAP
                     pictureBox1.Image = compass;
                     label1.Text = string.Format("{0:0.0},{1:0.0}", vector.X, vector.Y);
 
-                    pilot.Respond(vector);
+                    if (enabled)
+                        pilot.Respond(vector);
                 }
                 catch (Exception err)
                 {
-                    pilot.Respond(null);
+                    if (enabled)
+                        pilot.Respond(null);
                     pictureBox1.Image = compass;
                     label1.Text = "Error: " + err.ToString();
                     Console.WriteLine(err.ToString());                    
