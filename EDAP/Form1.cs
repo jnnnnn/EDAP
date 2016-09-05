@@ -17,7 +17,7 @@ namespace EDAP
 
         private Keyboard keyboard;
         private PilotJumper pilot;
-        private bool StopAtEnd = true;
+        private bool cruise = false;
 
         private IntPtr hwnd;
 
@@ -44,7 +44,7 @@ namespace EDAP
             else
                 Sounds.Play("autopilot disengaged.mp3");
             enabled = !enabled;
-            StopAtEnd = true;
+            cruise = false;
             keyboard.Clear();
             pilot.state = PilotJumper.PilotState.firstjump; // reset pilot state
             
@@ -68,12 +68,8 @@ namespace EDAP
 
             numericUpDown1.Value = pilot.Jumps;
 
-            if (pilot.Jumps < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
-            {
-                // finished! stop.
-                keyboard.Tap(Keyboard.LetterToKey('X'));
-            }
-
+            SetButtonColors();
+                        
             using (Bitmap screenshot = Screenshot.PrintWindow(hwnd))
             {
                 Bitmap compass = new Bitmap(10, 10);
@@ -98,13 +94,19 @@ namespace EDAP
                     if (enabled)
                         pilot.Respond(null);
                     pictureBox1.Image = compass;
-                    label1.Text = "Error: " + err.ToString();
+                    label1.Text = "Error: " + err.Message;
                     Console.WriteLine(err.ToString());                    
                 }
             }
             
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = (StopAtEnd ? "(stop) " : "(cruise) ") + string.Join(", ", keyboard.pressed_keys);            
+            label2.Text = string.Join(", ", keyboard.pressed_keys);            
+        }
+
+        private void SetButtonColors()
+        {
+            buttonAuto.ForeColor = enabled ? Color.Green : Color.Coral;
+            buttonCruise.ForeColor = cruise ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -126,7 +128,7 @@ namespace EDAP
         private void button4_Click(object sender, EventArgs e)
         {
             Focusize();
-            StopAtEnd = false;
+            cruise = !cruise;
             lastClick = DateTime.UtcNow;
         }
 
