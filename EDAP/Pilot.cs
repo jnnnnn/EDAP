@@ -87,9 +87,13 @@ namespace EDAP
                 Task.Delay(30000).ContinueWith(t =>
                 {
                     // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
-                    Sounds.Play("you have arrived.mp3");
-                    keyboard.Tap(Keyboard.LetterToKey('X'));  // cut throttle
+                    keyboard.Keydown(Keyboard.LetterToKey('X'));  // cut throttle
                 });
+                Task.Delay(50000).ContinueWith(_ => 
+                {
+                    keyboard.Keyup(Keyboard.LetterToKey('X'));
+                    Sounds.Play("you have arrived.mp3");
+                });                
             }
         }
 
