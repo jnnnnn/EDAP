@@ -17,7 +17,6 @@ namespace EDAP
 
         private Keyboard keyboard;
         private PilotJumper pilot;
-        private bool cruise = false;
 
         private IntPtr hwnd;
 
@@ -39,14 +38,15 @@ namespace EDAP
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (!enabled)
+            enabled = !enabled;
+
+            if (enabled)
                 Sounds.Play("autopilot engaged.mp3");
             else
                 Sounds.Play("autopilot disengaged.mp3");
-            enabled = !enabled;
-            cruise = false;
+
             keyboard.Clear();
-            pilot.state = PilotJumper.PilotState.firstjump; // reset pilot state
+            pilot.Reset();
             
             Focusize();
 
@@ -106,7 +106,8 @@ namespace EDAP
         private void SetButtonColors()
         {
             buttonAuto.ForeColor = enabled ? Color.Green : Color.Coral;
-            buttonCruise.ForeColor = cruise ? Color.Green : Color.Coral;
+            buttonCruise.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Cruise) ? Color.Green : Color.Coral;
+            buttonMap.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.SysMap) ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -128,13 +129,19 @@ namespace EDAP
         private void button4_Click(object sender, EventArgs e)
         {
             Focusize();
-            cruise = !cruise;
+            pilot.state ^= PilotJumper.PilotState.Cruise;
             lastClick = DateTime.UtcNow;
         }
 
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
             pilot.Jumps = (int)numericUpDown1.Value;
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            pilot.state ^= PilotJumper.PilotState.SysMap;
+            Focusize();
         }
     }
 }

@@ -14,11 +14,11 @@ namespace EDAP
     /// </summary>
     class PilotJumper
     {
-        private DateTime last_jump_time = DateTime.UtcNow.AddHours(-1); // time since the jump key was pressed        
+        private DateTime last_jump_time;  // time since the jump key was pressed        
         private DateTime lastClear = DateTime.UtcNow.AddHours(-1);
         public Keyboard keyboard;
         private int jumps_remaining = 0;
-        private uint alignFrames = 0;
+        private uint alignFrames;
 
         [Flags]
         public enum PilotState
@@ -32,27 +32,27 @@ namespace EDAP
             cruiseStart     = 1 << 5,
             AwayFromStar    = 1 << 6,
             SelectStar      = 1 << 7,
+            SysMap          = 1 << 8, // whether to open the system map after jumping
+            Cruise          = 1 << 9,
         }
 
         public PilotState state;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         
+        public void Reset()
+        {
+            state &= PilotState.SysMap | PilotState.Cruise; // clear per-jump flags
+            state |= PilotState.firstjump;
+
+            alignFrames = 0;
+            last_jump_time = DateTime.UtcNow.AddHours(-1);
+        }
+
         public int Jumps
         {
             get { return jumps_remaining; }
-            set
-            {
-                // If this is the first jump, don't wait for all the cooldowns before jumping.
-                if (jumps_remaining < 1 && SecondsSinceLastJump > 50 && value > 0)
-                {
-                    last_jump_time = DateTime.UtcNow;
-                    jumps_remaining = 0;
-                    state = PilotState.None;
-                    state |= PilotState.firstjump;
-                }
-                jumps_remaining = value;
-            }
+            set { jumps_remaining = value; }
         }
 
         private bool OncePerJump(PilotState flag)
@@ -72,9 +72,15 @@ namespace EDAP
             keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
             last_jump_time = DateTime.UtcNow;
             jumps_remaining -= 1;
-            state = PilotState.None;
-            // open system map / screenshot here ? 
-            keyboard.Tap(Keyboard.LetterToKey('6')); // open system map
+            state &= PilotState.SysMap | PilotState.Cruise; // clear per-jump flags
+
+            if (state.HasFlag(PilotState.SysMap))
+            {
+                keyboard.Tap(Keyboard.LetterToKey('6')); // open system map
+                Task.Delay(6000).ContinueWith(t => keyboard.Keydown(Keyboard.LetterToKey('K'))); // scroll right on system map
+                Task.Delay(7000).ContinueWith(t => keyboard.Keyup(Keyboard.LetterToKey('K')));
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap((int)ScanCode.F10)); // screenshot the system map                
+            }
             if (jumps_remaining < 1)
             {
                 Sounds.PlayOneOf("this is the last jump.mp3", "once more with feeling.mp3", "one jump remaining.mp3");
@@ -103,16 +109,7 @@ namespace EDAP
 
             // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
             if (SecondsSinceLastJump < 30)
-            {
-                if (SecondsSinceLastJump > 6 && SecondsSinceLastJump < 7)
-                    keyboard.Tap(Keyboard.LetterToKey('K')); // scroll right on system map
-
-                if (SecondsSinceLastJump > 10 && OncePerJump(PilotState.jumpTick))
-                {
-                    keyboard.Tap((int)ScanCode.F10); // screenshot the system map
-                }
                 return; 
-            }
 
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))            
@@ -162,12 +159,12 @@ namespace EDAP
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
             
-            if (jumps_remaining < 1)
+            if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
                 Align(compass);
                 Cruise();
             }
-            else if (Align(compass))
+            else if (jumps_remaining > 0 && Align(compass))
                 Jump();
         }
 
