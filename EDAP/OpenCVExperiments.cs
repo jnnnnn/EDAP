@@ -143,6 +143,16 @@ namespace EDAP
             }
             Window w5 = new Window("result", source);
         }
+
+        public static void FindTriQuadrantTime()
+        {
+            // This is gonna be tricky
+            /* Possible algorithms: 
+             *  - template match each character
+             *  - tesseract
+             */
+            
+        }
         
         public static bool MatchSafDisengag()
         {
