@@ -14,11 +14,11 @@ namespace EDAP
     /// </summary>
     class PilotJumper
     {
-        private DateTime last_jump_time = DateTime.UtcNow.AddHours(-1); // time since the jump key was pressed        
+        private DateTime last_jump_time;  // time since the jump key was pressed        
         private DateTime lastClear = DateTime.UtcNow.AddHours(-1);
         public Keyboard keyboard;
         private int jumps_remaining = 0;
-        private uint alignFrames = 0;
+        private uint alignFrames;
 
         [Flags]
         public enum PilotState
@@ -31,28 +31,28 @@ namespace EDAP
             swoopEnd        = 1 << 4,
             cruiseStart     = 1 << 5,
             AwayFromStar    = 1 << 6,
-            SelectStar = 1 << 7,
+            SelectStar      = 1 << 7,
+            SysMap          = 1 << 8, // whether to open the system map after jumping
+            Cruise          = 1 << 9,
         }
 
         public PilotState state;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         
+        public void Reset()
+        {
+            state &= PilotState.SysMap | PilotState.Cruise; // clear per-jump flags
+            state |= PilotState.firstjump;
+
+            alignFrames = 0;
+            last_jump_time = DateTime.UtcNow.AddHours(-1);
+        }
+
         public int Jumps
         {
             get { return jumps_remaining; }
-            set
-            {
-                // If this is the first jump, don't wait for all the cooldowns before jumping.
-                if (jumps_remaining < 1 && SecondsSinceLastJump > 50 && value > 0)
-                {
-                    last_jump_time = DateTime.UtcNow;
-                    jumps_remaining = 0;
-                    state = PilotState.None;
-                    state |= PilotState.firstjump;
-                }
-                jumps_remaining = value;
-            }
+            set { jumps_remaining = value; }
         }
 
         private bool OncePerJump(PilotState flag)
@@ -64,7 +64,7 @@ namespace EDAP
             }
             return false;
         }
-        
+
         private void Jump()
         {
             ClearAlignKeys();
@@ -72,9 +72,29 @@ namespace EDAP
             keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
             last_jump_time = DateTime.UtcNow;
             jumps_remaining -= 1;
-            state = PilotState.None;
-            // open system map / screenshot here ? 
-            keyboard.Tap(Keyboard.LetterToKey('6')); // open system map
+            state &= PilotState.SysMap | PilotState.Cruise; // clear per-jump flags
+
+            if (state.HasFlag(PilotState.SysMap))
+            {
+                keyboard.Tap(Keyboard.LetterToKey('6')); // open system map
+                Task.Delay(6000).ContinueWith(t => keyboard.Keydown(Keyboard.LetterToKey('K'))); // scroll right on system map
+                Task.Delay(7000).ContinueWith(t => keyboard.Keyup(Keyboard.LetterToKey('K')));
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap((int)ScanCode.F10)); // screenshot the system map                
+            }
+            if (jumps_remaining < 1)
+            {
+                Sounds.PlayOneOf("this is the last jump.mp3", "once more with feeling.mp3", "one jump remaining.mp3");
+                Task.Delay(30000).ContinueWith(t =>
+                {
+                    // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
+                    keyboard.Keydown(Keyboard.LetterToKey('X'));  // cut throttle
+                });
+                Task.Delay(50000).ContinueWith(_ => 
+                {
+                    keyboard.Keyup(Keyboard.LetterToKey('X'));
+                    Sounds.Play("you have arrived.mp3");
+                });                
+            }
         }
 
         /// <summary>
@@ -93,20 +113,13 @@ namespace EDAP
 
             // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
             if (SecondsSinceLastJump < 30)
-            {
-                if (SecondsSinceLastJump > 6 && SecondsSinceLastJump < 7)
-                    keyboard.Tap(Keyboard.LetterToKey('K')); // scroll right on system map
-
-                if (SecondsSinceLastJump > 10 && OncePerJump(PilotState.jumpTick))
-                {
-                    keyboard.Tap((int)ScanCode.F10); // screenshot the system map
-                }
                 return; 
-            }
 
+            // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))            
                 keyboard.Clear();
 
+            // dodge the star
             if (SecondsSinceLastJump < 40)
             {
                 Swoop();
@@ -117,17 +130,16 @@ namespace EDAP
             {
                 keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle                    
                 keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
-            }
+                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(Keyboard.LetterToKey('O'))); // stop honking after ten seconds
+            }            
 
-            if (SecondsSinceLastJump > 50)
-                keyboard.Keyup(Keyboard.LetterToKey('O')); // stop honking
-
-            // make sure we are travelling directly away from the star so that even if our destination is behind it our turn will parallax it out of the way.
+            // make sure we are travelling directly away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
             // don't do it for the supercruise at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
             {
+                // select star
                 if (OncePerJump(PilotState.SelectStar))
-                {    // select star
+                {    
                     keyboard.Tap(Keyboard.LetterToKey('1'));
                     Thread.Sleep(100); // game takes a while to catch up with this.
                     keyboard.Tap(Keyboard.LetterToKey('D'));
@@ -138,7 +150,7 @@ namespace EDAP
                     keyboard.Tap(Keyboard.LetterToKey('1'));
                 }
 
-                // 45 because we want the honk to finish before opening the system map
+                // 45 because we want to make sure the honk finishes before opening the system map
                 if (AntiAlign(compass) && SecondsSinceLastJump > 45)
                 {
                     state |= PilotState.AwayFromStar;
@@ -150,18 +162,14 @@ namespace EDAP
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
-
-
-            if (jumps_remaining < 1)
+            
+            if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
                 Align(compass);
                 Cruise();
             }
-            else
-            {
-                if (Align(compass))
-                    Jump();
-            }
+            else if (jumps_remaining > 0 && Align(compass))
+                Jump();
         }
 
         private void ClearAlignKeys()
@@ -277,7 +285,7 @@ namespace EDAP
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
-            if (compass.Y < 0 && compass.Y > -1.8)
+            if (compass.Y < 0 && compass.Y > -1.9)
                 keyboard.Keydown(Keyboard.NumpadToKey('8')); // pitch down
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('8'));
@@ -327,6 +335,7 @@ namespace EDAP
         {
             if (SecondsSinceLastJump > 60 && OncePerJump(PilotState.cruiseStart))
             {
+                Sounds.Play("cruise mode engaged.mp3");
                 keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
                 keyboard.Tap(Keyboard.LetterToKey('Q')); // drop 25% throttle
             }

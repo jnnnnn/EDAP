@@ -17,7 +17,6 @@ namespace EDAP
 
         private Keyboard keyboard;
         private PilotJumper pilot;
-        private bool StopAtEnd = true;
 
         private IntPtr hwnd;
 
@@ -40,16 +39,21 @@ namespace EDAP
         private void button1_Click(object sender, EventArgs e)
         {
             enabled = !enabled;
-            StopAtEnd = true;
+
+            if (enabled)
+                Sounds.Play("autopilot engaged.mp3");
+            else
+                Sounds.Play("autopilot disengaged.mp3");
+
             keyboard.Clear();
-            pilot.state = PilotJumper.PilotState.firstjump; // reset pilot state
+            pilot.Reset();
             
             Focusize();
 
             lastClick = DateTime.UtcNow;
         }
 
-        private void WhereAmI()
+        private void Timer_Tick(object sender, EventArgs e)
         {
             var t0 = DateTime.UtcNow;
             var ss = Properties.Settings.Default;
@@ -64,12 +68,8 @@ namespace EDAP
 
             numericUpDown1.Value = pilot.Jumps;
 
-            if (pilot.Jumps < 1 && StopAtEnd && (DateTime.UtcNow - lastClick).TotalSeconds > 10)
-            {
-                // finished! stop.
-                keyboard.Tap(Keyboard.LetterToKey('X'));
-            }
-
+            SetButtonColors();
+                        
             using (Bitmap screenshot = Screenshot.PrintWindow(hwnd))
             {
                 Bitmap compass = new Bitmap(10, 10);
@@ -86,19 +86,28 @@ namespace EDAP
                     pictureBox1.Image = compass;
                     label1.Text = string.Format("{0:0.0},{1:0.0}", vector.X, vector.Y);
 
-                    pilot.Respond(vector);
+                    if (enabled)
+                        pilot.Respond(vector);
                 }
                 catch (Exception err)
                 {
-                    pilot.Respond(null);
+                    if (enabled)
+                        pilot.Respond(null);
                     pictureBox1.Image = compass;
-                    label1.Text = "Error: " + err.ToString();
+                    label1.Text = "Error: " + err.Message;
                     Console.WriteLine(err.ToString());                    
                 }
             }
             
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = (StopAtEnd ? "(stop) " : "(cruise) ") + string.Join(", ", keyboard.pressed_keys);            
+            label2.Text = string.Join(", ", keyboard.pressed_keys);            
+        }
+
+        private void SetButtonColors()
+        {
+            buttonAuto.ForeColor = enabled ? Color.Green : Color.Coral;
+            buttonCruise.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Cruise) ? Color.Green : Color.Coral;
+            buttonMap.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.SysMap) ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -108,13 +117,7 @@ namespace EDAP
             timer.Tick += Timer_Tick;
             timer.Start();
         }
-
-        private void Timer_Tick(object sender, EventArgs e)
-        {
-            if (enabled)
-                WhereAmI();
-        }
-
+        
         private void button2_Click(object sender, EventArgs e)
         {
             CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
@@ -126,13 +129,19 @@ namespace EDAP
         private void button4_Click(object sender, EventArgs e)
         {
             Focusize();
-            StopAtEnd = false;
+            pilot.state ^= PilotJumper.PilotState.Cruise;
             lastClick = DateTime.UtcNow;
         }
 
         private void numericUpDown1_ValueChanged(object sender, EventArgs e)
         {
             pilot.Jumps = (int)numericUpDown1.Value;
+        }
+
+        private void button1_Click_1(object sender, EventArgs e)
+        {
+            pilot.state ^= PilotJumper.PilotState.SysMap;
+            Focusize();
         }
     }
 }
