@@ -132,7 +132,7 @@ namespace EDAP
                 dp: 1f, /* resolution scaling factor?  full resolution seems to work better */
                 minDist: 20, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
                 param1: 100, /* default was fine after experimentation */
-                param2: 10, /* required quality factor. 7 finds too many, 20 finds too few */
+                param2: 13, /* required quality factor. 9 finds too many, 14 finds too few */
                 minRadius: 45,
                 maxRadius: 47);
             foreach (CircleSegment circle in circles2)
