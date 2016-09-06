@@ -119,7 +119,7 @@ namespace EDAP
         {
             CompassRecognizer recognizer = new CompassRecognizer(pictureBox2);
             Bitmap image = (Bitmap)Image.FromFile("compass_tests.png");
-            recognizer.FindTargetsTest(image);
+            OpenCVExperiments.FindTargetsTest(image);
             pictureBox2.Image = image;
         }
         

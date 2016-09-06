@@ -76,6 +76,7 @@
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
     <Compile Include="Keyboard.cs" />
+    <Compile Include="OpenCVExperiments.cs" />
     <Compile Include="Pilot.cs" />
     <Compile Include="PrintWindow.cs" />
     <Compile Include="Program.cs" />
