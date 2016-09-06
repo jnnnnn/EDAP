@@ -104,5 +104,67 @@ namespace EDAP
                     break;
             }
         }
+
+        public static void FindTriQuadrant()
+        {
+            Bitmap image = (Bitmap)Image.FromFile("res3/supercruisetarget.png");
+            Mat source = BitmapConverter.ToMat(image);
+            Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
+            /* Paint.Net uses HSV [0..360], [0..100], [0..100].
+             * OpenCV uses H: 0 - 180, S: 0 - 255, V: 0 - 255
+             * Paint.NET colors:
+             * 50   94  100     bright yellow
+             * 27   93  90      orange
+             * 24   91  74      brown
+             * 16   73  25      almost background (low V)
+             * suggested range [20..55], [80..100], [50..100] (paint.net)
+             * suggested range [10..27], [200..255], [128..255] (openCV
+             * */
+            Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 27, 255, 255 }));
+            Window w1 = new Window("mask", mask);
+            Mat sourceHSVFiltered = new Mat();
+            sourceHSV.CopyTo(sourceHSVFiltered, mask);
+            Window w3 = new Window("yellowfilter", sourceHSVFiltered.CvtColor(ColorConversionCodes.HSV2BGR));            
+            Mat sourceGrey = sourceHSVFiltered.Split()[2]; // Value channel is pretty good as a greyscale conversion
+            Window w4 = new Window("yellowFilterValue", sourceGrey);
+            CircleSegment[] circles2 = sourceGrey.HoughCircles(
+                HoughMethods.Gradient,
+                dp: 1f, /* resolution scaling factor?  full resolution seems to work better */
+                minDist: 20, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
+                param1: 100, /* default was fine after experimentation */
+                param2: 10, /* required quality factor. 7 finds too many, 20 finds too few */
+                minRadius: 45,
+                maxRadius: 47);
+            foreach (CircleSegment circle in circles2)
+            {
+                var quarterCircle = new OpenCvSharp.Point2f(circle.Radius, circle.Radius);
+                source.Rectangle(circle.Center - quarterCircle, circle.Center + quarterCircle, new Scalar(0, 255, 0));
+                    // new Pen(Color.FromName("green"), 2), circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Radius * 2, circle.Radius * 2);
+            }
+            Window w5 = new Window("result", source);
+        }
+        
+        public static bool MatchSafDisengag()
+        {
+            // MatchTemplate doesn't allow for scaling / rotation. Allow more leeway by reducing resolution?
+
+            Bitmap image = (Bitmap)Image.FromFile("res3/compass_tests.png");
+            Mat source = BitmapConverter.ToMat(image);
+            Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
+
+            Mat[] channels = source.Split();
+            Mat blues2 = channels[0];
+            Mat clean = new Mat(blues2.Size(), blues2.Type());
+            blues2.CopyTo(clean, blues2.InRange(128, 255));
+            Window w2 = new Window(clean);
+
+            Mat template = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
+            Mat matches = blues2.MatchTemplate(template, TemplateMatchModes.SqDiffNormed);
+            Window w3 = new Window(matches);
+
+            double minVal, maxVal;
+            matches.MinMaxLoc(out minVal, out maxVal);
+            return minVal < 0.5; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
+        }
     }
 }

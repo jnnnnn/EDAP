@@ -12,8 +12,8 @@ namespace EDAP
     {
         private PictureBox pictureBox2;
         
-        private Mat template_open = new Mat("target-open.png", ImreadModes.GrayScale);
-        private Mat template_closed = new Mat("target-closed.png", ImreadModes.GrayScale);
+        private Mat template_open = new Mat("res3/target-open.png", ImreadModes.GrayScale);
+        private Mat template_closed = new Mat("res3/target-closed.png", ImreadModes.GrayScale);
         private const float match_threshold = 0.7f;
         public CompassRecognizer(PictureBox pictureBox2)
         {
