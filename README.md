@@ -13,7 +13,7 @@ Required settings:
   3. Triquadrant target: bright yellow/orange (I don't think you can change this)
   4. Saf Diseng: blue channel
 
-To see the key mappings used you will need to read the code, see Pilot.cs. You can change them when you build it. The numpad is used for orientation; F, P, X are various throttle, etc.
+To see the key mappings used you will need to read the code, see Pilot.cs. You can (obviously) change them before build/run. The numpad is used for orientation; F, P, X are various throttle, etc.
 
 This project uses OpenCVSharp, which should be downloaded automatically when you try to build the project.
 
