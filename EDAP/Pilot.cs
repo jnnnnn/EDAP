@@ -1,8 +1,7 @@
 ﻿using EDAP.SendInput;
+using OpenCvSharp;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +19,8 @@ namespace EDAP
         private int jumps_remaining = 0;
         private uint alignFrames;
 
+        public string status = "";
+
         [Flags]
         public enum PilotState
         {
@@ -34,9 +35,13 @@ namespace EDAP
             SelectStar      = 1 << 7,
             SysMap          = 1 << 8, // whether to open the system map after jumping
             Cruise          = 1 << 9,
+            CruiseEnd       = 1 << 10,
         }
 
         public PilotState state;
+        public Screen screen;
+        internal CompassRecognizer compassRecognizer;
+        internal CruiseSensor cruiseSensor;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         
@@ -97,16 +102,20 @@ namespace EDAP
             }
         }
 
+        internal void Idle()
+        {
+            // todo: recognize but don't act
+        }
+        
         /// <summary>
         /// Handle an input frame by setting which keys are pressed.
-        /// </summary>
-        /// <param name="compass"></param>
-        public void Respond(System.Drawing.PointF? compass)
+        /// </summary>        
+        public void Act()
         {
             // perform the first alignment/jump immediately
-            if (state.HasFlag(PilotState.firstjump))
+            if (state.HasFlag(PilotState.firstjump) && jumps_remaining > 0)
             {
-                if (Align(compass) && jumps_remaining > 0)
+                if (Align())
                     Jump();
                 return;
             }
@@ -151,7 +160,7 @@ namespace EDAP
                 }
 
                 // 45 because we want to make sure the honk finishes before opening the system map
-                if (AntiAlign(compass) && SecondsSinceLastJump > 45)
+                if (AntiAlign() && SecondsSinceLastJump > 45)
                 {
                     state |= PilotState.AwayFromStar;
                     keyboard.Tap(Keyboard.LetterToKey('N')); // select the next destination
@@ -165,10 +174,10 @@ namespace EDAP
             
             if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
-                Align(compass);
+                Align();
                 Cruise();
             }
-            else if (jumps_remaining > 0 && Align(compass))
+            else if (jumps_remaining > 0 && Align())
                 Jump();
         }
 
@@ -189,26 +198,49 @@ namespace EDAP
         /// </summary>
         /// <param name="compass">The normalized vector pointing from the centre of the compass to the blue dot</param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool Align(System.Drawing.PointF? compass_a)
+        private bool Align()
         {
-            // todo: if we miss more than ten frames in a row, start rolling? 
-            // this will usually remove the sunlight on the compass which sometimes confuses the circle detectors
-            if (!compass_a.HasValue)
+            bool result = false;
+            Point2f compass;
+            try
+            {
+                compass = compassRecognizer.GetOrientation();
+                status = string.Format("{0:0.0}, {1:0.0}", compass.X, compass.Y);
+            }
+            catch (Exception e)
             {
                 ClearAlignKeys();
                 alignFrames = 0;
+                status = e.Message;
                 return false;
             }
 
-            System.Drawing.PointF compass = compass_a.GetValueOrDefault();
-            if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) < 0.1)
-            {
-                ClearAlignKeys();
+            float margin = 0.1f;
+            double wrongness = Math.Sqrt(compass.X * compass.X + compass.Y * compass.Y);
+            if (wrongness < 0.1)
+            { 
                 alignFrames += 1;
-                return alignFrames > 5;
+                result = alignFrames > 5;
             }
             else
                 alignFrames = 0;
+
+            if (wrongness < 0.1 && state.HasFlag(PilotState.Cruise))
+            {
+                int centreBox = 200;
+                Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
+                try
+                {
+                    Point2f triquadrant = CruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
+                    compass = triquadrant * margin * (1f / centreBox);
+                    status = string.Format("{0:0.00}, {1:0.00}", compass.X, compass.Y);
+                    margin /= 4;
+                }
+                catch (Exception e)
+                {
+                    status = e.Message;
+                }
+            }
 
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
@@ -223,25 +255,25 @@ namespace EDAP
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('7'));
 
-            if (compass.Y < -0.1)
+            if (compass.Y < -margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
-            if (compass.Y > 0.1)
+            if (compass.Y > margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('8')); // pitch down
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('8'));
 
-            if (compass.X < -0.1)
+            if (compass.X < -margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('4')); // yaw left
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('4'));
-            if (compass.X > 0.1)
+            if (compass.X > margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('6')); // yaw right
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('6'));
 
-            return false;
+            return result;
         }
 
         /// <summary>
@@ -249,16 +281,23 @@ namespace EDAP
         /// </summary>
         /// <param name="compass">The normalized vector pointing from the centre of the compass to the blue dot</param>
         /// <returns>true if we are pointing directly away from the target</returns>
-        private bool AntiAlign(System.Drawing.PointF? compass_a)
+        private bool AntiAlign()
         {
-            if (!compass_a.HasValue)
+            bool result = false;
+            Point2f compass;
+            try
+            {
+                compass = compassRecognizer.GetOrientation();
+                status = string.Format("{1:0.0}, {2:0.0}", compass.X, compass.Y);
+            }
+            catch (Exception e)
             {
                 ClearAlignKeys();
                 alignFrames = 0;
+                status = e.Message;
                 return false;
             }
 
-            System.Drawing.PointF compass = compass_a.GetValueOrDefault();
             if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) > 1.9)
             {
                 ClearAlignKeys();
@@ -338,6 +377,12 @@ namespace EDAP
                 Sounds.Play("cruise mode engaged.mp3");
                 keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
                 keyboard.Tap(Keyboard.LetterToKey('Q')); // drop 25% throttle
+            }
+
+            if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
+            {
+                keyboard.Tap(Keyboard.LetterToKey('G')); // disengage
+                state |= PilotState.CruiseEnd;
             }
         }
     }

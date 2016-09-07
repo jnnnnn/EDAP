@@ -15,9 +15,11 @@ namespace EDAP
         private Mat template_open = new Mat("res3/target-open.png", ImreadModes.GrayScale);
         private Mat template_closed = new Mat("res3/target-closed.png", ImreadModes.GrayScale);
         private const float match_threshold = 0.7f;
-        public CompassRecognizer(PictureBox pictureBox2)
+        private Screen screen;
+        public CompassRecognizer(Screen screen, PictureBox pictureBox2)
         {
             this.pictureBox2 = pictureBox2;
+            this.screen = screen;
         }
         
         private int clamp(int value, int min, int max)
@@ -93,7 +95,7 @@ namespace EDAP
         /// </summary>
         /// <param name="croppedCompass"></param>
         /// <returns>The normalized vector from the center of the compass to the blue dot (y values are [1..2] if dot is a circle)</returns>
-        public PointF FindTarget2(Bitmap croppedCompass)
+        public Point2f FindTarget2(Bitmap croppedCompass)
         {
             Mat source = BitmapConverter.ToMat(croppedCompass);
 
@@ -129,7 +131,7 @@ namespace EDAP
                 throw new ArgumentException("Could not find target");
         }
         
-        private PointF ComputeVector(CircleSegment c, OpenCvSharp.Point target, bool forward)
+        private Point2f ComputeVector(CircleSegment c, OpenCvSharp.Point target, bool forward)
         {
             double x = (target.X - c.Center.X);
             double y = (target.Y - c.Center.Y);
@@ -149,20 +151,21 @@ namespace EDAP
             // but x/y is actually easier to handle since we are only doing a crude alignment, and not computing angular velocities or anything            
             if (!forward)
                 y = (y > 0) ? 2-y : -2-y; // if target is behind, add lots of pitch offset so that exactly wrong direction is 2/-2.
-            return new PointF((float)x, (float)y);
+            return new Point2f((float)x, (float)y);
         }
         
         // returns the normalized vector from the compass center to the blue dot
-        public PointF GetOrientation(Bitmap compassImage)
+        public Point2f GetOrientation()
         {
             float s = Properties.Settings.Default.Scale;
-            Graphics g = Graphics.FromImage(compassImage);
-            CircleSegment crosshair = FindCircle(compassImage);
+            Bitmap compassArea = Crop(screen.bitmap, 600, 550, 900, 1050);
+            Graphics g = Graphics.FromImage(compassArea);
+            CircleSegment crosshair = FindCircle(compassArea);
             var r = crosshair.Radius + 12;
             var c = crosshair.Center;
             Rectangle compassRect = new Rectangle((int)(c.X - r), (int)(c.Y - r), (int)(r*2), (int)(r * 2));
 
-            Bitmap croppedCompass = Crop(compassImage, compassRect);
+            Bitmap croppedCompass = Crop(compassArea, compassRect);
             // work out where the target indicator is
             pictureBox2.Image = croppedCompass;
 

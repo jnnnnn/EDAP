@@ -158,7 +158,7 @@ namespace EDAP
         {
             // MatchTemplate doesn't allow for scaling / rotation. Allow more leeway by reducing resolution?
 
-            Bitmap image = (Bitmap)Image.FromFile("res3/compass_tests.png");
+            Bitmap image = (Bitmap)Image.FromFile("res3/safdisengagtest.png");
             Mat source = BitmapConverter.ToMat(image);
             Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
 
@@ -171,7 +171,7 @@ namespace EDAP
             Mat template = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
             Mat matches = blues2.MatchTemplate(template, TemplateMatchModes.SqDiffNormed);
             Window w3 = new Window(matches);
-
+            Window w4 = new Window(matches.InRange(0.0, 0.9));
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
             return minVal < 0.5; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
