@@ -63,7 +63,7 @@ namespace EDAP
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
             
-            return minVal < 0.9; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
+            return minVal < 0.5; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
         }
     }
 }
