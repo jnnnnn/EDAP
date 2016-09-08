@@ -19,7 +19,7 @@ namespace EDAP
         private int jumps_remaining = 0;
         private uint alignFrames;
 
-        const float align_margin = 0.2f;
+        const float align_margin = 0.15f; // more -- jumps don't work (not aligned). less -- fine adjustment not allowed to work.
 
         public string status = "";
 
@@ -379,18 +379,19 @@ namespace EDAP
                 state |= PilotState.CruiseEnd;
                 // these commands will initiate docking if we have a computer
                 Task.Delay(6000).ContinueWith(t => keyboard.Tap((int)ScanCode.TAB)); // boost
-                Task.Delay(6000).ContinueWith(t => keyboard.Tap((int)ScanCode.KEY_X)); // cut throttle
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap((int)ScanCode.KEY_X)); // cut throttle
                 Task.Delay(12000).ContinueWith(t =>
                 {
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking thing if cruise gets turned off
-                    keyboard.Tap(Keyboard.LetterToKey('1')); // nav menu                    
+                    keyboard.Tap(Keyboard.LetterToKey('1')); // nav menu           
+                    Thread.Sleep(300); // game needs time to open this menu         
+                    keyboard.Tap(Keyboard.LetterToKey('E')); // tab right65765
+                    Thread.Sleep(300); // game needs time to realise key was unpressed
                     keyboard.Tap(Keyboard.LetterToKey('E')); // tab right
-                    Thread.Sleep(100); // game needs time to realise key was unpressed
-                    keyboard.Tap(Keyboard.LetterToKey('E')); // tab right
-                    keyboard.Tap((int)ScanCode.SPACEBAR);                    
+                    keyboard.Tap((int)ScanCode.SPACEBAR);
                     keyboard.Tap(Keyboard.LetterToKey('S'));
-                    keyboard.Tap((int)ScanCode.SPACEBAR);                    
+                    keyboard.Tap((int)ScanCode.SPACEBAR);
                     keyboard.Tap(Keyboard.LetterToKey('1'));
                 });
             }
