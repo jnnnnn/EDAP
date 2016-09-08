@@ -300,7 +300,7 @@ namespace EDAP
             try
             {
                 compass = compassRecognizer.GetOrientation();
-                status = string.Format("{1:0.0}, {2:0.0}", compass.X, compass.Y);
+                status = string.Format("{0:0.0}, {1:0.0}", compass.X, compass.Y);
             }
             catch (Exception e)
             {
