@@ -20,16 +20,24 @@ namespace EDAP
             Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
             Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 27, 255, 255 }));
             Mat sourceHSVFiltered = new Mat();
-            sourceHSV.CopyTo(sourceHSVFiltered, mask);
-            debugWindow.Image = BitmapConverter.ToBitmap(sourceHSVFiltered);
-            CircleSegment[] circles = sourceHSVFiltered.Split()[2].HoughCircles(
+            sourceHSV.CopyTo(sourceHSVFiltered, mask);            
+            Mat valueChannel = sourceHSVFiltered.Split()[2];
+            CircleSegment[] circles = valueChannel.HoughCircles(
                 HoughMethods.Gradient,
-                dp: 1f, 
-                minDist: 20, 
-                param1: 100, 
-                param2: 10, 
-                minRadius: 45,
+                dp: 1f, /* resolution scaling factor?  full resolution seems to work better */
+                minDist: 100, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
+                param1: 100, /* default was fine after experimentation */
+                param2: 13, /* required quality factor. 9 finds too many, 14 finds too few */
+                minRadius: 40,
                 maxRadius: 47);
+            
+            foreach (CircleSegment circle in circles)
+                valueChannel.Circle(circle.Center, (int)circle.Radius - 5, 255);
+
+            valueChannel.Line(screen.Height / 2, 0, screen.Height / 2, screen.Width, 255);
+            valueChannel.Line(0, screen.Width / 2, screen.Height, screen.Width / 2, 255);
+
+            debugWindow.Image = BitmapConverter.ToBitmap(valueChannel);
 
             if (circles.Length > 1)
                 throw new Exception("Too many possible triquadrants.");

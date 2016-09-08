@@ -121,7 +121,6 @@ namespace EDAP
              * suggested range [10..27], [200..255], [128..255] (openCV
              * */
             Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 27, 255, 255 }));
-            Window w1 = new Window("mask", mask);
             Mat sourceHSVFiltered = new Mat();
             sourceHSV.CopyTo(sourceHSVFiltered, mask);
             Window w3 = new Window("yellowfilter", sourceHSVFiltered.CvtColor(ColorConversionCodes.HSV2BGR));            
@@ -130,10 +129,10 @@ namespace EDAP
             CircleSegment[] circles2 = sourceGrey.HoughCircles(
                 HoughMethods.Gradient,
                 dp: 1f, /* resolution scaling factor?  full resolution seems to work better */
-                minDist: 20, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
+                minDist: 100, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
                 param1: 100, /* default was fine after experimentation */
                 param2: 13, /* required quality factor. 9 finds too many, 14 finds too few */
-                minRadius: 45,
+                minRadius: 40,
                 maxRadius: 47);
             foreach (CircleSegment circle in circles2)
             {

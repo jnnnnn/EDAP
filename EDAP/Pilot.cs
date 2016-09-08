@@ -19,7 +19,7 @@ namespace EDAP
         private int jumps_remaining = 0;
         private uint alignFrames;
 
-        const float align_margin = 0.1f;
+        const float align_margin = 0.2f;
 
         public string status = "";
 
@@ -222,11 +222,8 @@ namespace EDAP
             { 
                 alignFrames += 1;
                 result = alignFrames > 5;
-                if (state.HasFlag(PilotState.Cruise))
-                {
-                    FineAlign();
-                    return true;
-                }
+                FineAlign();
+                return true;
             }
             else
                 alignFrames = 0;
@@ -246,41 +243,46 @@ namespace EDAP
         }
 
         private Point2f oldOffset = new Point2f();
+        private int missedFineFrames = 0;
         /// <summary>
         /// try to point accurately at the target by centering the triquadrant on the screen 
         /// </summary>
         private void FineAlign()
         {
-            int centreBox = 200;
+            int centreBox = 150;
             Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
+            Point2f offset;
+            Point2f velocity;
             try
             {
-                Point2f triquadrant = -cruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
-                Point2f offset = triquadrant;
+                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
+                offset = -triquadrant;
+                velocity = (offset - oldOffset) * (1f / (screen.timestamp - screen.oldTimestamp).TotalSeconds); // pixels / s   
+            }
+            catch (Exception e)
+            {
+                status = e.Message;
+                return;
+            }
+                                     
+            if (oldOffset.X == 0 && oldOffset.Y == 0)
+            {
+                missedFineFrames += 1;
+                ClearAlignKeys();
+                status = string.Format("{0:0.00}, {1:0.00} ({2} old offset not available)", offset.X, offset.Y, missedFineFrames);
+            }
+            else
+            {
                 status = string.Format("{0:0.00}, {1:0.00}", offset.X, offset.Y);
-                Point2f velocity = (offset - oldOffset) * (1f/(screen.timestamp - screen.oldTimestamp).TotalSeconds); // pixels / s
-                
-                if (oldOffset.X == 0 && oldOffset.Y == 0)
-                {
-                    oldOffset = offset; // save for next time
-                    ClearAlignKeys();
-                    throw new Exception("Old offset not available.");
-                }
-                oldOffset = offset; // save for next time
-
-                const float fineMargin = 10; // 10 pixel dead zone
-                const float fineVelocityCoeff = 0.1f; // 0.5 pixels per second per pixel offset
-
+                missedFineFrames = 0;
+                const float fineMargin = 20; // size of dead zone (in pixels)
+                const float fineVelocityCoeff = 0.1f; // target centering velocity, in pixels per second per pixel offset
                 keyboard.SetKeyState(Keyboard.NumpadToKey('8'), offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff); // pitch up
                 keyboard.SetKeyState(Keyboard.NumpadToKey('5'), offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff); // pitch down
                 keyboard.SetKeyState(Keyboard.NumpadToKey('4'), offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff); // yaw left
                 keyboard.SetKeyState(Keyboard.NumpadToKey('6'), offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff); // yaw right
             }
-            catch (Exception e)
-            {
-                oldOffset *= 0;
-                status = e.Message;
-            }
+            oldOffset = offset; // save for next time
         }
 
         /// <summary>
