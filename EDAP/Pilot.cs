@@ -19,6 +19,8 @@ namespace EDAP
         private int jumps_remaining = 0;
         private uint alignFrames;
 
+        const float align_margin = 0.1f;
+
         public string status = "";
 
         [Flags]
@@ -215,33 +217,20 @@ namespace EDAP
                 return false;
             }
 
-            float margin = 0.1f;
             double wrongness = Math.Sqrt(compass.X * compass.X + compass.Y * compass.Y);
-            if (wrongness < 0.1)
+            if (wrongness < align_margin)
             { 
                 alignFrames += 1;
                 result = alignFrames > 5;
+                if (state.HasFlag(PilotState.Cruise))
+                {
+                    FineAlign();
+                    return true;
+                }
             }
             else
                 alignFrames = 0;
-
-            if (wrongness < 0.1 && state.HasFlag(PilotState.Cruise))
-            {
-                int centreBox = 200;
-                Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
-                try
-                {
-                    Point2f triquadrant = CruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
-                    compass = triquadrant * margin * (1f / centreBox);
-                    status = string.Format("{0:0.00}, {1:0.00}", compass.X, compass.Y);
-                    margin /= 4;
-                }
-                catch (Exception e)
-                {
-                    status = e.Message;
-                }
-            }
-
+            
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
@@ -255,25 +244,44 @@ namespace EDAP
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('7'));
 
-            if (compass.Y < -margin)
+            if (compass.Y < -align_margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
-            if (compass.Y > margin)
+            if (compass.Y > align_margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('8')); // pitch down
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('8'));
 
-            if (compass.X < -margin)
+            if (compass.X < -align_margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('4')); // yaw left
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('4'));
-            if (compass.X > margin)
+            if (compass.X > align_margin)
                 keyboard.Keydown(Keyboard.NumpadToKey('6')); // yaw right
             else
                 keyboard.Keyup(Keyboard.NumpadToKey('6'));
 
             return result;
+        }
+
+        // try to point accurately at the target by centering the triquadrant on the screen
+        private void FineAlign()
+        {
+            int centreBox = 200;
+            Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
+            try
+            {
+                Point2f triquadrant = CruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
+                Point2f offset = triquadrant * align_margin * (1f / centreBox);
+                status = string.Format("{0:0.00}, {1:0.00}", offset.X, offset.Y);
+                
+
+            }
+            catch (Exception e)
+            {
+                status = e.Message;
+            }
         }
 
         /// <summary>
