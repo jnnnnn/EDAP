@@ -15,8 +15,8 @@ namespace EDAP
         private Mat template_open = new Mat("res3/target-open.png", ImreadModes.GrayScale);
         private Mat template_closed = new Mat("res3/target-closed.png", ImreadModes.GrayScale);
         private const float match_threshold = 0.7f;
-        private Screen screen;
-        public CompassRecognizer(Screen screen, PictureBox pictureBox2)
+        private Screenshot screen;
+        public CompassRecognizer(Screenshot screen, PictureBox pictureBox2)
         {
             this.pictureBox2 = pictureBox2;
             this.screen = screen;

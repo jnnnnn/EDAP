@@ -7,7 +7,7 @@ namespace EDAP
 {
     // from http://stackoverflow.com/a/911225/412529
     // We need this class to get a screenshot of the ED window so we can "look" at the compass to align the next jump
-    class Screenshot
+    public class Screenshot
     {
         [DllImport("user32.dll")]
         public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
@@ -29,6 +29,33 @@ namespace EDAP
             gfxBmp.Dispose();
 
             return bmp;
+        }
+
+        public IntPtr hWnd;
+        private Bitmap screenshot;
+        // keeps a copy of the screenshot so we only get it once and only as often as we need it
+        public Bitmap bitmap
+        {
+            get
+            {
+                if (screenshot == null)
+                {
+                    screenshot = PrintWindow(hWnd);
+
+                    if (Math.Abs(screenshot.Height - 1080) > 10)
+                        throw new ArgumentException("Error: screenshot resultion wrong");
+                }
+                return screenshot;
+            }
+        }
+
+        public void ClearSaved()
+        {
+            if (screenshot != null)
+            {
+                screenshot.Dispose();
+                screenshot = null;
+            }
         }
     }
 }

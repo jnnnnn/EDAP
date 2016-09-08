@@ -41,7 +41,7 @@ namespace EDAP
         }
 
         public PilotState state;
-        public Screen screen;
+        public Screenshot screen;
         internal CompassRecognizer compassRecognizer;
         internal CruiseSensor cruiseSensor;
 

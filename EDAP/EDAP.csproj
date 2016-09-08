@@ -83,7 +83,6 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RECT.cs" />
-    <Compile Include="Screen.cs" />
     <Compile Include="SendInput.cs" />
     <Compile Include="Sounds.cs" />
     <EmbeddedResource Include="Form1.resx">

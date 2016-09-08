@@ -15,7 +15,7 @@ namespace EDAP
         private System.Windows.Forms.Timer timer;
         private bool enabled = false;
 
-        public Screen screen;
+        public Screenshot screen;
         private Keyboard keyboard;
         private PilotJumper pilot;
         private CompassRecognizer compassRecognizer;
@@ -35,7 +35,7 @@ namespace EDAP
         {
             InitializeComponent();
             keyboard = new Keyboard();
-            screen = new Screen();
+            screen = new Screenshot();
             cruiseSensor = new CruiseSensor();
             cruiseSensor.screen = screen;
             compassRecognizer = new CompassRecognizer(screen, pictureBox2);            

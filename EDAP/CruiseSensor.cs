@@ -7,7 +7,7 @@ namespace EDAP
 {
     class CruiseSensor
     {
-        public Screen screen;
+        public Screenshot screen;
 
         public static Point2f FindTriQuadrant(Bitmap screen)
         {
