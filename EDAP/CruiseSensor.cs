@@ -2,6 +2,7 @@
 using OpenCvSharp.Extensions;
 using System;
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace EDAP
 {
@@ -9,7 +10,8 @@ namespace EDAP
     {
         public Screenshot screen;
 
-        public static Point2f FindTriQuadrant(Bitmap screen)
+        public PictureBox debugWindow;
+        public Point2f FindTriQuadrant(Bitmap screen)
         {
             // todo: detect the dotted circle that means the target is obscured.
 
@@ -19,12 +21,13 @@ namespace EDAP
             Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 27, 255, 255 }));
             Mat sourceHSVFiltered = new Mat();
             sourceHSV.CopyTo(sourceHSVFiltered, mask);
+            debugWindow.Image = BitmapConverter.ToBitmap(sourceHSVFiltered);
             CircleSegment[] circles = sourceHSVFiltered.Split()[2].HoughCircles(
                 HoughMethods.Gradient,
                 dp: 1f, 
                 minDist: 20, 
                 param1: 100, 
-                param2: 13, 
+                param2: 10, 
                 minRadius: 45,
                 maxRadius: 47);
 
@@ -37,6 +40,7 @@ namespace EDAP
         }
         
         Mat templatesaf = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
+
         public bool MatchSafDisengag()
         {
             // MatchTemplate doesn't allow for scaling / rotation. Allow more leeway by reducing resolution?

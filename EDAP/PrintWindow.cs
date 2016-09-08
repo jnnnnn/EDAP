@@ -33,6 +33,8 @@ namespace EDAP
 
         public IntPtr hWnd;
         private Bitmap screenshot;
+        public DateTime timestamp = DateTime.UtcNow;
+        public DateTime oldTimestamp = DateTime.UtcNow;
         // keeps a copy of the screenshot so we only get it once and only as often as we need it
         public Bitmap bitmap
         {
@@ -41,6 +43,7 @@ namespace EDAP
                 if (screenshot == null)
                 {
                     screenshot = PrintWindow(hWnd);
+                    timestamp = DateTime.UtcNow;
 
                     if (Math.Abs(screenshot.Height - 1080) > 10)
                         throw new ArgumentException("Error: screenshot resultion wrong");
@@ -55,6 +58,7 @@ namespace EDAP
             {
                 screenshot.Dispose();
                 screenshot = null;
+                oldTimestamp = timestamp;
             }
         }
     }

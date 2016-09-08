@@ -38,6 +38,7 @@ namespace EDAP
             screen = new Screenshot();
             cruiseSensor = new CruiseSensor();
             cruiseSensor.screen = screen;
+            cruiseSensor.debugWindow = pictureBox1;
             compassRecognizer = new CompassRecognizer(screen, pictureBox2);            
             pilot = new PilotJumper();
             pilot.keyboard = keyboard;

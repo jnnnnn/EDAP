@@ -66,9 +66,9 @@ namespace EDAP
             // 
             // pictureBox1
             // 
-            this.pictureBox1.Location = new System.Drawing.Point(15, 90);
+            this.pictureBox1.Location = new System.Drawing.Point(15, 187);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(75, 86);
+            this.pictureBox1.Size = new System.Drawing.Size(265, 240);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.pictureBox1.TabIndex = 1;
             this.pictureBox1.TabStop = false;
@@ -170,7 +170,7 @@ namespace EDAP
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(293, 192);
+            this.ClientSize = new System.Drawing.Size(292, 439);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.buttonMap);
             this.Controls.Add(this.numericUpDown1);

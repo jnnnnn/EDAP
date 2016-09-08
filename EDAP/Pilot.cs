@@ -234,52 +234,51 @@ namespace EDAP
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
-
-            if (compass.X < -0.3)
-                keyboard.Keydown(Keyboard.NumpadToKey('9')); // roll right
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('9'));
-            if (compass.X > 0.3)
-                keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('7'));
-
-            if (compass.Y < -align_margin)
-                keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('5'));
-            if (compass.Y > align_margin)
-                keyboard.Keydown(Keyboard.NumpadToKey('8')); // pitch down
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('8'));
-
-            if (compass.X < -align_margin)
-                keyboard.Keydown(Keyboard.NumpadToKey('4')); // yaw left
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('4'));
-            if (compass.X > align_margin)
-                keyboard.Keydown(Keyboard.NumpadToKey('6')); // yaw right
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('6'));
-
+            
+            keyboard.SetKeyState(Keyboard.NumpadToKey('9'), compass.X < -0.3); // roll right
+            keyboard.SetKeyState(Keyboard.NumpadToKey('7'), compass.X > 0.3); // roll left
+            keyboard.SetKeyState(Keyboard.NumpadToKey('5'), compass.Y < -align_margin); // pitch up
+            keyboard.SetKeyState(Keyboard.NumpadToKey('8'), compass.Y > align_margin); // pitch down
+            keyboard.SetKeyState(Keyboard.NumpadToKey('4'), compass.X < -align_margin); // yaw left
+            keyboard.SetKeyState(Keyboard.NumpadToKey('6'), compass.X > align_margin); // yaw right
+            
             return result;
         }
 
-        // try to point accurately at the target by centering the triquadrant on the screen
+        private Point2f oldOffset = new Point2f();
+        /// <summary>
+        /// try to point accurately at the target by centering the triquadrant on the screen 
+        /// </summary>
         private void FineAlign()
         {
             int centreBox = 200;
             Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
             try
             {
-                Point2f triquadrant = CruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
-                Point2f offset = triquadrant * align_margin * (1f / centreBox);
+                Point2f triquadrant = -cruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
+                Point2f offset = triquadrant;
                 status = string.Format("{0:0.00}, {1:0.00}", offset.X, offset.Y);
+                Point2f velocity = (offset - oldOffset) * (1f/(screen.timestamp - screen.oldTimestamp).TotalSeconds); // pixels / s
                 
+                if (oldOffset.X == 0 && oldOffset.Y == 0)
+                {
+                    oldOffset = offset; // save for next time
+                    ClearAlignKeys();
+                    throw new Exception("Old offset not available.");
+                }
+                oldOffset = offset; // save for next time
 
+                const float fineMargin = 10; // 10 pixel dead zone
+                const float fineVelocityCoeff = 0.1f; // 0.5 pixels per second per pixel offset
+
+                keyboard.SetKeyState(Keyboard.NumpadToKey('8'), offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff); // pitch up
+                keyboard.SetKeyState(Keyboard.NumpadToKey('5'), offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff); // pitch down
+                keyboard.SetKeyState(Keyboard.NumpadToKey('4'), offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff); // yaw left
+                keyboard.SetKeyState(Keyboard.NumpadToKey('6'), offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff); // yaw right
             }
             catch (Exception e)
             {
+                oldOffset *= 0;
                 status = e.Message;
             }
         }
@@ -291,7 +290,6 @@ namespace EDAP
         /// <returns>true if we are pointing directly away from the target</returns>
         private bool AntiAlign()
         {
-            bool result = false;
             Point2f compass;
             try
             {
@@ -318,33 +316,13 @@ namespace EDAP
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
-
-            if (compass.X < -0.3)
-                keyboard.Keydown(Keyboard.NumpadToKey('7')); // roll left
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('7'));
-            if (compass.X > 0.3)
-                keyboard.Keydown(Keyboard.NumpadToKey('9')); // roll right
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('9'));
-
-            if (compass.Y > 0 && compass.Y < 1.9)
-                keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('5'));
-            if (compass.Y < 0 && compass.Y > -1.9)
-                keyboard.Keydown(Keyboard.NumpadToKey('8')); // pitch down
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('8'));
-
-            if (compass.X < -0.1)
-                keyboard.Keydown(Keyboard.NumpadToKey('6')); // yaw right
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('6'));
-            if (compass.X > 0.1)
-                keyboard.Keydown(Keyboard.NumpadToKey('4')); // yaw left
-            else
-                keyboard.Keyup(Keyboard.NumpadToKey('4'));
+            
+            keyboard.SetKeyState(Keyboard.NumpadToKey('9'), compass.X > 0.3); // roll right
+            keyboard.SetKeyState(Keyboard.NumpadToKey('7'), compass.X < -0.3); // roll left
+            keyboard.SetKeyState(Keyboard.NumpadToKey('5'), compass.Y > 0 && compass.Y < 1.9); // pitch up
+            keyboard.SetKeyState(Keyboard.NumpadToKey('8'), compass.Y < 0 && compass.Y > -1.9); // pitch down
+            keyboard.SetKeyState(Keyboard.NumpadToKey('4'), compass.X > 0.1); // yaw left
+            keyboard.SetKeyState(Keyboard.NumpadToKey('6'), compass.X < -0.1); // yaw right
 
             return false;
         }
@@ -359,9 +337,11 @@ namespace EDAP
             {
                 if (OncePerJump(PilotState.swoopStart))
                     keyboard.Tap(Keyboard.LetterToKey('P')); // set throttle to 50%
-            
+
                 // maybe in witchspace, maybe facing star
-                // todo: better detection of the end of witchspace (sometimes it's way longer and antialign has trouble seeing the compass to turn away from the star)
+                // todo: better detection of the end of witchspace (sometimes it's way longer 
+                // and antialign has trouble seeing the compass to turn away from the star, or 
+                // may even be so late that it doesn't select the star for the antialign procedure)
                 keyboard.Keyup(Keyboard.NumpadToKey('5'));
                 Thread.Sleep(10);
                 keyboard.Keydown(Keyboard.NumpadToKey('5')); // pitch up for ~10 seconds on arrival to avoid star.

@@ -104,6 +104,14 @@ namespace EDAP
             }            
         }
 
+        public void SetKeyState(int key, bool down)
+        {
+            if (down)
+                Keydown(key);
+            else
+                Keyup(key);
+        }
+
         /// <summary>
         /// Start pressing down on a key. Sends a "keydown" event to the game.
         /// </summary>
