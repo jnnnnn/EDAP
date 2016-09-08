@@ -78,9 +78,9 @@ namespace EDAP
             ClearAlignKeys();
             keyboard.Tap(Keyboard.LetterToKey('G')); // jump
             keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle
+            state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             last_jump_time = DateTime.UtcNow;
-            jumps_remaining -= 1;
-            state &= PilotState.SysMap | PilotState.Cruise; // clear per-jump flags
+            jumps_remaining -= 1;            
 
             if (state.HasFlag(PilotState.SysMap))
             {
