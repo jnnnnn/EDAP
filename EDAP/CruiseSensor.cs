@@ -32,7 +32,7 @@ namespace EDAP
                 maxRadius: 47);
             
             foreach (CircleSegment circle in circles)
-                valueChannel.Circle(circle.Center, (int)circle.Radius - 5, 255);
+                valueChannel.Circle(circle.Center, (int)circle.Radius, 128);
 
             valueChannel.Line(screen.Height / 2, 0, screen.Height / 2, screen.Width, 255);
             valueChannel.Line(0, screen.Width / 2, screen.Height, screen.Width / 2, 255);

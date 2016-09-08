@@ -25,6 +25,7 @@ namespace EDAP
 
         private DateTime lastClick = DateTime.UtcNow;
 
+        // make sure we focus back to the game window so that it registers keypresses
         private void Focusize()
         {
             SwitchToThisWindow(hwnd, true);
@@ -38,7 +39,7 @@ namespace EDAP
             screen = new Screenshot();
             cruiseSensor = new CruiseSensor();
             cruiseSensor.screen = screen;
-            cruiseSensor.debugWindow = pictureBox1;
+            cruiseSensor.debugWindow = pictureBox2;
             compassRecognizer = new CompassRecognizer(screen, pictureBox2);            
             pilot = new PilotJumper();
             pilot.keyboard = keyboard;
@@ -129,6 +130,12 @@ namespace EDAP
         private void button2_Click_1(object sender, EventArgs e)
         {
             OpenCVExperiments.FindTriQuadrant();
+        }
+
+        private void button1_Click_2(object sender, EventArgs e)
+        {
+            pilot.state ^= PilotJumper.PilotState.Honk;
+            Focusize();
         }
     }
 }

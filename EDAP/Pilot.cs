@@ -38,6 +38,7 @@ namespace EDAP
             SysMap          = 1 << 8, // whether to open the system map after jumping
             Cruise          = 1 << 9,
             CruiseEnd       = 1 << 10,
+            Honk            = 1 << 11,
         }
 
         public PilotState state;
@@ -49,7 +50,7 @@ namespace EDAP
         
         public void Reset()
         {
-            state &= PilotState.SysMap | PilotState.Cruise; // clear per-jump flags
+            state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             state |= PilotState.firstjump;
 
             alignFrames = 0;
@@ -139,9 +140,12 @@ namespace EDAP
 
             if (OncePerJump(PilotState.swoopEnd))
             {
-                keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle                    
-                keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
-                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(Keyboard.LetterToKey('O'))); // stop honking after ten seconds
+                keyboard.Tap(Keyboard.LetterToKey('F')); // full throttle           
+                if (state.HasFlag(PilotState.Honk))
+                {
+                    keyboard.Keydown(Keyboard.LetterToKey('O')); // hooooooooooooonk
+                    Task.Delay(10000).ContinueWith(t => keyboard.Keyup(Keyboard.LetterToKey('O'))); // stop honking after ten seconds
+                }
             }            
 
             // make sure we are travelling directly away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
