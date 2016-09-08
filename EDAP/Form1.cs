@@ -99,6 +99,7 @@ namespace EDAP
             buttonAuto.ForeColor = enabled ? Color.Green : Color.Coral;
             buttonCruise.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Cruise) ? Color.Green : Color.Coral;
             buttonMap.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.SysMap) ? Color.Green : Color.Coral;
+            buttonHorn.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Honk) ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)

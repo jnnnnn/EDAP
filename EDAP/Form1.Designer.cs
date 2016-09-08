@@ -43,7 +43,7 @@ namespace EDAP
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
             this.buttonMap = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
+            this.buttonHorn = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
@@ -147,7 +147,7 @@ namespace EDAP
             this.button2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button2.ForeColor = System.Drawing.Color.Coral;
-            this.button2.Location = new System.Drawing.Point(206, 139);
+            this.button2.Location = new System.Drawing.Point(205, 178);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 37);
             this.button2.TabIndex = 10;
@@ -155,20 +155,20 @@ namespace EDAP
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click_1);
             // 
-            // button1
+            // buttonHorn
             // 
-            this.button1.BackColor = System.Drawing.Color.Black;
-            this.button1.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.ForeColor = System.Drawing.Color.Coral;
-            this.button1.Location = new System.Drawing.Point(205, 182);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 37);
-            this.button1.TabIndex = 11;
-            this.button1.Text = "HONK";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click_2);
+            this.buttonHorn.BackColor = System.Drawing.Color.Black;
+            this.buttonHorn.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.buttonHorn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonHorn.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonHorn.ForeColor = System.Drawing.Color.Coral;
+            this.buttonHorn.Location = new System.Drawing.Point(206, 135);
+            this.buttonHorn.Name = "buttonHorn";
+            this.buttonHorn.Size = new System.Drawing.Size(75, 37);
+            this.buttonHorn.TabIndex = 11;
+            this.buttonHorn.Text = "HRN";
+            this.buttonHorn.UseVisualStyleBackColor = true;
+            this.buttonHorn.Click += new System.EventHandler(this.button1_Click_2);
             // 
             // Form1
             // 
@@ -176,7 +176,7 @@ namespace EDAP
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(292, 255);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.buttonHorn);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.buttonMap);
             this.Controls.Add(this.numericUpDown1);
@@ -208,7 +208,7 @@ namespace EDAP
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         private System.Windows.Forms.Button buttonMap;
         private System.Windows.Forms.Button button2;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonHorn;
     }
 }
 

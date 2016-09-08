@@ -377,6 +377,22 @@ namespace EDAP
             {
                 keyboard.Tap(Keyboard.LetterToKey('G')); // disengage
                 state |= PilotState.CruiseEnd;
+                // these commands will initiate docking if we have a computer
+                Task.Delay(6000).ContinueWith(t => keyboard.Tap((int)ScanCode.TAB)); // boost
+                Task.Delay(6000).ContinueWith(t => keyboard.Tap((int)ScanCode.KEY_X)); // cut throttle
+                Task.Delay(12000).ContinueWith(t =>
+                {
+                    if (!state.HasFlag(PilotState.Cruise))
+                        return; // abort docking thing if cruise gets turned off
+                    keyboard.Tap(Keyboard.LetterToKey('1')); // nav menu                    
+                    keyboard.Tap(Keyboard.LetterToKey('E')); // tab right
+                    Thread.Sleep(100); // game needs time to realise key was unpressed
+                    keyboard.Tap(Keyboard.LetterToKey('E')); // tab right
+                    keyboard.Tap((int)ScanCode.SPACEBAR);                    
+                    keyboard.Tap(Keyboard.LetterToKey('S'));
+                    keyboard.Tap((int)ScanCode.SPACEBAR);                    
+                    keyboard.Tap(Keyboard.LetterToKey('1'));
+                });
             }
         }
     }
