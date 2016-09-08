@@ -279,7 +279,7 @@ namespace EDAP
             {
                 status = string.Format("{0:0.00}, {1:0.00}", offset.X, offset.Y);
                 missedFineFrames = 0;
-                const float fineMargin = 20; // size of dead zone (in pixels)
+                const float fineMargin = 50; // size of dead zone (in pixels)
                 const float fineVelocityCoeff = 0.1f; // target centering velocity, in pixels per second per pixel offset
                 keyboard.SetKeyState(Keyboard.NumpadToKey('8'), offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff); // pitch up
                 keyboard.SetKeyState(Keyboard.NumpadToKey('5'), offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff); // pitch down
