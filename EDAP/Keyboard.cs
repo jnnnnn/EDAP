@@ -14,7 +14,7 @@ namespace EDAP
     /// </summary>
     class Keyboard
     {        
-        public HashSet<int> pressed_keys;
+        public HashSet<ScanCode> pressed_keys;
         public IntPtr hWnd;
         
         [DllImport("user32.dll")]
@@ -29,52 +29,52 @@ namespace EDAP
         
         public Keyboard()
         {
-            pressed_keys = new HashSet<int>();
+            pressed_keys = new HashSet<ScanCode>();
         }
 
         /// <summary>
         /// Returns the scan keycode of a given letter or number on the keyboard.
         /// </summary>
-        public static int LetterToKey(char letter)
+        public static ScanCode LetterToKey(char letter)
         {
             switch (letter)
             {
-                case '0': return (int)ScanCode.KEY_0;
-                case '1': return (int)ScanCode.KEY_1;
-                case '2': return (int)ScanCode.KEY_2;
-                case '3': return (int)ScanCode.KEY_3;
-                case '4': return (int)ScanCode.KEY_4;
-                case '5': return (int)ScanCode.KEY_5;
-                case '6': return (int)ScanCode.KEY_6;
-                case '7': return (int)ScanCode.KEY_7;
-                case '8': return (int)ScanCode.KEY_8;
-                case '9': return (int)ScanCode.KEY_9;
-                case 'A': return (int)ScanCode.KEY_A;
-                case 'B': return (int)ScanCode.KEY_B;
-                case 'C': return (int)ScanCode.KEY_C;
-                case 'D': return (int)ScanCode.KEY_D;
-                case 'E': return (int)ScanCode.KEY_E;
-                case 'F': return (int)ScanCode.KEY_F;
-                case 'G': return (int)ScanCode.KEY_G;
-                case 'H': return (int)ScanCode.KEY_H;
-                case 'I': return (int)ScanCode.KEY_I;
-                case 'J': return (int)ScanCode.KEY_J;
-                case 'K': return (int)ScanCode.KEY_K;
-                case 'L': return (int)ScanCode.KEY_L;
-                case 'M': return (int)ScanCode.KEY_M;
-                case 'N': return (int)ScanCode.KEY_N;
-                case 'O': return (int)ScanCode.KEY_O;
-                case 'P': return (int)ScanCode.KEY_P;
-                case 'Q': return (int)ScanCode.KEY_Q;
-                case 'R': return (int)ScanCode.KEY_R;
-                case 'S': return (int)ScanCode.KEY_S;
-                case 'T': return (int)ScanCode.KEY_T;
-                case 'U': return (int)ScanCode.KEY_U;
-                case 'V': return (int)ScanCode.KEY_V;
-                case 'W': return (int)ScanCode.KEY_W;
-                case 'X': return (int)ScanCode.KEY_X;
-                case 'Y': return (int)ScanCode.KEY_Y;
-                case 'Z': return (int)ScanCode.KEY_Z;
+                case '0': return ScanCode.KEY_0;
+                case '1': return ScanCode.KEY_1;
+                case '2': return ScanCode.KEY_2;
+                case '3': return ScanCode.KEY_3;
+                case '4': return ScanCode.KEY_4;
+                case '5': return ScanCode.KEY_5;
+                case '6': return ScanCode.KEY_6;
+                case '7': return ScanCode.KEY_7;
+                case '8': return ScanCode.KEY_8;
+                case '9': return ScanCode.KEY_9;
+                case 'A': return ScanCode.KEY_A;
+                case 'B': return ScanCode.KEY_B;
+                case 'C': return ScanCode.KEY_C;
+                case 'D': return ScanCode.KEY_D;
+                case 'E': return ScanCode.KEY_E;
+                case 'F': return ScanCode.KEY_F;
+                case 'G': return ScanCode.KEY_G;
+                case 'H': return ScanCode.KEY_H;
+                case 'I': return ScanCode.KEY_I;
+                case 'J': return ScanCode.KEY_J;
+                case 'K': return ScanCode.KEY_K;
+                case 'L': return ScanCode.KEY_L;
+                case 'M': return ScanCode.KEY_M;
+                case 'N': return ScanCode.KEY_N;
+                case 'O': return ScanCode.KEY_O;
+                case 'P': return ScanCode.KEY_P;
+                case 'Q': return ScanCode.KEY_Q;
+                case 'R': return ScanCode.KEY_R;
+                case 'S': return ScanCode.KEY_S;
+                case 'T': return ScanCode.KEY_T;
+                case 'U': return ScanCode.KEY_U;
+                case 'V': return ScanCode.KEY_V;
+                case 'W': return ScanCode.KEY_W;
+                case 'X': return ScanCode.KEY_X;
+                case 'Y': return ScanCode.KEY_Y;
+                case 'Z': return ScanCode.KEY_Z;
                 default:
                     throw new Exception("Unrecognized letter or number");
             }
@@ -85,38 +85,38 @@ namespace EDAP
         /// </summary>
         /// <param name="letter"></param>
         /// <returns></returns>
-        public static int NumpadToKey(char letter)
+        public static ScanCode NumpadToKey(char letter)
         {
             switch (letter)
             {
-                case '0': return (int)ScanCode.NUMPAD_0;
-                case '1': return (int)ScanCode.NUMPAD_1;
-                case '2': return (int)ScanCode.NUMPAD_2;
-                case '3': return (int)ScanCode.NUMPAD_3;
-                case '4': return (int)ScanCode.NUMPAD_4;
-                case '5': return (int)ScanCode.NUMPAD_5;
-                case '6': return (int)ScanCode.NUMPAD_6;
-                case '7': return (int)ScanCode.NUMPAD_7;
-                case '8': return (int)ScanCode.NUMPAD_8;
-                case '9': return (int)ScanCode.NUMPAD_9;
+                case '0': return ScanCode.NUMPAD_0;
+                case '1': return ScanCode.NUMPAD_1;
+                case '2': return ScanCode.NUMPAD_2;
+                case '3': return ScanCode.NUMPAD_3;
+                case '4': return ScanCode.NUMPAD_4;
+                case '5': return ScanCode.NUMPAD_5;
+                case '6': return ScanCode.NUMPAD_6;
+                case '7': return ScanCode.NUMPAD_7;
+                case '8': return ScanCode.NUMPAD_8;
+                case '9': return ScanCode.NUMPAD_9;
                 default:
                     throw new Exception("Invalid numpad key");
             }            
         }
 
-        public void SetKeyState(int key, bool down)
+        public void SetKeyState(ScanCode key, bool down)
         {
             if (down)
                 Keydown(key);
             else
                 Keyup(key);
         }
-
+        
         /// <summary>
         /// Start pressing down on a key. Sends a "keydown" event to the game.
         /// </summary>
         /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to press.</param>
-        public void Keydown(int key)
+        public void Keydown(ScanCode key)
         {
             if (pressed_keys.Contains(key))
                 return;
@@ -147,12 +147,12 @@ namespace EDAP
                 }
             });
         }
-
+        
         /// <summary>
         /// Immediately release a key.
         /// </summary>
         /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to release.</param>
-        public void Keyup(int key)
+        public void Keyup(ScanCode key)
         {
             if (!pressed_keys.Contains(key))
                 return;
@@ -174,12 +174,12 @@ namespace EDAP
                 }
             });
         }
-
+        
         /// <summary>
         /// Send a keydown and then, soon after, a keyup, event to the game.
         /// </summary>
         /// <param name="key">The key to tap on.</param>
-        public void Tap(int key)
+        public void Tap(ScanCode key)
         {
             Keydown(key);
             Thread.Sleep(100); // make sure the game recognizes the keypress!

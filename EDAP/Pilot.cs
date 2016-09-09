@@ -87,7 +87,7 @@ namespace EDAP
                 keyboard.Tap(Keyboard.LetterToKey('6')); // open system map
                 Task.Delay(6000).ContinueWith(t => keyboard.Keydown(Keyboard.LetterToKey('K'))); // scroll right on system map
                 Task.Delay(7000).ContinueWith(t => keyboard.Keyup(Keyboard.LetterToKey('K')));
-                Task.Delay(10000).ContinueWith(t => keyboard.Tap((int)ScanCode.F10)); // screenshot the system map                
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.F10)); // screenshot the system map                
             }
             if (jumps_remaining < 1)
             {
@@ -158,9 +158,9 @@ namespace EDAP
                     keyboard.Tap(Keyboard.LetterToKey('1'));
                     Thread.Sleep(100); // game takes a while to catch up with this.
                     keyboard.Tap(Keyboard.LetterToKey('D'));
-                    keyboard.Tap((int)ScanCode.SPACEBAR);
+                    keyboard.Tap(ScanCode.SPACEBAR);
                     Thread.Sleep(100);
-                    keyboard.Tap((int)ScanCode.SPACEBAR);
+                    keyboard.Tap(ScanCode.SPACEBAR);
                     Thread.Sleep(100);
                     keyboard.Tap(Keyboard.LetterToKey('1'));
                 }
@@ -378,8 +378,8 @@ namespace EDAP
                 keyboard.Tap(Keyboard.LetterToKey('G')); // disengage
                 state |= PilotState.CruiseEnd;
                 // these commands will initiate docking if we have a computer
-                Task.Delay(6000).ContinueWith(t => keyboard.Tap((int)ScanCode.TAB)); // boost
-                Task.Delay(10000).ContinueWith(t => keyboard.Tap((int)ScanCode.KEY_X)); // cut throttle
+                Task.Delay(6000).ContinueWith(t => keyboard.Tap(ScanCode.TAB)); // boost
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_X)); // cut throttle
                 Task.Delay(12000).ContinueWith(t =>
                 {
                     if (!state.HasFlag(PilotState.Cruise))
@@ -389,9 +389,9 @@ namespace EDAP
                     keyboard.Tap(Keyboard.LetterToKey('E')); // tab right65765
                     Thread.Sleep(200); // game needs time to realise key was unpressed
                     keyboard.Tap(Keyboard.LetterToKey('E')); // tab right
-                    keyboard.Tap((int)ScanCode.SPACEBAR); // select first contact (the station)
+                    keyboard.Tap(ScanCode.SPACEBAR); // select first contact (the station)
                     keyboard.Tap(Keyboard.LetterToKey('S')); // down to the second option (request docking)
-                    keyboard.Tap((int)ScanCode.SPACEBAR); // select request docking
+                    keyboard.Tap(ScanCode.SPACEBAR); // select request docking
                     keyboard.Tap(Keyboard.LetterToKey('1')); // close nav menu
                 });
             }
