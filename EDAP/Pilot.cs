@@ -282,11 +282,10 @@ namespace EDAP
                 const float fineMargin = 10; // size of deadzone (in pixels)
                 const float fineVelocityCoeff = 0.01f; // target angular alignment velocity, in pixels per second per pixel offset
                 
-                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff); // pitch up
-                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff); // pitch down
-                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff*3); // yaw left
-                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff*3); // yaw right
-                
+                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin &&  velocity.Y / -offset.Y < fineVelocityCoeff*0.5); // pitch up
+                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y >  fineMargin && -velocity.Y /  offset.Y < fineVelocityCoeff*0.5); // pitch down
+                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X >  fineMargin && -velocity.X /  offset.X < fineVelocityCoeff*3  ); // yaw left
+                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin &&  velocity.X / -offset.X < fineVelocityCoeff*3  ); // yaw right
             }
             oldOffset = offset; // save for next time
         }
