@@ -385,14 +385,14 @@ namespace EDAP
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking thing if cruise gets turned off
                     keyboard.Tap(Keyboard.LetterToKey('1')); // nav menu           
-                    Thread.Sleep(300); // game needs time to open this menu         
+                    Thread.Sleep(200); // game needs time to open this menu         
                     keyboard.Tap(Keyboard.LetterToKey('E')); // tab right65765
-                    Thread.Sleep(300); // game needs time to realise key was unpressed
+                    Thread.Sleep(200); // game needs time to realise key was unpressed
                     keyboard.Tap(Keyboard.LetterToKey('E')); // tab right
-                    keyboard.Tap((int)ScanCode.SPACEBAR);
-                    keyboard.Tap(Keyboard.LetterToKey('S'));
-                    keyboard.Tap((int)ScanCode.SPACEBAR);
-                    keyboard.Tap(Keyboard.LetterToKey('1'));
+                    keyboard.Tap((int)ScanCode.SPACEBAR); // select first contact (the station)
+                    keyboard.Tap(Keyboard.LetterToKey('S')); // down to the second option (request docking)
+                    keyboard.Tap((int)ScanCode.SPACEBAR); // select request docking
+                    keyboard.Tap(Keyboard.LetterToKey('1')); // close nav menu
                 });
             }
         }

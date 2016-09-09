@@ -83,10 +83,15 @@ namespace EDAP
                 minRadius: 22, 
                 maxRadius: 28);
 
-            if (circles.Length > 1)
-                throw new System.ArgumentException("More than one valid circle...");
-            if (circles.Length < 1)
-                throw new System.ArgumentException("No valid circles");
+            if (circles.Length != 1)
+            {
+                pictureBox2.Image = image;
+                if (circles.Length > 1)
+                    throw new System.ArgumentException("More than one valid circle...");
+                if (circles.Length < 1)
+                    throw new System.ArgumentException("No valid circles");
+            }
+
             return circles[0];
         }
 
@@ -157,9 +162,7 @@ namespace EDAP
         // returns the normalized vector from the compass center to the blue dot
         public Point2f GetOrientation()
         {
-            float s = Properties.Settings.Default.Scale;
             Bitmap compassArea = Crop(screen.bitmap, 600, 550, 900, 1050);
-            Graphics g = Graphics.FromImage(compassArea);
             CircleSegment crosshair = FindCircle(compassArea);
             var r = crosshair.Radius + 12;
             var c = crosshair.Center;

@@ -25,7 +25,7 @@ namespace EDAP
             CircleSegment[] circles = valueChannel.HoughCircles(
                 HoughMethods.Gradient,
                 dp: 1f, /* resolution scaling factor?  full resolution seems to work better */
-                minDist: 100, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
+                minDist: 100, /* set this high so that we only find one (also seems to improve accuracy) */
                 param1: 100, /* default was fine after experimentation */
                 param2: 13, /* required quality factor. 9 finds too many, 14 finds too few */
                 minRadius: 40,
