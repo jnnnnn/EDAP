@@ -105,7 +105,7 @@ namespace EDAP
         private void Form1_Load(object sender, EventArgs e)
         {
             timer = new System.Windows.Forms.Timer();
-            timer.Interval = 100;
+            timer.Interval = 200;
             timer.Tick += Timer_Tick;
             timer.Start();
         }

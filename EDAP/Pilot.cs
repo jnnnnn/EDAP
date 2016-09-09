@@ -206,7 +206,6 @@ namespace EDAP
         /// <returns>true if we are pointing at the target</returns>
         private bool Align()
         {
-            bool result = false;
             Point2f compass;
             try
             {
@@ -223,14 +222,7 @@ namespace EDAP
 
             double wrongness = Math.Sqrt(compass.X * compass.X + compass.Y * compass.Y);
             if (wrongness < align_margin)
-            {
-                alignFrames += 1;
-                result = alignFrames > 5;
-                FineAlign();
-                return true;
-            }
-            else
-                alignFrames = 0;
+                return FineAlign();
 
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
@@ -243,7 +235,7 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X > align_margin); // yaw right
 
-            return result;
+            return false;
         }
 
         private Point2f oldOffset = new Point2f();
@@ -251,7 +243,7 @@ namespace EDAP
         /// <summary>
         /// try to point accurately at the target by centering the triquadrant on the screen 
         /// </summary>
-        private void FineAlign()
+        private bool FineAlign()
         {
             int centreBox = 150;
             Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
@@ -261,33 +253,52 @@ namespace EDAP
             {
                 Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
                 offset = -triquadrant;
-                velocity = (offset - oldOffset) * (1f / (screen.timestamp - screen.oldTimestamp).TotalSeconds); // pixels / s   
+                double timedelta = (screen.timestamp - screen.oldTimestamp).TotalSeconds;
+                velocity = (offset - oldOffset) * (1f / timedelta); // pixels / s   
             }
             catch (Exception e)
             {
                 status = e.Message;
-                return;
+                return false;
             }
+
+            const float fineMargin = 20; // size of deadzone (in pixels)
+            const float fineVelocityCoeff = 0.01f; // target angular alignment velocity, in pixels per second per pixel offset
 
             if (oldOffset.X == 0 && oldOffset.Y == 0)
             {
                 missedFineFrames += 1;
                 ClearAlignKeys();
-                status = string.Format("{0:0.00}, {1:0.00} ({2} old offset not available)", offset.X, offset.Y, missedFineFrames);
+                status = string.Format("{0:0.00}, {1:0.00} ({2} old offset not available)", offset.X, offset.Y, missedFineFrames);                
             }
             else
-            {
-                status = string.Format("{0:0.00}, {1:0.00}", offset.X, offset.Y);
+            {                
                 missedFineFrames = 0;
-                const float fineMargin = 10; // size of deadzone (in pixels)
-                const float fineVelocityCoeff = 0.01f; // target angular alignment velocity, in pixels per second per pixel offset
-                
-                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin &&  velocity.Y / -offset.Y < fineVelocityCoeff*0.5); // pitch up
-                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y >  fineMargin && -velocity.Y /  offset.Y < fineVelocityCoeff*0.5); // pitch down
-                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X >  fineMargin && -velocity.X /  offset.X < fineVelocityCoeff*3  ); // yaw left
-                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin &&  velocity.X / -offset.X < fineVelocityCoeff*3  ); // yaw right
+               
+                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff * 0.5); // pitch up
+                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff * 0.5); // pitch down
+                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff * 3); // yaw left
+                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff * 3); // yaw right
+
+                status = string.Format("{0:0}, {1:0}, {2:0}, {3:0}", offset.X, offset.Y, oldOffset.X, oldOffset.Y);
+                /*
+                const float fineMarginY = 20; // size of deadzone (in pixels)
+                const float fineVelocityCoeffY = .1f; // desired duration before we reach "perfectly aligned", in seconds
+                const float fineMarginX = 20; // size of deadzone (in pixels)
+                const float fineVelocityCoeffX = .1f; // desired duration before we reach "perfectly aligned", in seconds
+
+                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y + fineVelocityCoeffY * velocity.Y >  fineMarginY); // pitch up
+                //keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y + fineVelocityCoeffY * velocity.Y < -fineMarginY); // pitch down
+                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X + fineVelocityCoeffX * velocity.X >  fineMarginX); // yaw left
+                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X + fineVelocityCoeffX * velocity.X < -fineMarginX); // yaw right
+                Console.WriteLine(string.Format("Offset: {0}, OldOffset: {1}, Velocity: {2}", offset.ToString(), oldOffset.ToString(), velocity.ToString()));
+                */
+
+                Console.WriteLine(string.Format("Offset: {0}, OldOffset: {1}, Velocity: {2}", offset.ToString(), oldOffset.ToString(), velocity.ToString()));
             }
             oldOffset = offset; // save for next time
+
+            return offset.X < fineMargin * 2 && offset.Y < fineMargin * 2 && velocity.X < 5 && velocity.Y < 5;
         }
 
         /// <summary>
