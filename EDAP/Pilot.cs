@@ -43,7 +43,7 @@ namespace EDAP
 
         public PilotState state;
         public Screenshot screen;
-        internal CompassRecognizer compassRecognizer;
+        internal CompassSensor compassRecognizer;
         internal CruiseSensor cruiseSensor;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
@@ -259,7 +259,7 @@ namespace EDAP
             Point2f velocity;
             try
             {
-                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassRecognizer.Crop(screen.bitmap, screenCentre));
+                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
                 offset = -triquadrant;
                 velocity = (offset - oldOffset) * (1f / (screen.timestamp - screen.oldTimestamp).TotalSeconds); // pixels / s   
             }
@@ -279,12 +279,14 @@ namespace EDAP
             {
                 status = string.Format("{0:0.00}, {1:0.00}", offset.X, offset.Y);
                 missedFineFrames = 0;
-                const float fineMargin = 50; // size of dead zone (in pixels)
-                const float fineVelocityCoeff = 0.1f; // target centering velocity, in pixels per second per pixel offset
+                const float fineMargin = 10; // size of deadzone (in pixels)
+                const float fineVelocityCoeff = 0.01f; // target angular alignment velocity, in pixels per second per pixel offset
+                
                 keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff); // pitch up
                 keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff); // pitch down
-                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff); // yaw left
-                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff); // yaw right
+                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff*3); // yaw left
+                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff*3); // yaw right
+                
             }
             oldOffset = offset; // save for next time
         }
