@@ -380,7 +380,7 @@ namespace EDAP
                 // these commands will initiate docking if we have a computer
                 Task.Delay(6000).ContinueWith(t => keyboard.Tap(ScanCode.TAB)); // boost
                 Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_X)); // cut throttle
-                Task.Delay(12000).ContinueWith(t =>
+                Task.Delay(12000).ContinueWith(t => // request docking
                 {
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking thing if cruise gets turned off
