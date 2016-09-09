@@ -30,13 +30,15 @@ namespace EDAP
                 param2: 13, /* required quality factor. 9 finds too many, 14 finds too few */
                 minRadius: 40,
                 maxRadius: 47);
-            
+
+            Point2f shipPointer = FindShipPointer(valueChannel);
+
+
+            // draw some debug stuff for display: found circles, line to shippointer.
             foreach (CircleSegment circle in circles)
                 valueChannel.Circle(circle.Center, (int)circle.Radius, 128);
-
-            valueChannel.Line(screen.Height / 2, 0, screen.Height / 2, screen.Width, 255);
-            valueChannel.Line(0, screen.Width / 2, screen.Height, screen.Width / 2, 255);
-
+            if (circles.Length == 1) 
+                valueChannel.Line(circles[0].Center, shipPointer, 255);
             debugWindow.Image = BitmapConverter.ToBitmap(valueChannel);
 
             if (circles.Length > 1)
@@ -44,16 +46,29 @@ namespace EDAP
             if (circles.Length < 1)
                 throw new Exception("No possible triquadrants.");
             
-            return circles[0].Center - new Point2f(screen.Width / 2, screen.Height / 2);            
+            return circles[0].Center - FindShipPointer(valueChannel);            
         }
-        
+
+        Mat templatepointer = new Mat("res3/squaretarget.png", ImreadModes.GrayScale);
+
+        /// <summary>
+        /// Find the little square dot that indicates where the nose of the ship is pointing.
+        /// </summary>
+        public Point2f FindShipPointer(Mat screen)
+        {
+            Mat matches = screen.MatchTemplate(templatepointer, TemplateMatchModes.CCoeffNormed);
+            OpenCvSharp.Point minloc, maxloc;
+            matches.MinMaxLoc(out minloc, out maxloc);
+            return maxloc + new OpenCvSharp.Point(templatepointer.Size().Width, templatepointer.Size().Height) * 0.5;            
+        }
+                
         Mat templatesaf = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
 
         public bool MatchSafDisengag()
         {
             // MatchTemplate doesn't allow for scaling / rotation. Allow more leeway by reducing resolution?
 
-            Bitmap image = CompassRecognizer.Crop(screen.bitmap, new Rectangle(800, 700, 300, 100));
+            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(800, 700, 300, 100));
             Mat source = BitmapConverter.ToMat(image);
             Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);            
             Mat blues = source.Split()[0];

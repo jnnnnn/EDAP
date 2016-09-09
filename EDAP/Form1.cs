@@ -18,7 +18,7 @@ namespace EDAP
         public Screenshot screen;
         private Keyboard keyboard;
         private PilotJumper pilot;
-        private CompassRecognizer compassRecognizer;
+        private CompassSensor compassRecognizer;
         private CruiseSensor cruiseSensor;
 
         private IntPtr hwnd;
@@ -40,7 +40,7 @@ namespace EDAP
             cruiseSensor = new CruiseSensor();
             cruiseSensor.screen = screen;
             cruiseSensor.debugWindow = pictureBox2;
-            compassRecognizer = new CompassRecognizer(screen, pictureBox2);            
+            compassRecognizer = new CompassSensor(screen, pictureBox2);            
             pilot = new PilotJumper();
             pilot.keyboard = keyboard;
             pilot.compassRecognizer = compassRecognizer;

@@ -8,7 +8,7 @@ using System.Windows.Forms;
 namespace EDAP
 {
     // This class is to get the orientation of the ship relative to the target so that we can point at the target.
-    class CompassRecognizer
+    class CompassSensor
     {
         private PictureBox pictureBox2;
         
@@ -16,7 +16,7 @@ namespace EDAP
         private Mat template_closed = new Mat("res3/target-closed.png", ImreadModes.GrayScale);
         private const float match_threshold = 0.7f;
         private Screenshot screen;
-        public CompassRecognizer(Screenshot screen, PictureBox pictureBox2)
+        public CompassSensor(Screenshot screen, PictureBox pictureBox2)
         {
             this.pictureBox2 = pictureBox2;
             this.screen = screen;

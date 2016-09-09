@@ -138,8 +138,17 @@ namespace EDAP
             {
                 var quarterCircle = new OpenCvSharp.Point2f(circle.Radius, circle.Radius);
                 source.Rectangle(circle.Center - quarterCircle, circle.Center + quarterCircle, new Scalar(0, 255, 0));
-                    // new Pen(Color.FromName("green"), 2), circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Radius * 2, circle.Radius * 2);
             }
+
+
+            Mat templatepointer = new Mat("res3/squaretarget.png", ImreadModes.GrayScale);            
+            Mat matches = sourceGrey.MatchTemplate(templatepointer, TemplateMatchModes.CCoeffNormed);
+            Window w6 = new Window("pointer", matches);
+            OpenCvSharp.Point minloc, maxloc;
+            matches.MinMaxLoc(out minloc, out maxloc);
+
+            source.Rectangle(maxloc, maxloc + new OpenCvSharp.Point(templatepointer.Size().Width, templatepointer.Size().Height), new Scalar(255, 255, 0));
+
             Window w5 = new Window("result", source);
         }
 
