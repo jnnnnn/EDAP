@@ -18,7 +18,7 @@ namespace EDAP
         public Keyboard keyboard;
         private int jumps_remaining = 0;
         private uint alignFrames;
-
+        public const int TIMERINTERVAL_MS = 200;
         const float align_margin = 0.15f; // more -- jumps don't work (not aligned). less -- fine adjustment not allowed to work.
 
         public string status = "";
@@ -230,8 +230,14 @@ namespace EDAP
 
             keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
             keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
-            keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
-            keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
+            if (compass.Y < -align_margin && compass.Y > -2 * align_margin)
+                keyboard.TimedTap(ScanCode.NUMPAD_5, TIMERINTERVAL_MS); // gentler near the target
+            else
+                keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
+            if (compass.Y > align_margin && compass.Y < -2 * align_margin)
+                keyboard.TimedTap(ScanCode.NUMPAD_8, TIMERINTERVAL_MS); // gentler near the target
+            else
+                keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X > align_margin); // yaw right
 
@@ -276,7 +282,7 @@ namespace EDAP
                 missedFineFrames = 0;
                 ClearAlignKeys();
 
-                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed, and our measured initial velocity is probably going to be inaccurate due to sampling. Measured pitch acceleration was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09.
+                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed, and our measured initial velocity is probably going to be inaccurate due to sampling. Measured pitch acceleration was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09. In normal space pitch acceleration can be > 5000px/s/s which is difficult to deal with because even the rough alignment overshoots.
                  * 
                  * The main thing is that we get closer to 0 fairly quickly without holding down the key for too long and causing oscillation.
                  * 

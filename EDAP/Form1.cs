@@ -105,7 +105,7 @@ namespace EDAP
         private void Form1_Load(object sender, EventArgs e)
         {
             timer = new System.Windows.Forms.Timer();
-            timer.Interval = 200;
+            timer.Interval = PilotJumper.TIMERINTERVAL_MS;
             timer.Tick += Timer_Tick;
             timer.Start();
         }
