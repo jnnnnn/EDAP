@@ -268,8 +268,7 @@ namespace EDAP
                 return false;
             }
 
-            const float fineMargin = 3; // size of deadzone (in pixels)
-            const float fineVelocityCoeff = 0.01f; // target angular alignment velocity, in pixels per second per pixel offset
+            const float deadzone = 3; // size of deadzone (in pixels)
 
             if (oldOffset.X == 0 && oldOffset.Y == 0)
             {
@@ -282,19 +281,21 @@ namespace EDAP
                 missedFineFrames = 0;
                 ClearAlignKeys();
 
-                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed, and our measured initial velocity is probably going to be inaccurate due to sampling. Measured pitch acceleration was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09. In normal space pitch acceleration can be > 5000px/s/s which is difficult to deal with because even the rough alignment overshoots.
+                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed, and our measured initial velocity is probably going to be inaccurate due to sampling. Measured pitch acceleration in supercruise was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09. In normal space pitch acceleration can be > 5000px/s/s which is difficult to deal with because even the rough alignment overshoots.
                  * 
                  * The main thing is that we get closer to 0 fairly quickly without holding down the key for too long and causing oscillation.
                  * 
-                 * We get t from constant acceleration and then constant deceleration to v=0 at x=offset. solve x + v * t + 0.5 * a * t^2 = -(v/a + t) * (v + at) + 0.5 * a * (v/a + t)^2 for t 
-                 * gives t = -v/a +/- 1/(a*2**.5) * (v*v - 2*a*x)**.5.
+                 * We get t from constant acceleration for t seconds and then constant deceleration to v=0 at x=0. 
+                 * solve x + v * t + 0.5 * a * t^2 = -(v/a + t) * (v + at) + 0.5 * a * (v/a + t)^2 for t 
+                 * gives t = -v/a +/- 1/(a*2**.5) * (v*v - 2*a*x)**.5. 
+                 * (see constantaccel.py for a demonstration.)
                  * 
                 */
-                double aY = 5000; // px/s/s
+                double aY = 5000; // px/s/s    // it doesn't hurt us much if this is high, just can't get as close to the centre
                 double vY = velocity.Y; // px/s
                 double xY = offset.Y; // px
 
-                // correct for velocity sampling error
+                // correct for velocity sampling error. fixing this properly would require computing the estimated velocity based on our inputs
                 vY = (offset.Y > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.Y), Math.Abs(offset.Y) * timedelta); // assume we're travelling towards the target pretty fast already.
 
                 if (vY * vY - 2 * aY * xY < 0)
@@ -304,35 +305,36 @@ namespace EDAP
                 double tY2 = -vY / aY - 1 / aY * rootpartY;
                 double tY = Math.Max(tY1, tY2); // s
 
-                if (offset.Y < -fineMargin && aY > 0 && tY > 0.05)
+                if (offset.Y < -deadzone && aY > 0 && tY > 0.05)
                     keyboard.TimedTap(ScanCode.NUMPAD_8, (int)(tY * 1000)); // pitch down when offset.Y < 0
                 else
                     keyboard.Keyup(ScanCode.NUMPAD_8);
-                if (offset.Y > fineMargin && aY < 0 && tY > 0.05)
+                if (offset.Y > deadzone && aY < 0 && tY > 0.05)
                     keyboard.TimedTap(ScanCode.NUMPAD_5, (int)(tY * 1000)); // pitch up when offset.Y > 0
                 else
                     keyboard.Keyup(ScanCode.NUMPAD_5);
 
+                // now do it all again for the x axis
+
                 double aX = 3000; // px/s/s
                 double vX = velocity.X * 2; // px/s. x2 to ensure overestimation of sampling error.
                 double xX = offset.X; // px
-
-                // correct for velocity sampling error
-                vX = (offset.X > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.X), Math.Abs(offset.X) * timedelta); // assume we're travelling towards the target pretty fast already.
+                
+                vX = (offset.X > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.X), Math.Abs(offset.X) * timedelta);
 
                 if (vX * vX - 2 * aX * xX < 0)
-                    aX *= -1; // make sure sqrt is not imaginary
+                    aX *= -1;
                 double rootpartX = Math.Sqrt(0.5 * (vX * vX - 2 * aX * xX));
                 double tX1 = -vX / aX + 1 / aX * rootpartX;
                 double tX2 = -vX / aX - 1 / aX * rootpartX;
                 double tX = Math.Max(tX1, tX2); // s
 
-                if (offset.X < -fineMargin && aX > 0 && tX > 0.05)
-                    keyboard.TimedTap(ScanCode.NUMPAD_6, (int)(tX * 1000)); // pitch down when offset.X < 0
+                if (offset.X < -deadzone && aX > 0 && tX > 0.05)
+                    keyboard.TimedTap(ScanCode.NUMPAD_6, (int)(tX * 1000)); // yaw right when offset.X < 0
                 else
                     keyboard.Keyup(ScanCode.NUMPAD_6);
-                if (offset.X > fineMargin && aX < 0 && tX > 0.05)
-                    keyboard.TimedTap(ScanCode.NUMPAD_4, (int)(tX * 1000)); // pitch up when offset.X > 0
+                if (offset.X > deadzone && aX < 0 && tX > 0.05)
+                    keyboard.TimedTap(ScanCode.NUMPAD_4, (int)(tX * 1000)); // yaw left when offset.X > 0
                 else
                     keyboard.Keyup(ScanCode.NUMPAD_4);
 
