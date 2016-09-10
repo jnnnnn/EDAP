@@ -249,11 +249,11 @@ namespace EDAP
             Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
             Point2f offset;
             Point2f velocity;
+            double timedelta = (screen.timestamp - screen.oldTimestamp).TotalSeconds;
             try
             {
                 Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
                 offset = -triquadrant;
-                double timedelta = (screen.timestamp - screen.oldTimestamp).TotalSeconds;
                 velocity = (offset - oldOffset) * (1f / timedelta); // pixels / s   
             }
             catch (Exception e)
@@ -262,7 +262,7 @@ namespace EDAP
                 return false;
             }
 
-            const float fineMargin = 20; // size of deadzone (in pixels)
+            const float fineMargin = 3; // size of deadzone (in pixels)
             const float fineVelocityCoeff = 0.01f; // target angular alignment velocity, in pixels per second per pixel offset
 
             if (oldOffset.X == 0 && oldOffset.Y == 0)
@@ -276,32 +276,66 @@ namespace EDAP
                 missedFineFrames = 0;
                 ClearAlignKeys();
 
-                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed.  Measured pitch acceleration was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09.
+                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed, and our measured initial velocity is probably going to be inaccurate due to sampling. Measured pitch acceleration was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09.
                  * 
-                 * We get t from constant acceleration and then constant deceleration to v=0 at x=offset. solve v*t + 0.5*a*t^2 = -(v + a * t) / (2 * a) for t gives t = (-2v-1 +- sqrt(-8ax + 4v*v + 1))/(2a)
+                 * The main thing is that we get closer to 0 fairly quickly without holding down the key for too long and causing oscillation.
+                 * 
+                 * We get t from constant acceleration and then constant deceleration to v=0 at x=offset. solve x + v * t + 0.5 * a * t^2 = -(v/a + t) * (v + at) + 0.5 * a * (v/a + t)^2 for t 
+                 * gives t = -v/a +/- 1/(a*2**.5) * (v*v - 2*a*x)**.5.
                  * 
                 */
-                double aY = 720;
-                double vY = velocity.Y;
-                double xY = offset.Y;
+                double aY = 5000; // px/s/s
+                double vY = velocity.Y; // px/s
+                double xY = offset.Y; // px
 
-                if (-8 * aY * xY + 4 * vY * vY + 1 < 0)
-                    aY *= -1; // make sure sqrt is not imaginary by starting in the other direction
-                double rootpart = Math.Sqrt(-8 * aY * xY + 4 * vY * vY + 1);
-                double tY1 = (-2 * vY - 1 - rootpart) / (2 * aY);
-                double tY2 = (-2 * vY - 1 + rootpart) / (2 * aY);
-                if (offset.Y < 0 && aY > 0)
-                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff * 0.5); // pitch down when offset.Y < 0
-                keyboard.SetKeyState (ScanCode.NUMPAD_5, offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff * 0.5); // pitch up when offset.Y > 0
-                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff * 3); // yaw left when offset.X > 0
-                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff * 3); // yaw right when offset.X < 0
+                // correct for velocity sampling error
+                vY = (offset.Y > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.Y), Math.Abs(offset.Y) * timedelta); // assume we're travelling towards the target pretty fast already.
 
-                status = string.Format("{0:0}, {1:0}, {2:0}, {3:0}", offset.X, offset.Y, oldOffset.X, oldOffset.Y);                
+                if (vY * vY - 2 * aY * xY < 0)
+		            aY *= -1; // make sure sqrt is not imaginary
+                double rootpartY = Math.Sqrt(0.5 * (vY * vY - 2 * aY * xY));
+                double tY1 = -vY / aY + 1 / aY * rootpartY;
+                double tY2 = -vY / aY - 1 / aY * rootpartY;
+                double tY = Math.Max(tY1, tY2); // s
+
+                if (offset.Y < -fineMargin && aY > 0 && tY > 0.05)
+                    keyboard.TimedTap(ScanCode.NUMPAD_8, (int)(tY * 1000)); // pitch down when offset.Y < 0
+                else
+                    keyboard.Keyup(ScanCode.NUMPAD_8);
+                if (offset.Y > fineMargin && aY < 0 && tY > 0.05)
+                    keyboard.TimedTap(ScanCode.NUMPAD_5, (int)(tY * 1000)); // pitch up when offset.Y > 0
+                else
+                    keyboard.Keyup(ScanCode.NUMPAD_5);
+
+                double aX = 3000; // px/s/s
+                double vX = velocity.X * 2; // px/s. x2 to ensure overestimation of sampling error.
+                double xX = offset.X; // px
+
+                // correct for velocity sampling error
+                vX = (offset.X > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.X), Math.Abs(offset.X) * timedelta); // assume we're travelling towards the target pretty fast already.
+
+                if (vX * vX - 2 * aX * xX < 0)
+                    aX *= -1; // make sure sqrt is not imaginary
+                double rootpartX = Math.Sqrt(0.5 * (vX * vX - 2 * aX * xX));
+                double tX1 = -vX / aX + 1 / aX * rootpartX;
+                double tX2 = -vX / aX - 1 / aX * rootpartX;
+                double tX = Math.Max(tX1, tX2); // s
+
+                if (offset.X < -fineMargin && aX > 0 && tX > 0.05)
+                    keyboard.TimedTap(ScanCode.NUMPAD_6, (int)(tX * 1000)); // pitch down when offset.X < 0
+                else
+                    keyboard.Keyup(ScanCode.NUMPAD_6);
+                if (offset.X > fineMargin && aX < 0 && tX > 0.05)
+                    keyboard.TimedTap(ScanCode.NUMPAD_4, (int)(tX * 1000)); // pitch up when offset.X > 0
+                else
+                    keyboard.Keyup(ScanCode.NUMPAD_4);
+
+                status = string.Format("{0:0}, {1:0}, {2:0}, {3:0}", offset.X, offset.Y, oldOffset.X, oldOffset.Y);
                 Console.WriteLine(string.Format("Offset: {0}, OldOffset: {1}, Velocity: {2}", offset.ToString(), oldOffset.ToString(), velocity.ToString()));
             }
             oldOffset = offset; // save for next time
 
-            return offset.X < fineMargin * 2 && offset.Y < fineMargin * 2 && velocity.X < 5 && velocity.Y < 5;
+            return offset.X < 50 && offset.Y < 50 && Math.Abs(velocity.X) < 10 && Math.Abs(velocity.Y) < 10;
         }
 
         /// <summary>
