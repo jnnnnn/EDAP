@@ -118,10 +118,13 @@ namespace EDAP
         /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to press.</param>
         public void Keydown(ScanCode key)
         {
-            if (pressed_keys.Contains(key))
-                return;
+            lock (pressed_keys)
+            {
+                if (pressed_keys.Contains(key))
+                    return;
 
-            pressed_keys.Add(key);
+                pressed_keys.Add(key);
+            }
 
             // program doesn't recognize this.. 
             // PostMessage(hWnd, WM_KEYDOWN, ((IntPtr)key), (IntPtr)0);
@@ -154,10 +157,13 @@ namespace EDAP
         /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to release.</param>
         public void Keyup(ScanCode key)
         {
-            if (!pressed_keys.Contains(key))
-                return;
+            lock (pressed_keys)
+            {
+                if (!pressed_keys.Contains(key))
+                    return;
 
-            pressed_keys.Remove(key);
+                pressed_keys.Remove(key);
+            }
             SendInputWrapper.SendInput(new INPUT
             {
                 Type = (uint)InputType.Keyboard,
