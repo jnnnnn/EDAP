@@ -231,11 +231,11 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
             keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
             if (compass.Y < -align_margin && compass.Y > -2 * align_margin)
-                keyboard.TimedTap(ScanCode.NUMPAD_5, TIMERINTERVAL_MS); // gentler near the target
+                keyboard.TimedTap(ScanCode.NUMPAD_5, TIMERINTERVAL_MS / 2); // gentler near the target
             else
                 keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
             if (compass.Y > align_margin && compass.Y < -2 * align_margin)
-                keyboard.TimedTap(ScanCode.NUMPAD_8, TIMERINTERVAL_MS); // gentler near the target
+                keyboard.TimedTap(ScanCode.NUMPAD_8, TIMERINTERVAL_MS / 2); // gentler near the target
             else
                 keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
