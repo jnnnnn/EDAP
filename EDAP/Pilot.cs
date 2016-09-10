@@ -274,26 +274,29 @@ namespace EDAP
             else
             {                
                 missedFineFrames = 0;
-               
-                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff * 0.5); // pitch up
-                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff * 0.5); // pitch down
-                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff * 3); // yaw left
-                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff * 3); // yaw right
+                ClearAlignKeys();
 
-                status = string.Format("{0:0}, {1:0}, {2:0}, {3:0}", offset.X, offset.Y, oldOffset.X, oldOffset.Y);
-                /*
-                const float fineMarginY = 20; // size of deadzone (in pixels)
-                const float fineVelocityCoeffY = .1f; // desired duration before we reach "perfectly aligned", in seconds
-                const float fineMarginX = 20; // size of deadzone (in pixels)
-                const float fineVelocityCoeffX = .1f; // desired duration before we reach "perfectly aligned", in seconds
-
-                keyboard.SetKeyState(ScanCode.NUMPAD_5, offset.Y + fineVelocityCoeffY * velocity.Y >  fineMarginY); // pitch up
-                //keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y + fineVelocityCoeffY * velocity.Y < -fineMarginY); // pitch down
-                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X + fineVelocityCoeffX * velocity.X >  fineMarginX); // yaw left
-                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X + fineVelocityCoeffX * velocity.X < -fineMarginX); // yaw right
-                Console.WriteLine(string.Format("Offset: {0}, OldOffset: {1}, Velocity: {2}", offset.ToString(), oldOffset.ToString(), velocity.ToString()));
+                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed.  Measured pitch acceleration was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09.
+                 * 
+                 * We get t from constant acceleration and then constant deceleration to v=0 at x=offset. solve v*t + 0.5*a*t^2 = -(v + a * t) / (2 * a) for t gives t = (-2v-1 +- sqrt(-8ax + 4v*v + 1))/(2a)
+                 * 
                 */
+                double aY = 720;
+                double vY = velocity.Y;
+                double xY = offset.Y;
 
+                if (-8 * aY * xY + 4 * vY * vY + 1 < 0)
+                    aY *= -1; // make sure sqrt is not imaginary by starting in the other direction
+                double rootpart = Math.Sqrt(-8 * aY * xY + 4 * vY * vY + 1);
+                double tY1 = (-2 * vY - 1 - rootpart) / (2 * aY);
+                double tY2 = (-2 * vY - 1 + rootpart) / (2 * aY);
+                if (offset.Y < 0 && aY > 0)
+                keyboard.SetKeyState(ScanCode.NUMPAD_8, offset.Y < -fineMargin && velocity.Y / -offset.Y < fineVelocityCoeff * 0.5); // pitch down when offset.Y < 0
+                keyboard.SetKeyState (ScanCode.NUMPAD_5, offset.Y > fineMargin && -velocity.Y / offset.Y < fineVelocityCoeff * 0.5); // pitch up when offset.Y > 0
+                keyboard.SetKeyState(ScanCode.NUMPAD_4, offset.X > fineMargin && -velocity.X / offset.X < fineVelocityCoeff * 3); // yaw left when offset.X > 0
+                keyboard.SetKeyState(ScanCode.NUMPAD_6, offset.X < -fineMargin && velocity.X / -offset.X < fineVelocityCoeff * 3); // yaw right when offset.X < 0
+
+                status = string.Format("{0:0}, {1:0}, {2:0}, {3:0}", offset.X, offset.Y, oldOffset.X, oldOffset.Y);                
                 Console.WriteLine(string.Format("Offset: {0}, OldOffset: {1}, Velocity: {2}", offset.ToString(), oldOffset.ToString(), velocity.ToString()));
             }
             oldOffset = offset; // save for next time
