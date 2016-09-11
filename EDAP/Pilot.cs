@@ -358,7 +358,7 @@ namespace EDAP
 
             status = string.Format("{0:0}, {1:0}", offset.X, offset.Y);
 
-            return offset.X < 50 && offset.Y < 50; // && Math.Abs(velocity.X) < 100 && Math.Abs(velocity.Y) < 100;
+            return Math.Abs(offset.X) < 50 && Math.Abs(offset.Y) < 50; // && Math.Abs(velocity.X) < 100 && Math.Abs(velocity.Y) < 100;
         }
 
         /// <summary>
