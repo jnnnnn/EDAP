@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
@@ -33,8 +34,8 @@ namespace EDAP
 
         public IntPtr hWnd;
         private Bitmap screenshot;
-        public DateTime timestamp = DateTime.UtcNow;
-        public DateTime oldTimestamp = DateTime.UtcNow;
+        // a history of screenshot times for interpolation purposes
+        public List<DateTime> timestamp_history = new List<DateTime>() { DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow, DateTime.UtcNow };
         // keeps a copy of the screenshot so we only get it once and only as often as we need it
         public Bitmap bitmap
         {
@@ -42,8 +43,9 @@ namespace EDAP
             {
                 if (screenshot == null)
                 {
-                    screenshot = PrintWindow(hWnd);
-                    timestamp = DateTime.UtcNow;
+                    timestamp_history.Insert(0, DateTime.UtcNow);
+                    timestamp_history.RemoveAt(5);
+                    screenshot = PrintWindow(hWnd);         
 
                     if (Math.Abs(screenshot.Height - 1080) > 10)
                         throw new ArgumentException("Error: screenshot resultion wrong");
@@ -58,7 +60,6 @@ namespace EDAP
             {
                 screenshot.Dispose();
                 screenshot = null;
-                oldTimestamp = timestamp;
             }
         }
     }

@@ -1,6 +1,7 @@
 ﻿using EDAP.SendInput;
 using OpenCvSharp;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,8 +19,8 @@ namespace EDAP
         public Keyboard keyboard;
         private int jumps_remaining = 0;
         private uint alignFrames;
-        public const int TIMERINTERVAL_MS = 200;
-        const float align_margin = 0.15f; // more -- jumps don't work (not aligned). less -- fine adjustment not allowed to work.
+        public const int TIMERINTERVAL_MS = 100;
+        const float align_margin = 0.2f; // more -- jumps don't work (not aligned). less -- fine adjustment not allowed to work.
 
         public string status = "";
 
@@ -53,6 +54,7 @@ namespace EDAP
             state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             state |= PilotState.firstjump;
 
+            overshoots = new System.Drawing.Point();
             alignFrames = 0;
             last_jump_time = DateTime.UtcNow.AddHours(-1);
         }
@@ -149,7 +151,7 @@ namespace EDAP
             }
 
             // make sure we are travelling directly away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
-            // don't do it for the supercruise at the end because we can't reselect the in-system destination with the "N" key.
+            // don't do it for the supcruz at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
             {
                 // select star
@@ -230,22 +232,16 @@ namespace EDAP
 
             keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
             keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
-            if (compass.Y < -align_margin && compass.Y > -2 * align_margin)
-                keyboard.TimedTap(ScanCode.NUMPAD_5, TIMERINTERVAL_MS / 2); // gentler near the target
-            else
-                keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
-            if (compass.Y > align_margin && compass.Y < -2 * align_margin)
-                keyboard.TimedTap(ScanCode.NUMPAD_8, TIMERINTERVAL_MS / 2); // gentler near the target
-            else
-                keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
+            keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
+            keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X > align_margin); // yaw right
 
             return false;
         }
 
-        private Point2f oldOffset = new Point2f();
-        private int missedFineFrames = 0;
+        private System.Drawing.Point overshoots;
+        private List<Tuple<DateTime, Point2f>> finehistory = new List<Tuple<DateTime, Point2f>>();
         /// <summary>
         /// try to point accurately at the target by centering the triquadrant on the screen 
         /// </summary>
@@ -254,13 +250,18 @@ namespace EDAP
             int centreBox = 150;
             Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
             Point2f offset;
-            Point2f velocity;
-            double timedelta = (screen.timestamp - screen.oldTimestamp).TotalSeconds;
             try
             {
-                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
+                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));                
                 offset = -triquadrant;
-                velocity = (offset - oldOffset) * (1f / timedelta); // pixels / s   
+                finehistory.Insert(0, new Tuple<DateTime, Point2f>(screen.timestamp_history[0], offset));
+                if (finehistory.Count > 3)
+                    finehistory.RemoveAt(3);
+                if (finehistory.Count > 1)
+                {
+                    overshoots.X += offset.X * finehistory[1].Item2.X < 0 ? 1 : 0;
+                    overshoots.Y += offset.Y * finehistory[1].Item2.Y < 0 ? 1 : 0;
+                }
             }
             catch (Exception e)
             {
@@ -268,81 +269,95 @@ namespace EDAP
                 return false;
             }
 
-            const float deadzone = 3; // size of deadzone (in pixels)
-
-            if (oldOffset.X == 0 && oldOffset.Y == 0)
+            Point2f velocity = new Point2f();
+            List<DateTime> ts = screen.timestamp_history;
+            // if we have the two previous frames of finehistory, use that to estimate velocity
+            if (finehistory.Count > 2 &&
+                finehistory[0].Item1 == ts[0] &&
+                finehistory[1].Item1 == ts[1] &&
+                finehistory[2].Item1 == ts[2])
             {
-                missedFineFrames += 1;
-                ClearAlignKeys();
-                status = string.Format("{0:0.00}, {1:0.00} ({2} old offset not available)", offset.X, offset.Y, missedFineFrames);                
+                velocity.X = -(float)CompassSensor.QuadFitFinalVelocity(finehistory[2].Item2.X, finehistory[1].Item2.X, finehistory[0].Item2.X, ts[2], ts[1], ts[0]);
+                velocity.Y = -(float)CompassSensor.QuadFitFinalVelocity(finehistory[2].Item2.Y, finehistory[1].Item2.Y, finehistory[0].Item2.Y, ts[2], ts[1], ts[0]);
+                Console.WriteLine(string.Format("velocity: {0}; {1}", velocity, compassRecognizer.GetOrientationVelocity()));
             }
             else
-            {                
-                missedFineFrames = 0;
+            {
+                // I tried to use the compass' velocity here instead of fine velocity but it was too 
+                // noisy for a quadratic prediction, the fine and rough velocities were basically uncorrelated.
+                // Instead, pause until the fine velocity prediction has enough frames.
                 ClearAlignKeys();
-
-                /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. This is not quite accurate as the game will cut acceleration to 0 once we reach the maximum pitching speed, and our measured initial velocity is probably going to be inaccurate due to sampling. Measured pitch acceleration in supercruise was 720px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09. In normal space pitch acceleration can be > 5000px/s/s which is difficult to deal with because even the rough alignment overshoots.
-                 * 
-                 * The main thing is that we get closer to 0 fairly quickly without holding down the key for too long and causing oscillation.
-                 * 
-                 * We get t from constant acceleration for t seconds and then constant deceleration to v=0 at x=0. 
-                 * solve x + v * t + 0.5 * a * t^2 = -(v/a + t) * (v + at) + 0.5 * a * (v/a + t)^2 for t 
-                 * gives t = -v/a +/- 1/(a*2**.5) * (v*v - 2*a*x)**.5. 
-                 * (see constantaccel.py for a demonstration.)
-                 * 
-                */
-                double aY = 5000; // px/s/s    // it doesn't hurt us much if this is high, just can't get as close to the centre
-                double vY = velocity.Y; // px/s
-                double xY = offset.Y; // px
-
-                // correct for velocity sampling error. fixing this properly would require computing the estimated velocity based on our inputs
-                vY = (offset.Y > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.Y), Math.Abs(offset.Y) * timedelta); // assume we're travelling towards the target pretty fast already.
-
-                if (vY * vY - 2 * aY * xY < 0)
-		            aY *= -1; // make sure sqrt is not imaginary
-                double rootpartY = Math.Sqrt(0.5 * (vY * vY - 2 * aY * xY));
-                double tY1 = -vY / aY + 1 / aY * rootpartY;
-                double tY2 = -vY / aY - 1 / aY * rootpartY;
-                double tY = Math.Max(tY1, tY2); // s
-
-                if (offset.Y < -deadzone && aY > 0 && tY > 0.05)
-                    keyboard.TimedTap(ScanCode.NUMPAD_8, (int)(tY * 1000)); // pitch down when offset.Y < 0
-                else
-                    keyboard.Keyup(ScanCode.NUMPAD_8);
-                if (offset.Y > deadzone && aY < 0 && tY > 0.05)
-                    keyboard.TimedTap(ScanCode.NUMPAD_5, (int)(tY * 1000)); // pitch up when offset.Y > 0
-                else
-                    keyboard.Keyup(ScanCode.NUMPAD_5);
-
-                // now do it all again for the x axis
-
-                double aX = 3000; // px/s/s
-                double vX = velocity.X * 2; // px/s. x2 to ensure overestimation of sampling error.
-                double xX = offset.X; // px
-                
-                vX = (offset.X > 0 ? -1 : 1) * Math.Max(Math.Abs(velocity.X), Math.Abs(offset.X) * timedelta);
-
-                if (vX * vX - 2 * aX * xX < 0)
-                    aX *= -1;
-                double rootpartX = Math.Sqrt(0.5 * (vX * vX - 2 * aX * xX));
-                double tX1 = -vX / aX + 1 / aX * rootpartX;
-                double tX2 = -vX / aX - 1 / aX * rootpartX;
-                double tX = Math.Max(tX1, tX2); // s
-
-                if (offset.X < -deadzone && aX > 0 && tX > 0.05)
-                    keyboard.TimedTap(ScanCode.NUMPAD_6, (int)(tX * 1000)); // yaw right when offset.X < 0
-                else
-                    keyboard.Keyup(ScanCode.NUMPAD_6);
-                if (offset.X > deadzone && aX < 0 && tX > 0.05)
-                    keyboard.TimedTap(ScanCode.NUMPAD_4, (int)(tX * 1000)); // yaw left when offset.X > 0
-                else
-                    keyboard.Keyup(ScanCode.NUMPAD_4);
-
-                status = string.Format("{0:0}, {1:0}, {2:0}, {3:0}", offset.X, offset.Y, oldOffset.X, oldOffset.Y);
-                Console.WriteLine(string.Format("Offset: {0}, OldOffset: {1}, Velocity: {2}", offset.ToString(), oldOffset.ToString(), velocity.ToString()));
+                return false;
             }
-            oldOffset = offset; // save for next time
 
+            const float deadzone = 3; // size of deadzone (in pixels)
+            
+            /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. 
+             * This is not quite accurate as:
+             *  -  the game will cut acceleration to 0 once we reach the maximum pitching speed
+             *  - our measured initial velocity is probably going to be inaccurate due to sampling
+             *  - acceleration is damped at velocities, presumably to allow for fine adjustments. This is ok for us as well will just underestimate how long to press the key for.
+             *  
+             *  Measured pitch acceleration in supcruz was 1440px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09. In normal space pitch acceleration can be > 5000px/s/s which is difficult to deal with because even the rough alignment overshoots.
+            * 
+            * The main thing is that we get closer to 0 fairly quickly without holding down the key for too long and causing oscillation.
+            * 
+            * We get t from constant acceleration for t seconds and then constant deceleration to v=0 at x=0. 
+            * solve x + v * t + 0.5 * a * t^2 = -(v/a + t) * (v + at) + 0.5 * a * (v/a + t)^2 for t 
+            * gives t = -v/a +/- 1/(a*2**.5) * (v*v - 2*a*x)**.5. 
+            * (see constantaccel.py for a demonstration.)
+            * 
+            * todo: would be good to constantly refine aX and aY from previous key presses ( would also require quadratic fitting )
+            * 
+            * If you notice bouncing around or oscillation around the centre, increase aY and aX so the predictor knows how much effect pressing a key has.
+            */
+            double aY = 3000; // pitch acceleration while key pressed (deceleration while unpressed), in px/s/s. It doesn't hurt us much if this is high, just takes longer to get to the middle. Too low causes bouncing / oscillation.
+            double vY = velocity.Y; // px/s
+            double xY = offset.Y; // px
+
+            if (vY * vY - 2 * aY * xY < 0)
+		        aY *= -1; // make sure sqrt is not imaginary
+            double rootpartY = Math.Sqrt(0.5 * (vY * vY - 2 * aY * xY));
+            double tY1 = -vY / aY + 1 / aY * rootpartY;
+            double tY2 = -vY / aY - 1 / aY * rootpartY;
+            double tY = Math.Max(tY1, tY2); // s
+
+            tY -= 0.02; // take off 20ms to stop overshooting
+
+            if (offset.Y < -deadzone && aY > 0 && tY > 0.05 /* don't press a key for less than 50ms */)
+                keyboard.TimedTap(ScanCode.NUMPAD_8, (int)(tY * 1000)); // pitch down when offset.Y < 0
+            else
+                keyboard.Keyup(ScanCode.NUMPAD_8);
+            if (offset.Y > deadzone && aY < 0 && tY > 0.05)
+                keyboard.TimedTap(ScanCode.NUMPAD_5, (int)(tY * 1000)); // pitch up when offset.Y > 0
+            else
+                keyboard.Keyup(ScanCode.NUMPAD_5);
+
+            // now do it all again for the x axis
+
+            double aX = 2000; // // yaw acceleration while key pressed (deceleration while unpressed), in px/s/s.
+            double vX = velocity.X; // px/s
+            double xX = offset.X; // px
+                
+            if (vX * vX - 2 * aX * xX < 0)
+                aX *= -1;
+            double rootpartX = Math.Sqrt(0.5 * (vX * vX - 2 * aX * xX));
+            double tX1 = -vX / aX + 1 / aX * rootpartX;
+            double tX2 = -vX / aX - 1 / aX * rootpartX;
+            double tX = Math.Max(tX1, tX2); // s
+
+            //status = string.Format("v = {0:0}, x = {1}, t = {2:0}", vX, xX, tX * 1000);
+            if (offset.X < -deadzone && aX > 0 && tX > 0.05)
+                keyboard.TimedTap(ScanCode.NUMPAD_6, (int)(tX * 1000)); // yaw right when offset.X < 0
+            else
+                keyboard.Keyup(ScanCode.NUMPAD_6);
+            if (offset.X > deadzone && aX < 0 && tX > 0.05)
+                keyboard.TimedTap(ScanCode.NUMPAD_4, (int)(tX * 1000)); // yaw left when offset.X > 0
+            else
+                keyboard.Keyup(ScanCode.NUMPAD_4);
+
+            status = string.Format("{0:0}, {1:0}", offset.X, offset.Y);
+            
             return offset.X < 50 && offset.Y < 50 && Math.Abs(velocity.X) < 10 && Math.Abs(velocity.Y) < 10;
         }
 

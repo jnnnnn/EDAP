@@ -73,7 +73,7 @@ namespace EDAP
             Process proc = Process.GetProcessesByName(Properties.Settings.Default.ProcName).FirstOrDefault();
             if (proc == null)
             {
-                Console.WriteLine("Could not find main window. Run in Administrator mode, and check settings.");
+                label1.Text = "Could not find main window. Run in Administrator mode, and check settings.";
                 return;
             }
             hwnd = proc.MainWindowHandle;
