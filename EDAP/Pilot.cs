@@ -357,8 +357,8 @@ namespace EDAP
                 keyboard.Keyup(ScanCode.NUMPAD_4);
 
             status = string.Format("{0:0}, {1:0}", offset.X, offset.Y);
-            
-            return offset.X < 50 && offset.Y < 50 && Math.Abs(velocity.X) < 10 && Math.Abs(velocity.Y) < 10;
+
+            return offset.X < 50 && offset.Y < 50; // && Math.Abs(velocity.X) < 100 && Math.Abs(velocity.Y) < 100;
         }
 
         /// <summary>
@@ -381,16 +381,7 @@ namespace EDAP
                 status = e.Message;
                 return false;
             }
-
-            if (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) > 1.9)
-            {
-                ClearAlignKeys();
-                alignFrames += 1;
-                return alignFrames > 3; // antialign doesn't need much accuracy... this will just stop accidental noise
-            }
-            else
-                alignFrames = 0;
-
+                        
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
@@ -402,6 +393,14 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X > 0.1); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X < -0.1); // yaw right
 
+            // antialign doesn't need much accuracy... this will just stop accidental noise
+            alignFrames = (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) > 1.8) ? alignFrames + 1 : 0;
+            if (alignFrames > 3)
+            {
+                ClearAlignKeys();
+                return true;
+            }
+            
             return false;
         }
 
