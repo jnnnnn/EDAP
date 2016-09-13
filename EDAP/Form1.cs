@@ -35,6 +35,7 @@ namespace EDAP
         public Form1()
         {
             InitializeComponent();
+            Location = new Point(1920 - this.Size.Width, 0);
             keyboard = new Keyboard();
             screen = new Screenshot();
             cruiseSensor = new CruiseSensor();
