@@ -108,6 +108,7 @@ namespace EDAP
             Mat[] channels = source.Split();
             Mat blues2 = channels[0];
             Mat clean = blues2.EmptyClone();
+            clean.SetTo(0);
             blues2.CopyTo(clean, blues2.InRange(128, 255));
 
             double minval, maxval_closed, maxval_open;
