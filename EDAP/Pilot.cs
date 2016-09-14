@@ -447,6 +447,7 @@ namespace EDAP
 
             if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
             {
+                Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3");
                 keyboard.Tap(ScanCode.KEY_G); // disengage
                 state |= PilotState.CruiseEnd;
                 // these commands will initiate docking if we have a computer

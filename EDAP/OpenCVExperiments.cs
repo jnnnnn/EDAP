@@ -184,5 +184,24 @@ namespace EDAP
             matches.MinMaxLoc(out minVal, out maxVal);
             return minVal < 0.8; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
         }
+
+        public static void MatchSafDisengag2()
+        {
+            Bitmap screen = new Bitmap("Screenshot_0078.bmp");
+            Bitmap image = CompassSensor.Crop(screen, new Rectangle(800, 700, 350, 150));
+            Mat source = BitmapConverter.ToMat(image);
+            Mat blues = source.Split()[0];
+            Mat clean = blues.EmptyClone();
+            clean.SetTo(0); // make sure the matrix is blank.            
+            blues.CopyTo(clean, blues.InRange(250, 255));
+            Mat matches = clean.MatchTemplate(new Mat("res3/safdisengag250.png", ImreadModes.GrayScale), TemplateMatchModes.CCoeffNormed);
+            clean.ImWrite("safdisengag250.png");
+            double minVal, maxVal;
+            matches.MinMaxLoc(out minVal, out maxVal);
+            Window w2 = new Window(clean);
+            Window w3 = new Window(matches);
+            Window w4 = new Window(matches.InRange(0.0, 0.5));
+            Window w5 = new Window(matches.InRange(0.4, 1));
+        }
     }
 }

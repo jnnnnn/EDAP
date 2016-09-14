@@ -62,7 +62,7 @@ namespace EDAP
             return maxloc + new OpenCvSharp.Point(templatepointer.Size().Width, templatepointer.Size().Height) * 0.5;            
         }
                 
-        Mat templatesaf = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
+        Mat templatesaf = new Mat("res3/safdisengag250.png", ImreadModes.GrayScale);
         
         public bool MatchSafDisengag()
         {
@@ -73,12 +73,12 @@ namespace EDAP
             Mat blues = source.Split()[0];
             Mat clean = blues.EmptyClone();
             clean.SetTo(0); // make sure the matrix is blank.            
-            blues.CopyTo(clean, blues.InRange(128, 255));            
-            Mat matches = clean.MatchTemplate(templatesaf, TemplateMatchModes.SqDiffNormed);
+            blues.CopyTo(clean, blues.InRange(250, 255));            
+            Mat matches = clean.MatchTemplate(templatesaf, TemplateMatchModes.CCoeffNormed);
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
             
-            return minVal < 0.8; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
+            return maxVal > 0.5; // see experiments
         }
     }
 }
