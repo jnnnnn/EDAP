@@ -290,7 +290,7 @@ namespace EDAP
                 return false;
             }
 
-            const float deadzone = 3; // size of deadzone (in pixels)
+            const float deadzone = 20; // size of deadzone (in pixels)
             
             /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. 
              * This is not quite accurate as:
@@ -437,6 +437,7 @@ namespace EDAP
         /// </summary>
         private void Cruise()
         {
+
             if (SecondsSinceLastJump > 60 && OncePerJump(PilotState.cruiseStart))
             {
                 Sounds.Play("cruise mode engaged.mp3");

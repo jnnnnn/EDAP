@@ -59,7 +59,8 @@ namespace EDAP
 
             Mat[] channels = source.Split();
             Mat blues2 = channels[0];
-            Mat clean = new Mat(blues2.Size(), blues2.Type());
+            Mat clean = blues2.EmptyClone();
+            clean.SetTo(0);
             blues2.CopyTo(clean, blues2.InRange(128, 255));
             Window w2 = new Window(clean);
             Graphics g2 = Graphics.FromImage(compasses);
@@ -168,21 +169,20 @@ namespace EDAP
 
             Bitmap image = (Bitmap)Image.FromFile("res3/safdisengagtest.png");
             Mat source = BitmapConverter.ToMat(image);
-            Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
-
-            Mat[] channels = source.Split();
-            Mat blues2 = channels[0];
-            Mat clean = new Mat(blues2.Size(), blues2.Type());
-            blues2.CopyTo(clean, blues2.InRange(128, 255));
+            
+            Mat blues2 = source.Split()[0];
+            Mat clean = blues2.EmptyClone();
+            clean.SetTo(0);
+            blues2.CopyTo(clean, blues2.InRange(200, 255));
             Window w2 = new Window(clean);
 
             Mat template = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
             Mat matches = blues2.MatchTemplate(template, TemplateMatchModes.SqDiffNormed);
             Window w3 = new Window(matches);
-            Window w4 = new Window(matches.InRange(0.0, 0.9));
+            Window w4 = new Window(matches.InRange(0.0, 0.8));
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
-            return minVal < 0.5; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
+            return minVal < 0.8; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
         }
     }
 }

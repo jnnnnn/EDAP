@@ -107,17 +107,17 @@ namespace EDAP
 
             Mat[] channels = source.Split();
             Mat blues2 = channels[0];
-            Mat clean = new Mat(blues2.Size(), blues2.Type());
+            Mat clean = blues2.EmptyClone();
             blues2.CopyTo(clean, blues2.InRange(128, 255));
 
             double minval, maxval_closed, maxval_open;
             OpenCvSharp.Point minloc, maxloc_closed, maxloc_open;
 
-            Mat result_closed = new Mat(clean.Size(), clean.Type());
+            Mat result_closed = clean.EmptyClone();
             Cv2.MatchTemplate(clean, template_closed, result_closed, TemplateMatchModes.CCoeffNormed);
             Cv2.MinMaxLoc(result_closed, out minval, out maxval_closed, out minloc, out maxloc_closed);
 
-            Mat result_open = new Mat(clean.Size(), clean.Type());
+            Mat result_open = clean.EmptyClone();
             Cv2.MatchTemplate(clean, template_open, result_open, TemplateMatchModes.CCoeffNormed);
             Cv2.MinMaxLoc(result_open, out minval, out maxval_open, out minloc, out maxloc_open);
             Graphics g = Graphics.FromImage(croppedCompass);

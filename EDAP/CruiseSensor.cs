@@ -63,22 +63,22 @@ namespace EDAP
         }
                 
         Mat templatesaf = new Mat("res3/safdisengag.png", ImreadModes.GrayScale);
-
+        
         public bool MatchSafDisengag()
         {
             // MatchTemplate doesn't allow for scaling / rotation. Allow more leeway by reducing resolution?
 
-            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(800, 700, 300, 100));
-            Mat source = BitmapConverter.ToMat(image);
-            Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);            
+            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(800, 700, 300, 150));
+            Mat source = BitmapConverter.ToMat(image);            
             Mat blues = source.Split()[0];
-            Mat clean = new Mat(blues.Size(), blues.Type());
-            blues.CopyTo(clean, blues.InRange(128, 255));
+            Mat clean = blues.EmptyClone();
+            clean.SetTo(0); // make sure the matrix is blank.            
+            blues.CopyTo(clean, blues.InRange(128, 255));            
             Mat matches = clean.MatchTemplate(templatesaf, TemplateMatchModes.SqDiffNormed);
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
             
-            return minVal < 0.5; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
+            return minVal < 0.8; // for SqDiffNormed, perfect match 0.1; no match [0.99 .. 1.0].
         }
     }
 }
