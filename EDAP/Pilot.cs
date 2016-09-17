@@ -150,6 +150,13 @@ namespace EDAP
                 }
             }
 
+            // cruise away from the star for an extra ten seconds after the last jump to make it less likely that manual intervention is required to dodge the star
+            if (SecondsSinceLastJump < 50 && jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
+            {
+                keyboard.Clear();
+                return;
+            }
+
             // make sure we are travelling directly away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
             // don't do it for the supcruz at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
@@ -179,6 +186,9 @@ namespace EDAP
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
+
+            if (state.HasFlag(PilotState.CruiseEnd))
+                return;
 
             if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
