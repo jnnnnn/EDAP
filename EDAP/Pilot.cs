@@ -96,6 +96,22 @@ namespace EDAP
             if (OncePerJump(PilotState.clearedJump))
                 keyboard.Clear();
 
+            // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
+            if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
+            {
+                if (OncePerJump(PilotState.swoopEnd))
+                    keyboard.Tap(ScanCode.KEY_X); // cut throttle
+
+                if (SecondsSinceLastJump < 40)
+                    return;
+
+                if (OncePerJump(PilotState.SelectStar))
+                    SelectStar();
+
+                Align();
+                return;
+            }
+
             // dodge the star
             if (SecondsSinceLastJump < 40)
             {
@@ -124,18 +140,8 @@ namespace EDAP
             // don't do it for the supcruz at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
             {
-                // select star
                 if (OncePerJump(PilotState.SelectStar))
-                {
-                    keyboard.Tap(ScanCode.KEY_1); // nav menu
-                    Thread.Sleep(100); // game takes a while to catch up with this.
-                    keyboard.Tap(ScanCode.KEY_D); // right to select nearest object in system (the central star)
-                    keyboard.Tap(ScanCode.SPACEBAR); // open menu
-                    Thread.Sleep(100);
-                    keyboard.Tap(ScanCode.SPACEBAR); // select the object
-                    Thread.Sleep(100);
-                    keyboard.Tap(ScanCode.KEY_1); // close nav menu
-                }
+                    SelectStar();
 
                 // 45 because we want to make sure the honk finishes before opening the system map
                 if (AntiAlign() && SecondsSinceLastJump > 45)
@@ -160,6 +166,19 @@ namespace EDAP
             }
             else if (jumps_remaining > 0 && Align())
                 Jump();
+        }
+
+        // select star
+        private void SelectStar()
+        {
+            keyboard.Tap(ScanCode.KEY_1); // nav menu
+            Thread.Sleep(100); // game takes a while to catch up with this.
+            keyboard.Tap(ScanCode.KEY_D); // right to select nearest object in system (the central star)
+            keyboard.Tap(ScanCode.SPACEBAR); // open menu
+            Thread.Sleep(100);
+            keyboard.Tap(ScanCode.SPACEBAR); // select the object
+            Thread.Sleep(100);
+            keyboard.Tap(ScanCode.KEY_1); // close nav menu
         }
 
         private void Jump()
