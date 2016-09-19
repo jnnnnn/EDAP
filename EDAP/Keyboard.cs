@@ -125,9 +125,12 @@ namespace EDAP
         /// </summary>
         public void Clear()
         {
-            // inefficient but ok because there will only ever be up to three keys pressed at once
-            while (pressed_keys.Count > 0)
-                Keyup(pressed_keys.ToArray()[0]);
+            lock (pressed_keys)
+            {
+                // inefficient but ok because there will only ever be up to three keys pressed at once
+                while (pressed_keys.Count > 0)
+                    Keyup(pressed_keys.ToArray()[0]);
+            }
         }
 
         /// <summary>

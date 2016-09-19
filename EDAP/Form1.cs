@@ -139,5 +139,10 @@ namespace EDAP
             pilot.state ^= PilotJumper.PilotState.Honk;
             Focusize();
         }
+        
+        private void numericUpDown1_MouseDown(object sender, MouseEventArgs e)
+        {
+            enabled = false;
+        }
     }
 }
