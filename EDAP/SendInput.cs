@@ -130,8 +130,8 @@ namespace EDAP.SendInput
         CTRL_L = 0x1D,
         ALT_L = 0x38, 
         SPACEBAR = 0x39,
-        ALT_R = 0xE038,
-        CTRL_R = 0xE01D,
+        // E0,38    Right Alt
+        // E0,1D    Right Control
         // E0,52 	Insert 	na 	
         // E0,53 	Delete 	na 	
         // E0,4B 	Left Arrow 	na

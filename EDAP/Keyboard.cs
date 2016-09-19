@@ -31,79 +31,7 @@ namespace EDAP
         {
             pressed_keys = new HashSet<ScanCode>();
         }
-
-        /// <summary>
-        /// Returns the scan keycode of a given letter or number on the keyboard.
-        /// </summary>
-        public static ScanCode LetterToKey(char letter)
-        {
-            switch (letter)
-            {
-                case '0': return ScanCode.KEY_0;
-                case '1': return ScanCode.KEY_1;
-                case '2': return ScanCode.KEY_2;
-                case '3': return ScanCode.KEY_3;
-                case '4': return ScanCode.KEY_4;
-                case '5': return ScanCode.KEY_5;
-                case '6': return ScanCode.KEY_6;
-                case '7': return ScanCode.KEY_7;
-                case '8': return ScanCode.KEY_8;
-                case '9': return ScanCode.KEY_9;
-                case 'A': return ScanCode.KEY_A;
-                case 'B': return ScanCode.KEY_B;
-                case 'C': return ScanCode.KEY_C;
-                case 'D': return ScanCode.KEY_D;
-                case 'E': return ScanCode.KEY_E;
-                case 'F': return ScanCode.KEY_F;
-                case 'G': return ScanCode.KEY_G;
-                case 'H': return ScanCode.KEY_H;
-                case 'I': return ScanCode.KEY_I;
-                case 'J': return ScanCode.KEY_J;
-                case 'K': return ScanCode.KEY_K;
-                case 'L': return ScanCode.KEY_L;
-                case 'M': return ScanCode.KEY_M;
-                case 'N': return ScanCode.KEY_N;
-                case 'O': return ScanCode.KEY_O;
-                case 'P': return ScanCode.KEY_P;
-                case 'Q': return ScanCode.KEY_Q;
-                case 'R': return ScanCode.KEY_R;
-                case 'S': return ScanCode.KEY_S;
-                case 'T': return ScanCode.KEY_T;
-                case 'U': return ScanCode.KEY_U;
-                case 'V': return ScanCode.KEY_V;
-                case 'W': return ScanCode.KEY_W;
-                case 'X': return ScanCode.KEY_X;
-                case 'Y': return ScanCode.KEY_Y;
-                case 'Z': return ScanCode.KEY_Z;
-                default:
-                    throw new Exception("Unrecognized letter or number");
-            }
-        }
-
-        /// <summary>
-        /// Returns the scan keycode of one of the numbers on the numpad.
-        /// </summary>
-        /// <param name="letter"></param>
-        /// <returns></returns>
-        public static ScanCode NumpadToKey(char letter)
-        {
-            switch (letter)
-            {
-                case '0': return ScanCode.NUMPAD_0;
-                case '1': return ScanCode.NUMPAD_1;
-                case '2': return ScanCode.NUMPAD_2;
-                case '3': return ScanCode.NUMPAD_3;
-                case '4': return ScanCode.NUMPAD_4;
-                case '5': return ScanCode.NUMPAD_5;
-                case '6': return ScanCode.NUMPAD_6;
-                case '7': return ScanCode.NUMPAD_7;
-                case '8': return ScanCode.NUMPAD_8;
-                case '9': return ScanCode.NUMPAD_9;
-                default:
-                    throw new Exception("Invalid numpad key");
-            }            
-        }
-
+        
         public void SetKeyState(ScanCode key, bool down)
         {
             if (down)
@@ -132,7 +60,7 @@ namespace EDAP
             // need to use sendinput instead
             // this means the target program must be the foreground window :(
 
-            // program also doesn't recognize virtual key codes.. 
+            // program also doesn't recognize virtual key codes for anything except text chat.. 
 
             SendInputWrapper.SendInput(new INPUT
             {
@@ -152,7 +80,7 @@ namespace EDAP
         }
         
         /// <summary>
-        /// Immediately release a key.
+        /// Immediately release a key, by sending a keyup event to the game.
         /// </summary>
         /// <param name="key">The scan code (NOT the VK_ keycode!) of the key to release.</param>
         public void Keyup(ScanCode key)

@@ -20,7 +20,7 @@ namespace EDAP
         private int jumps_remaining = 0;
         private uint alignFrames;
         public const int TIMERINTERVAL_MS = 100;
-        const float align_margin = 0.2f; // more -- jumps don't work (not aligned). less -- fine adjustment not allowed to work.
+        const float align_margin = 0.15f; // more -- fine adjustment won't work because target not in view. less -- fine adjustment not fully utilized; noise from compass may cause problems
 
         public string status = "";
 
@@ -75,43 +75,6 @@ namespace EDAP
             return false;
         }
 
-        private void Jump()
-        {
-            ClearAlignKeys();
-            keyboard.Tap(ScanCode.KEY_G); // jump
-            keyboard.Tap(ScanCode.KEY_F); // full throttle
-            state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
-            last_jump_time = DateTime.UtcNow;
-            jumps_remaining -= 1;
-
-            if (state.HasFlag(PilotState.SysMap))
-            {
-                keyboard.Tap(ScanCode.KEY_6); // open system map
-                Task.Delay(6000).ContinueWith(t => keyboard.Keydown(ScanCode.KEY_K)); // scroll right on system map
-                Task.Delay(7000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_K));
-                Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.F10)); // screenshot the system map                
-            }
-            if (jumps_remaining < 1)
-            {
-                Sounds.PlayOneOf("this is the last jump.mp3", "once more with feeling.mp3", "one jump remaining.mp3");
-                Task.Delay(30000).ContinueWith(t =>
-                {
-                    // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
-                    keyboard.Keydown(ScanCode.KEY_X);  // cut throttle
-                });
-                Task.Delay(50000).ContinueWith(_ =>
-                {
-                    keyboard.Keyup(ScanCode.KEY_X);
-                    Sounds.Play("you have arrived.mp3");
-                });
-            }
-        }
-
-        internal void Idle()
-        {
-            // todo: recognize but don't act
-        }
-
         /// <summary>
         /// Handle an input frame by setting which keys are pressed.
         /// </summary>        
@@ -157,14 +120,14 @@ namespace EDAP
                 // select star
                 if (OncePerJump(PilotState.SelectStar))
                 {
-                    keyboard.Tap(ScanCode.KEY_1);
+                    keyboard.Tap(ScanCode.KEY_1); // nav menu
                     Thread.Sleep(100); // game takes a while to catch up with this.
-                    keyboard.Tap(ScanCode.KEY_D);
-                    keyboard.Tap(ScanCode.SPACEBAR);
+                    keyboard.Tap(ScanCode.KEY_D); // right to select nearest object in system (the central star)
+                    keyboard.Tap(ScanCode.SPACEBAR); // open menu
                     Thread.Sleep(100);
-                    keyboard.Tap(ScanCode.SPACEBAR);
+                    keyboard.Tap(ScanCode.SPACEBAR); // select the object
                     Thread.Sleep(100);
-                    keyboard.Tap(ScanCode.KEY_1);
+                    keyboard.Tap(ScanCode.KEY_1); // close nav menu
                 }
 
                 // 45 because we want to make sure the honk finishes before opening the system map
@@ -189,6 +152,43 @@ namespace EDAP
                 Jump();
         }
 
+        private void Jump()
+        {
+            ClearAlignKeys();
+            keyboard.Tap(ScanCode.KEY_G); // jump
+            keyboard.Tap(ScanCode.KEY_F); // full throttle
+            state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
+            last_jump_time = DateTime.UtcNow;
+            jumps_remaining -= 1;
+
+            if (state.HasFlag(PilotState.SysMap))
+            {
+                keyboard.Tap(ScanCode.KEY_6); // open system map
+                Task.Delay(6000).ContinueWith(t => keyboard.Keydown(ScanCode.KEY_K)); // scroll right on system map
+                Task.Delay(7000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_K));
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.F10)); // screenshot the system map                
+            }
+            if (jumps_remaining < 1)
+            {
+                Sounds.PlayOneOf("this is the last jump.mp3", "once more with feeling.mp3", "one jump remaining.mp3");
+                Task.Delay(30000).ContinueWith(t =>
+                {
+                    // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
+                    keyboard.Keydown(ScanCode.KEY_X);  // cut throttle
+                });
+                Task.Delay(50000).ContinueWith(_ =>
+                {
+                    keyboard.Keyup(ScanCode.KEY_X);
+                    Sounds.Play("you have arrived.mp3");
+                });
+            }
+        }
+
+        internal void Idle()
+        {
+            // todo: recognize but don't act
+        }
+        
         private void ClearAlignKeys()
         {
             keyboard.Keyup(ScanCode.NUMPAD_7);
@@ -320,7 +320,7 @@ namespace EDAP
             double rootpartY = Math.Sqrt(0.5 * (vY * vY - 2 * aY * xY));
             double tY1 = -vY / aY + 1 / aY * rootpartY;
             double tY2 = -vY / aY - 1 / aY * rootpartY;
-            double tY = Math.Max(tY1, tY2); // s
+            double tY = Math.Max(tY1, tY2); // in seconds
 
             tY -= 0.02; // take off 20ms to stop overshooting
 
@@ -394,7 +394,7 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X < -0.1); // yaw right
 
             // antialign doesn't need much accuracy... this will just stop accidental noise
-            alignFrames = (Math.Abs(compass.X) < 0.1 && Math.Abs(compass.Y) > 1.8) ? alignFrames + 1 : 0;
+            alignFrames = (Math.Abs(compass.X) < 0.2 && Math.Abs(compass.Y) > 1.8) ? alignFrames + 1 : 0;
             if (alignFrames > 3)
             {
                 ClearAlignKeys();
@@ -442,7 +442,7 @@ namespace EDAP
             {
                 Sounds.Play("cruise mode engaged.mp3");
                 keyboard.Tap(ScanCode.KEY_F); // full throttle
-                keyboard.Tap(ScanCode.KEY_Q); // drop 25% throttle
+                keyboard.Tap(ScanCode.KEY_Q); // drop 25% throttle, to 75%
             }
 
             if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
@@ -457,9 +457,9 @@ namespace EDAP
                 {
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking thing if cruise gets turned off
-                    keyboard.Tap(ScanCode.KEY_1); // nav menu           
-                    Thread.Sleep(200); // game needs time to open this menu         
-                    keyboard.Tap(ScanCode.KEY_E); // tab right65765
+                    keyboard.Tap(ScanCode.KEY_1); // nav menu
+                    Thread.Sleep(200); // game needs time to open this menu
+                    keyboard.Tap(ScanCode.KEY_E); // tab right
                     Thread.Sleep(200); // game needs time to realise key was unpressed
                     keyboard.Tap(ScanCode.KEY_E); // tab right
                     keyboard.Tap(ScanCode.SPACEBAR); // select first contact (the station)
