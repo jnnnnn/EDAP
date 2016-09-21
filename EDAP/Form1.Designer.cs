@@ -61,7 +61,7 @@ namespace EDAP
             this.buttonAuto.TabIndex = 0;
             this.buttonAuto.Text = "AUTO";
             this.buttonAuto.UseVisualStyleBackColor = false;
-            this.buttonAuto.Click += new System.EventHandler(this.button1_Click);
+            this.buttonAuto.MouseDown += new System.Windows.Forms.MouseEventHandler(this.buttonAuto_MouseDown);
             // 
             // label1
             // 

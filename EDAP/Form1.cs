@@ -49,7 +49,7 @@ namespace EDAP
             pilot.cruiseSensor = cruiseSensor;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
         {
             enabled = !enabled;
 
@@ -60,7 +60,7 @@ namespace EDAP
 
             keyboard.Clear();
             pilot.Reset();
-            
+
             Focusize();
 
             lastClick = DateTime.UtcNow;
