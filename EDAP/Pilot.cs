@@ -119,6 +119,13 @@ namespace EDAP
                 return;
             }
 
+            // swoop a bit more if last jump because slow ship kept hitting star
+            if (jumps_remaining == 0 && SecondsSinceLastJump < 45)
+            {
+                Swoop();
+                return;
+            }
+
             if (OncePerJump(PilotState.swoopEnd))
             {
                 keyboard.Tap(ScanCode.KEY_F); // full throttle           
