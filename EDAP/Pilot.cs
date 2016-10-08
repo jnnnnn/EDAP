@@ -120,7 +120,7 @@ namespace EDAP
             }
 
             // swoop a bit more if last jump because slow ship kept hitting star
-            if (jumps_remaining == 0 && SecondsSinceLastJump < 45)
+            if (jumps_remaining < 1 && SecondsSinceLastJump < 45)
             {
                 Swoop();
                 return;
@@ -244,24 +244,30 @@ namespace EDAP
         /// <returns>true if we are pointing at the target</returns>
         private bool Align()
         {
+            status = "";
+            try
+            {
+                return FineAlign();
+            }
+            catch (Exception e)
+            {
+                status = e.Message;                
+            }
+
             Point2f compass;
             try
             {
                 compass = compassRecognizer.GetOrientation();
-                status = string.Format("{0:0.0}, {1:0.0}", compass.X, compass.Y);
+                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;
             }
             catch (Exception e)
             {
                 ClearAlignKeys();
                 alignFrames = 0;
-                status = e.Message;
+                status = e.Message + "\n" + status;
                 return false;
             }
-
-            double wrongness = Math.Sqrt(compass.X * compass.X + compass.Y * compass.Y);
-            if (wrongness < align_margin)
-                return FineAlign();
-
+            
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
@@ -279,32 +285,25 @@ namespace EDAP
         private System.Drawing.Point overshoots;
         private List<Tuple<DateTime, Point2f>> finehistory = new List<Tuple<DateTime, Point2f>>();
         /// <summary>
-        /// try to point accurately at the target by centering the triquadrant on the screen 
+        /// try to point accurately at the target by centering the little yellow square in the triquadrant (the target) on the screen 
         /// </summary>
         private bool FineAlign()
         {
             int centreBox = 150;
             Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
             Point2f offset;
-            try
-            {
-                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));                
-                offset = -triquadrant;
-                finehistory.Insert(0, new Tuple<DateTime, Point2f>(screen.timestamp_history[0], offset));
-                if (finehistory.Count > 3)
-                    finehistory.RemoveAt(3);
-                if (finehistory.Count > 1)
-                {
-                    overshoots.X += offset.X * finehistory[1].Item2.X < 0 ? 1 : 0;
-                    overshoots.Y += offset.Y * finehistory[1].Item2.Y < 0 ? 1 : 0;
-                }
-            }
-            catch (Exception e)
-            {
-                status = e.Message;
-                return false;
-            }
 
+            Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));                
+            offset = -triquadrant;
+            finehistory.Insert(0, new Tuple<DateTime, Point2f>(screen.timestamp_history[0], offset));
+            if (finehistory.Count > 3)
+                finehistory.RemoveAt(3);
+            if (finehistory.Count > 1)
+            {
+                overshoots.X += offset.X * finehistory[1].Item2.X < 0 ? 1 : 0;
+                overshoots.Y += offset.Y * finehistory[1].Item2.Y < 0 ? 1 : 0;
+            }
+            
             Point2f velocity = new Point2f();
             List<DateTime> ts = screen.timestamp_history;
             // if we have the two previous frames of finehistory, use that to estimate velocity
@@ -330,9 +329,9 @@ namespace EDAP
             
             /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. 
              * This is not quite accurate as:
-             *  -  the game will cut acceleration to 0 once we reach the maximum pitching speed
+             *  - the game will cut acceleration to 0 once we reach the maximum pitching speed
              *  - our measured initial velocity is probably going to be inaccurate due to sampling
-             *  - acceleration is damped at velocities, presumably to allow for fine adjustments. This is ok for us as well will just underestimate how long to press the key for.
+             *  - acceleration is damped at low velocities, presumably to allow for fine adjustments. This is ok as we will just underestimate how long to press the key for.
              *  
              *  Measured pitch acceleration in supcruz was 1440px/s/s at 1080p up to a maximum pitch rate of 142px/s at optimal speed/throttle (75%) for a python on 2016-10-09. In normal space pitch acceleration can be > 5000px/s/s which is difficult to deal with because even the rough alignment overshoots.
             * 
