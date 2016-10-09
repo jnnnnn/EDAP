@@ -40,6 +40,7 @@ namespace EDAP
             Cruise = 1 << 9,
             CruiseEnd = 1 << 10,
             Honk = 1 << 11,
+            Enabled = 1 << 12
         }
 
         public PilotState state;
@@ -51,7 +52,7 @@ namespace EDAP
 
         public void Reset()
         {
-            state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
+            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             state |= PilotState.firstjump;
 
             overshoots = new System.Drawing.Point();
@@ -162,10 +163,7 @@ namespace EDAP
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
-
-            if (state.HasFlag(PilotState.CruiseEnd))
-                return;
-
+            
             if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
                 Align();
@@ -193,7 +191,7 @@ namespace EDAP
             ClearAlignKeys();
             keyboard.Tap(ScanCode.KEY_G); // jump
             keyboard.Tap(ScanCode.KEY_F); // full throttle
-            state &= PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
+            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             last_jump_time = DateTime.UtcNow;
             jumps_remaining -= 1;
 
@@ -482,9 +480,10 @@ namespace EDAP
 
             if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
             {
-                Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3");
-                keyboard.Tap(ScanCode.KEY_G); // disengage
+                Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3", "autopilot disengaged.mp3");
+                keyboard.Tap(ScanCode.KEY_G); // "Safe Disengage"
                 state |= PilotState.CruiseEnd;
+                state &= ~PilotState.Enabled; // disable! we've arrived!
                 // these commands will initiate docking if we have a computer
                 Task.Delay(6000).ContinueWith(t => keyboard.Tap(ScanCode.TAB)); // boost
                 Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_X)); // cut throttle

@@ -13,8 +13,7 @@ namespace EDAP
         public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
         private System.Windows.Forms.Timer timer;
-        private bool enabled = false;
-
+        
         public Screenshot screen;
         private Keyboard keyboard;
         private PilotJumper pilot;
@@ -51,12 +50,10 @@ namespace EDAP
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
         {
-            enabled = !enabled;
+            pilot.state ^= PilotJumper.PilotState.Enabled;
 
-            if (enabled)
+            if (pilot.state.HasFlag(PilotJumper.PilotState.Enabled))
                 Sounds.Play("autopilot engaged.mp3");
-            else
-                Sounds.Play("autopilot disengaged.mp3");
 
             keyboard.Clear();
             pilot.Reset();
@@ -84,11 +81,7 @@ namespace EDAP
             numericUpDown1.Value = pilot.Jumps;
 
             SetButtonColors();
-
-            if (enabled)
-                pilot.Act();
-            else
-                pilot.Idle();                            
+            pilot.Act();
             label1.Text = pilot.status;
             
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
@@ -97,7 +90,7 @@ namespace EDAP
 
         private void SetButtonColors()
         {
-            buttonAuto.ForeColor = enabled ? Color.Green : Color.Coral;
+            buttonAuto.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Enabled) ? Color.Green : Color.Coral;
             buttonCruise.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Cruise) ? Color.Green : Color.Coral;
             buttonMap.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.SysMap) ? Color.Green : Color.Coral;
             buttonHorn.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Honk) ? Color.Green : Color.Coral;
@@ -142,7 +135,8 @@ namespace EDAP
         
         private void numericUpDown1_MouseDown(object sender, MouseEventArgs e)
         {
-            enabled = false;
+            // disable when the mouse goes down on the jump count control (so that key presses don't interrupt user input)
+            pilot.state &= ~PilotJumper.PilotState.Enabled;
         }
     }
 }
