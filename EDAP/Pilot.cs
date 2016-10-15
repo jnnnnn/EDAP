@@ -9,8 +9,11 @@ using System.Threading.Tasks;
 namespace EDAP
 {
     /// <summary>
-    /// This is a very simple controller. It waits a certain amount of time, then starts aligning to the compass. 
+    /// This was originally a very simple controller. It waits a certain amount of time, then starts aligning to the compass. 
     /// When it is aligned, it presses "G". Then the cycle starts again.
+    /// Once the count of jumps remaining reaches zero, it will cruise to the destination, and try to initiate an auto-dock.
+    /// If cruise is not selected, it will aim at the star and cut throttle (waiting for a manual fuel scooping procedure because I haven't implemented OCR).
+    /// 
     /// </summary>
     class PilotJumper
     {
@@ -28,19 +31,19 @@ namespace EDAP
         public enum PilotState
         {
             None = 0,
-            firstjump = 1 << 0,
-            clearedJump = 1 << 1,
-            jumpTick = 1 << 2,
-            swoopStart = 1 << 3,
-            swoopEnd = 1 << 4,
-            cruiseStart = 1 << 5,
-            AwayFromStar = 1 << 6,
-            SelectStar = 1 << 7,
+            firstjump = 1 << 0, // is this the first jump? (skip waiting and swooping and go straight to aligning)
+            clearedJump = 1 << 1, // at the start of the jump-loop process, we need to reset everything
+            jumpTick = 1 << 2, 
+            swoopStart = 1 << 3, // have we set the throttle to 50% at the start of the swoop
+            swoopEnd = 1 << 4, // have we finished turning away from the star
+            cruiseStart = 1 << 5, // have we set throttle to 75% to start cruise at destination
+            AwayFromStar = 1 << 6, // have we finished pointing away from the star
+            SelectStar = 1 << 7, // have we selected the star yet (so we can point away from it)
             SysMap = 1 << 8, // whether to open the system map after jumping
-            Cruise = 1 << 9,
-            CruiseEnd = 1 << 10,
-            Honk = 1 << 11,
-            Enabled = 1 << 12
+            Cruise = 1 << 9, // whether to aim at the target once the jump count reaches zero
+            CruiseEnd = 1 << 10, // whether we have pressed "safe disengage"
+            Honk = 1 << 11, // fire discovery scanner when arriving in system?
+            Enabled = 1 << 12 // is the pilot enabled?
         }
 
         public PilotState state;
@@ -81,6 +84,11 @@ namespace EDAP
         /// </summary>        
         public void Act()
         {
+            if (!state.HasFlag(PilotState.Enabled))
+            {
+                Idle();
+                return;
+            }
             // perform the first alignment/jump immediately
             if (state.HasFlag(PilotState.firstjump) && jumps_remaining > 0)
             {
@@ -189,7 +197,7 @@ namespace EDAP
         private void Jump()
         {
             ClearAlignKeys();
-            keyboard.Tap(ScanCode.KEY_G); // jump
+            keyboard.Tap(ScanCode.KEY_G); // jump (frameshift drive charging)
             keyboard.Tap(ScanCode.KEY_F); // full throttle
             state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             last_jump_time = DateTime.UtcNow;
@@ -218,9 +226,34 @@ namespace EDAP
             }
         }
 
+        /// <summary>
+        /// Run the recognition stuff but don't press any keys
+        /// </summary>
         internal void Idle()
         {
-            // todo: recognize but don't act
+            try
+            {
+                FineAlign();
+                return;
+            }
+            catch (Exception e)
+            {
+                status = e.Message;
+            }
+            
+            Point2f compass;
+            try
+            {
+                compass = compassRecognizer.GetOrientation();
+                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;
+            }
+            catch (Exception e)
+            {
+                ClearAlignKeys();
+                alignFrames = 0;
+                status = e.Message + "\n" + status;
+                return;
+            }
         }
         
         private void ClearAlignKeys()
@@ -242,6 +275,7 @@ namespace EDAP
         /// <returns>true if we are pointing at the target</returns>
         private bool Align()
         {
+            // start by looking for the triquadrant target (because that is more reliably recognized, it doesn't change size / skew depending on ship movement)
             status = "";
             try
             {
@@ -252,6 +286,7 @@ namespace EDAP
                 status = e.Message;                
             }
 
+            // see if we can find the compass
             Point2f compass;
             try
             {
@@ -270,6 +305,7 @@ namespace EDAP
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
 
+            // press whichever keys will point us toward the target
             keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
             keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
             keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
@@ -466,7 +502,7 @@ namespace EDAP
         /// This function could also do the final part: 
         ///  1. press G when the "SAFE DISENGAGE" graphic is detected
         ///  2. Wait 5 seconds
-        ///  3. Press Tab, X, 1,E,E,Space,S,Space so the docking computer takes over.
+        ///  3. Press Tab, X, 1,E,E,Space,S,Space to boost, cut throttle, and request docking (so the docking computer takes over).
         /// </summary>
         private void Cruise()
         {
