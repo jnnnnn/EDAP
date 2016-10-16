@@ -233,7 +233,10 @@ namespace EDAP
         {
             try
             {
-                FineAlign();
+
+                int centreBox = 150;
+                Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
+                cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
                 return;
             }
             catch (Exception e)
