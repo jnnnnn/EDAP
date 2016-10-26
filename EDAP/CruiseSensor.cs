@@ -68,7 +68,7 @@ namespace EDAP
         {
             // MatchTemplate doesn't allow for scaling / rotation. Allow more leeway by reducing resolution?
 
-            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(800, 700, 300, 150));
+            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(800, 650, 300, 200));
             Mat source = BitmapConverter.ToMat(image);            
             Mat blues = source.Split()[0];
             Mat clean = blues.EmptyClone();
