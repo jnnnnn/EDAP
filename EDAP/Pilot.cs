@@ -105,8 +105,15 @@ namespace EDAP
             if (SecondsSinceLastJump < 30)
                 return;
 
-            // wait until we hit the star at the end of the loading screen
-            if (!state.HasFlag(PilotState.Faceplant))
+            // just in case, we should make sure no keys have been forgotten about
+            if (OncePerJump(PilotState.clearedJump))
+            {
+                keyboard.Tap(ScanCode.KEY_X); // cut throttle
+                keyboard.Clear();
+            }
+
+            // wait until we hit the star at the end of the loading screen (up to 100 seconds)
+            if (!state.HasFlag(PilotState.Faceplant) && SecondsSinceLastJump < 100)
             {
                 if (cruiseSensor.MatchFaceplant())
                 {
@@ -116,10 +123,6 @@ namespace EDAP
                 else
                     return; // keep waiting
             }
-
-            // just in case, we should make sure no keys have been forgotten about
-            if (OncePerJump(PilotState.clearedJump))
-                keyboard.Clear();
 
             // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
             if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
@@ -137,15 +140,8 @@ namespace EDAP
                 return;
             }
 
-            // dodge the star
-            if (SecondsSinceFaceplant < 5)
-            {
-                Swoop();
-                return;
-            }
-
             // swoop a bit more if last jump because slow ship kept hitting star
-            if (jumps_remaining < 1 && SecondsSinceFaceplant < 5)
+            if (SecondsSinceFaceplant < (jumps_remaining < 1 ? 10:5))
             {
                 Swoop();
                 return;
@@ -174,12 +170,16 @@ namespace EDAP
             {
                 if (OncePerJump(PilotState.SelectStar))
                     SelectStar();
-
-                // 45 because we want to make sure the honk finishes before opening the system map
-                if (AntiAlign() && SecondsSinceFaceplant > 15)
+                
+                if (OncePerJump(PilotState.swoopStart))
+                    keyboard.Tap(ScanCode.KEY_P); // set throttle to 50%
+                
+                // 10 because we want to make sure the honk finishes before opening the system map
+                if (AntiAlign() && SecondsSinceFaceplant > 10)
                 {
                     state |= PilotState.AwayFromStar;
                     keyboard.Tap(ScanCode.KEY_N); // select the next destination
+                    keyboard.Tap(ScanCode.KEY_F); // full throttle
                 }
                 else
                     return;
@@ -475,8 +475,8 @@ namespace EDAP
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
 
-            keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X > 0.3); // roll right
-            keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X < -0.3); // roll left
+            keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll right
+            keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll left
             keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y > 0 && compass.Y < 1.9); // pitch up
             keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y < 0 && compass.Y > -1.9); // pitch down
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X > 0.1); // yaw left
@@ -519,7 +519,7 @@ namespace EDAP
         /// </summary>
         private void Cruise()
         {
-            if (SecondsSinceFaceplant > 40 && OncePerJump(PilotState.cruiseStart))
+            if (SecondsSinceFaceplant > 20 && OncePerJump(PilotState.cruiseStart))
             {
                 Sounds.Play("cruise mode engaged.mp3");
                 keyboard.Tap(ScanCode.KEY_F); // full throttle
