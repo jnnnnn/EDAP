@@ -187,7 +187,7 @@ namespace EDAP
 
         public static void MatchSafDisengag2()
         {
-            Bitmap screen = new Bitmap("Screenshot_0078.bmp");
+            Bitmap screen = new Bitmap("Screenshot_0022.bmp");
             Bitmap image = CompassSensor.Crop(screen, new Rectangle(800, 700, 350, 150));
             Mat source = BitmapConverter.ToMat(image);
             Mat blues = source.Split()[0];
@@ -200,7 +200,6 @@ namespace EDAP
             matches.MinMaxLoc(out minVal, out maxVal);
             Window w2 = new Window(clean);
             Window w3 = new Window(matches);
-            Window w4 = new Window(matches.InRange(0.0, 0.5));
             Window w5 = new Window(matches.InRange(0.4, 1));
         }
 

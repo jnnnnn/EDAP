@@ -78,7 +78,7 @@ namespace EDAP
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
             
-            return maxVal > 0.5; // see experiments
+            return maxVal > 0.4; // see experiments, MatchSafDisengag2
         }
 
         /// <summary>
