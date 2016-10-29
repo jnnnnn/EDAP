@@ -17,7 +17,8 @@ namespace EDAP
     /// </summary>
     class PilotJumper
     {
-        private DateTime last_jump_time;  // time since the jump key was pressed        
+        private DateTime last_jump_time;  // time at which the jump key was (most recently) pressed
+        private DateTime last_faceplant_time; // time at which the last faceplant occurred
         private DateTime lastClear = DateTime.UtcNow.AddHours(-1);
         public Keyboard keyboard;
         private int jumps_remaining = 0;
@@ -43,7 +44,8 @@ namespace EDAP
             Cruise = 1 << 9, // whether to aim at the target once the jump count reaches zero
             CruiseEnd = 1 << 10, // whether we have pressed "safe disengage"
             Honk = 1 << 11, // fire discovery scanner when arriving in system?
-            Enabled = 1 << 12 // is the pilot enabled?
+            Enabled = 1 << 12, // is the pilot enabled?
+            Faceplant = 1 << 13, // have we faceplanted the star yet
         }
 
         public PilotState state;
@@ -52,6 +54,7 @@ namespace EDAP
         internal CruiseSensor cruiseSensor;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
+        double SecondsSinceFaceplant {  get { return (DateTime.UtcNow - last_faceplant_time).TotalSeconds; } }
 
         public void Reset()
         {
@@ -61,6 +64,7 @@ namespace EDAP
             overshoots = new System.Drawing.Point();
             alignFrames = 0;
             last_jump_time = DateTime.UtcNow.AddHours(-1);
+            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
         }
 
         public int Jumps
@@ -97,9 +101,21 @@ namespace EDAP
                 return;
             }
 
-            // charging friendship drive (15s) / countdown (5s) / witchspace (~14-16s)
+            // charging frendship drive (15s) / countdown (5s) / loading screen (~14-16s)
             if (SecondsSinceLastJump < 30)
                 return;
+
+            // wait until we hit the star at the end of the loading screen
+            if (!state.HasFlag(PilotState.Faceplant))
+            {
+                if (cruiseSensor.MatchFaceplant())
+                {
+                    state |= PilotState.Faceplant;
+                    last_faceplant_time = DateTime.UtcNow;
+                }
+                else
+                    return; // keep waiting
+            }
 
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))
@@ -107,12 +123,12 @@ namespace EDAP
 
             // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
             if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
-            {
+            {                
+                if (SecondsSinceFaceplant < 2)
+                    return;
+
                 if (OncePerJump(PilotState.swoopEnd))
                     keyboard.Tap(ScanCode.KEY_X); // cut throttle
-
-                if (SecondsSinceLastJump < 40)
-                    return;
 
                 if (OncePerJump(PilotState.SelectStar))
                     SelectStar();
@@ -122,14 +138,14 @@ namespace EDAP
             }
 
             // dodge the star
-            if (SecondsSinceLastJump < 40)
+            if (SecondsSinceFaceplant < 2)
             {
                 Swoop();
                 return;
             }
 
             // swoop a bit more if last jump because slow ship kept hitting star
-            if (jumps_remaining < 1 && SecondsSinceLastJump < 45)
+            if (jumps_remaining < 1 && SecondsSinceFaceplant < 5)
             {
                 Swoop();
                 return;
@@ -146,7 +162,7 @@ namespace EDAP
             }
 
             // cruise away from the star for an extra ten seconds after the last jump to make it less likely that manual intervention is required to dodge the star
-            if (SecondsSinceLastJump < 50 && jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
+            if (SecondsSinceFaceplant < 15 && jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
                 keyboard.Clear();
                 return;
@@ -160,7 +176,7 @@ namespace EDAP
                     SelectStar();
 
                 // 45 because we want to make sure the honk finishes before opening the system map
-                if (AntiAlign() && SecondsSinceLastJump > 45)
+                if (AntiAlign() && SecondsSinceFaceplant > 15)
                 {
                     state |= PilotState.AwayFromStar;
                     keyboard.Tap(ScanCode.KEY_N); // select the next destination
@@ -201,6 +217,7 @@ namespace EDAP
             keyboard.Tap(ScanCode.KEY_F); // full throttle
             state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
             last_jump_time = DateTime.UtcNow;
+            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
             jumps_remaining -= 1;
 
             if (state.HasFlag(PilotState.SysMap))
@@ -482,21 +499,14 @@ namespace EDAP
         /// </summary>
         private void Swoop()
         {
-            if (SecondsSinceLastJump < 40)
-            {
-                if (OncePerJump(PilotState.swoopStart))
-                    keyboard.Tap(ScanCode.KEY_P); // set throttle to 50%
-
-                // maybe in witchspace, maybe facing star
-                // todo: better detection of the end of witchspace (sometimes it's way longer 
-                // and antialign has trouble seeing the compass to turn away from the star, or 
-                // may even be so late that it doesn't select the star for the antialign procedure)
-                keyboard.Keyup(ScanCode.NUMPAD_5);
-                Thread.Sleep(10);
-                keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up for ~10 seconds on arrival to avoid star.
-                Thread.Sleep(100);
-                return;
-            }
+            if (OncePerJump(PilotState.swoopStart))
+                keyboard.Tap(ScanCode.KEY_P); // set throttle to 50%
+            
+            keyboard.Keyup(ScanCode.NUMPAD_5);
+            Thread.Sleep(10);
+            keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up for ~5 seconds on arrival to avoid star.
+            Thread.Sleep(100);
+            return;
         }
 
         /// <summary>
@@ -509,8 +519,7 @@ namespace EDAP
         /// </summary>
         private void Cruise()
         {
-
-            if (SecondsSinceLastJump > 60 && OncePerJump(PilotState.cruiseStart))
+            if (SecondsSinceFaceplant > 40 && OncePerJump(PilotState.cruiseStart))
             {
                 Sounds.Play("cruise mode engaged.mp3");
                 keyboard.Tap(ScanCode.KEY_F); // full throttle

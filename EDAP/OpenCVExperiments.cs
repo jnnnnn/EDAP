@@ -203,5 +203,17 @@ namespace EDAP
             Window w4 = new Window(matches.InRange(0.0, 0.5));
             Window w5 = new Window(matches.InRange(0.4, 1));
         }
+
+        public static void MatchJumpEnd()
+        {
+            Bitmap screen = new Bitmap("Screenshot_0029.bmp");
+            var d = 30;
+            Bitmap image = CompassSensor.Crop(screen, new Rectangle(screen.Width / 2 - d, screen.Height / 2 - d, d*2, d * 2));
+            Mat screencentre = BitmapConverter.ToMat(image);
+            Window w1 = new Window(screencentre);
+            Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);            
+            var x = hsv.Mean();
+            int i = 0;
+        }
     }
 }
