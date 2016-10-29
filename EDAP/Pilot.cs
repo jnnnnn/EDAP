@@ -138,7 +138,7 @@ namespace EDAP
             }
 
             // dodge the star
-            if (SecondsSinceFaceplant < 2)
+            if (SecondsSinceFaceplant < 5)
             {
                 Swoop();
                 return;
