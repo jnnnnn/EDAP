@@ -490,7 +490,7 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X < -0.1); // yaw right
 
             // antialign doesn't need much accuracy... this will just stop accidental noise
-            alignFrames = (Math.Abs(compass.X) < 0.2 && Math.Abs(compass.Y) > 1.8) ? alignFrames + 1 : 0;
+            alignFrames = (Math.Abs(compass.X) < 0.2 && Math.Abs(compass.Y) > 1.0) ? alignFrames + 1 : 0;
             if (alignFrames > 3)
             {
                 ClearAlignKeys();
