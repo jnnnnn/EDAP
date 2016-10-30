@@ -34,7 +34,7 @@ namespace EDAP
             None = 0,
             firstjump = 1 << 0, // is this the first jump? (skip waiting and swooping and go straight to aligning)
             clearedJump = 1 << 1, // at the start of the jump-loop process, we need to reset everything
-            jumpTick = 1 << 2, 
+            jumpCharge = 1 << 2, 
             swoopStart = 1 << 3, // have we set the throttle to 50% at the start of the swoop
             swoopEnd = 1 << 4, // have we finished turning away from the star
             cruiseStart = 1 << 5, // have we set throttle to 75% to start cruise at destination
@@ -149,7 +149,7 @@ namespace EDAP
 
             if (OncePerJump(PilotState.swoopEnd))
             {
-                keyboard.Tap(ScanCode.KEY_F); // full throttle           
+                keyboard.Tap(ScanCode.KEY_F); // full throttle
                 if (state.HasFlag(PilotState.Honk))
                 {
                     keyboard.Keydown(ScanCode.KEY_O); // hooooooooooooonk
@@ -168,18 +168,15 @@ namespace EDAP
             // don't do it for the supcruz at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
             {
-                if (OncePerJump(PilotState.SelectStar))
+                if (OncePerJump(PilotState.SelectStar))                
                     SelectStar();
-                
-                if (OncePerJump(PilotState.swoopStart))
-                    keyboard.Tap(ScanCode.KEY_P); // set throttle to 50%
                 
                 // 10 because we want to make sure the honk finishes before opening the system map
                 if (AntiAlign() && SecondsSinceFaceplant > 10)
                 {
                     state |= PilotState.AwayFromStar;
                     keyboard.Tap(ScanCode.KEY_N); // select the next destination
-                    keyboard.Tap(ScanCode.KEY_F); // full throttle
+                    keyboard.Tap(ScanCode.KEY_F); // full throttle                    
                 }
                 else
                     return;
@@ -213,12 +210,21 @@ namespace EDAP
         private void Jump()
         {
             ClearAlignKeys();
-            keyboard.Tap(ScanCode.KEY_G); // jump (frameshift drive charging)
+            if (OncePerJump(PilotState.jumpCharge))
+            {
+                keyboard.Tap(ScanCode.KEY_G); // jump (frameshift drive charging)
+                last_jump_time = DateTime.UtcNow;
+            }
+            else
+                last_jump_time = DateTime.UtcNow.AddSeconds(-15); // because we might have charged for up to 15 seconds...
+
             keyboard.Tap(ScanCode.KEY_F); // full throttle
-            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
-            last_jump_time = DateTime.UtcNow;
-            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
             jumps_remaining -= 1;
+
+            // reset everything
+            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
+            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
+
 
             if (state.HasFlag(PilotState.SysMap))
             {
@@ -227,6 +233,7 @@ namespace EDAP
                 Task.Delay(7000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_K));
                 Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.F10)); // screenshot the system map                
             }
+
             if (jumps_remaining < 1)
             {
                 Sounds.PlayOneOf("this is the last jump.mp3", "once more with feeling.mp3", "one jump remaining.mp3");
@@ -325,7 +332,7 @@ namespace EDAP
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
 
-            // press whichever keys will point us toward the target
+            // press whichever keys will point us toward the target. Coordinate system origin is bottom right
             keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
             keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
             keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
@@ -499,9 +506,9 @@ namespace EDAP
         /// </summary>
         private void Swoop()
         {
-            if (OncePerJump(PilotState.swoopStart))
+            if (SecondsSinceFaceplant > 2 && OncePerJump(PilotState.swoopStart))
                 keyboard.Tap(ScanCode.KEY_P); // set throttle to 50%
-            
+
             keyboard.Keyup(ScanCode.NUMPAD_5);
             Thread.Sleep(10);
             keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up for ~5 seconds on arrival to avoid star.
