@@ -248,7 +248,7 @@ namespace EDAP
             return DetectStationaryCompass();
         }
 
-        List<Point2f> compassHistory; // up to the last five compass points
+        List<Point2f> compassHistory = new List<Point2f>(); // up to the last five compass points
         DateTime lastCompassTime = DateTime.UtcNow.AddHours(-1);
         private double sq(double x) { return x * x; }
         private bool DetectStationaryCompass()
