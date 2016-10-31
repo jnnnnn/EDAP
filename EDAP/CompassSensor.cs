@@ -235,17 +235,18 @@ namespace EDAP
         /// </summary>
         public bool MatchFaceplant()
         {
-            // Just take the middle section of the screen. If it's bright, there's a star there and we have arrived.
+            // if the compass stops jumping around, we've arrived
+            if (DetectStationaryCompass())
+                return true;
+
+            // If the middle of the screen is saturated, there's a star there and we have arrived.
             var d = 30;
             Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(screen.bitmap.Width / 2 - d, screen.bitmap.Height / 2 - d, 2 * d, 2 * d));
             Mat screencentre = BitmapConverter.ToMat(image);
             Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);
             pictureBox2.Image = BitmapConverter.ToBitmap(hsv.Split()[2]);
             if (hsv.Mean()[2] > 180.0)
-                return true; // small star while still loading, average "value" 29; star filling little box: 254-255.
-
-            // also look for a stationary compass (for tiny things like neutron stars)
-            return DetectStationaryCompass();
+                return true; // small star while still loading, average "value" 29; star filling little box: 254-255.            
         }
 
         List<Point2f> compassHistory = new List<Point2f>(); // up to the last five compass points
