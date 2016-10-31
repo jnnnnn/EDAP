@@ -80,20 +80,5 @@ namespace EDAP
             
             return maxVal > 0.4; // see experiments, MatchSafDisengag2
         }
-
-        /// <summary>
-        /// Returns true if we can detect on the screen that the jump loading screen has ended (i.e. finished loading, we have arrived at the next star)
-        /// </summary>
-        /// <returns></returns>
-        public bool MatchFaceplant()
-        {
-            // Just take the middle section of the screen. If it's bright, there's a star there and we have arrived.
-            var d = 30;
-            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(screen.bitmap.Width / 2 - d, screen.bitmap.Height / 2 - d, 2*d, 2*d));
-            Mat screencentre = BitmapConverter.ToMat(image);
-            Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);
-            debugWindow.Image = BitmapConverter.ToBitmap(hsv.Split()[2]);
-            return hsv.Mean()[2] > 180.0; // small star while still loading, average "value" 29; star filling little box: 254-255.
-        }
     }
 }

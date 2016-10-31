@@ -115,7 +115,7 @@ namespace EDAP
             // wait until we hit the star at the end of the loading screen (up to 100 seconds)
             if (!state.HasFlag(PilotState.Faceplant) && SecondsSinceLastJump < 100)
             {
-                if (cruiseSensor.MatchFaceplant())
+                if (compassRecognizer.MatchFaceplant())
                 {
                     state |= PilotState.Faceplant;
                     last_faceplant_time = DateTime.UtcNow;

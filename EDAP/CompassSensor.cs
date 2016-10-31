@@ -228,5 +228,48 @@ namespace EDAP
             double vy = QuadFitFinalVelocity(history[2].Y, history[1].Y, history[0].Y, ts[2], ts[1], ts[0]);
             return new Point2f((float)vx, (float)vy);
         }
+
+
+        /// <summary>
+        /// Returns true if we can detect on the screen that the jump loading screen has ended (i.e. finished loading, we have arrived at the next star)
+        /// </summary>
+        public bool MatchFaceplant()
+        {
+            // Just take the middle section of the screen. If it's bright, there's a star there and we have arrived.
+            var d = 30;
+            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(screen.bitmap.Width / 2 - d, screen.bitmap.Height / 2 - d, 2 * d, 2 * d));
+            Mat screencentre = BitmapConverter.ToMat(image);
+            Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);
+            pictureBox2.Image = BitmapConverter.ToBitmap(hsv.Split()[2]);
+            if (hsv.Mean()[2] > 180.0)
+                return true; // small star while still loading, average "value" 29; star filling little box: 254-255.
+
+            // also look for a stationary compass (for tiny things like neutron stars)
+            return DetectStationaryCompass();
+        }
+
+        List<Point2f> compassHistory; // up to the last five compass points
+        DateTime lastCompassTime = DateTime.UtcNow.AddHours(-1);
+        private double sq(double x) { return x * x; }
+        private bool DetectStationaryCompass()
+        {
+            if ((DateTime.UtcNow - lastCompassTime).TotalSeconds > 5)
+                compassHistory.Clear();
+            lastCompassTime = DateTime.UtcNow;
+
+            const int wobbleFrames = 5;
+            
+            Point2f compass = GetOrientation();
+            compassHistory.Add(compass);
+            if (compassHistory.Count > wobbleFrames)
+                compassHistory.RemoveAt(0);
+            if (compassHistory.Count < wobbleFrames)
+                return false;
+
+            double totalDistance = 0.0;
+            for (int i = 1; i < compassHistory.Count; i++)
+                totalDistance += sq(compassHistory[i - 1].X - compassHistory[i].X) + sq(compassHistory[i - 1].Y - compassHistory[i].Y);
+            return totalDistance < 0.1 * 0.1 * 1.707 * wobbleFrames; // max "wobble" of 0.1, in two dimensions
+        }
     }
 }
