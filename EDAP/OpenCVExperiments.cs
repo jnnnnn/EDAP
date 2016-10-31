@@ -212,7 +212,6 @@ namespace EDAP
             Window w1 = new Window(screencentre);
             Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);            
             var x = hsv.Mean();
-            int i = 0;
         }
     }
 }

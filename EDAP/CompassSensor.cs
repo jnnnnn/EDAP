@@ -258,8 +258,9 @@ namespace EDAP
             lastCompassTime = DateTime.UtcNow;
 
             const int wobbleFrames = 5;
-            try { Point2f compass = GetOrientation(); } catch (ArgumentException e) { return false; }
 
+            Point2f compass;
+            try { compass = GetOrientation(); } catch (ArgumentException) { return false; }
             compassHistory.Add(compass);
             if (compassHistory.Count > wobbleFrames)
                 compassHistory.RemoveAt(0);
