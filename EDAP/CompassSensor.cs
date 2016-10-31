@@ -246,7 +246,9 @@ namespace EDAP
             Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);
             pictureBox2.Image = BitmapConverter.ToBitmap(hsv.Split()[2]);
             if (hsv.Mean()[2] > 180.0)
-                return true; // small star while still loading, average "value" 29; star filling little box: 254-255.            
+                return true; // small star while still loading, average "value" 29; star filling little box: 254-255.   
+
+            return false;         
         }
 
         List<Point2f> compassHistory = new List<Point2f>(); // up to the last five compass points
