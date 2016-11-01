@@ -535,7 +535,6 @@ namespace EDAP
 
             if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
             {
-                Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3", "autopilot disengaged.mp3");
                 keyboard.Tap(ScanCode.KEY_G); // "Safe Disengage"
                 state |= PilotState.CruiseEnd;
                 state &= ~PilotState.Enabled; // disable! we've arrived!
@@ -546,6 +545,8 @@ namespace EDAP
                 {
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking thing if cruise gets turned off
+
+                    Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3", "autopilot disengaged.mp3");
                     keyboard.Tap(ScanCode.KEY_1); // nav menu
                     Thread.Sleep(200); // game needs time to open this menu
                     keyboard.Tap(ScanCode.KEY_E); // tab right
@@ -555,6 +556,8 @@ namespace EDAP
                     keyboard.Tap(ScanCode.KEY_S); // down to the second option (request docking)
                     keyboard.Tap(ScanCode.SPACEBAR); // select request docking
                     keyboard.Tap(ScanCode.KEY_1); // close nav menu
+
+                    state &= ~PilotState.Cruise; // disable! we've arrived!
                 });
             }
         }

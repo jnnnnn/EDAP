@@ -256,7 +256,7 @@ namespace EDAP
         private double sq(double x) { return x * x; }
         private bool DetectStationaryCompass()
         {
-            if ((DateTime.UtcNow - lastCompassTime).TotalSeconds > 5)
+            if ((DateTime.UtcNow - lastCompassTime).TotalSeconds > 2)
                 compassHistory.Clear();
             lastCompassTime = DateTime.UtcNow;
 
