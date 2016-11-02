@@ -138,5 +138,43 @@ namespace EDAP
             // disable when the mouse goes down on the jump count control (so that key presses don't interrupt user input)
             pilot.state &= ~PilotJumper.PilotState.Enabled;
         }
+
+        bool bPrivate = false; // which one to log into next. first is open.
+        private void button_relog_Click(object sender, EventArgs e)
+        {
+            Focusize();
+            // exit to main menu
+            Thread.Sleep(200);
+            keyboard.Tap(SendInput.ScanCode.ESC);
+            Thread.Sleep(1000); // wait for the menu to come up
+            keyboard.Tap(SendInput.ScanCode.KEY_W);
+            Thread.Sleep(100);
+            keyboard.Tap(SendInput.ScanCode.KEY_W);
+            Thread.Sleep(100);
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // quit to menu
+            Thread.Sleep(800);
+            keyboard.Tap(SendInput.ScanCode.KEY_D);
+            Thread.Sleep(100);
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // confirm
+            Thread.Sleep(5000);
+
+            keyboard.Tap(SendInput.ScanCode.KEY_S);
+            Thread.Sleep(1000);
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // play game
+            Thread.Sleep(1000); 
+            if (bPrivate)
+            {
+                // choose solo
+                keyboard.Tap(SendInput.ScanCode.KEY_S);
+                Thread.Sleep(100);
+                keyboard.Tap(SendInput.ScanCode.KEY_S);
+            }
+            bPrivate = !bPrivate;
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select solo or open
+            return; 
+            
+            // to do more here, need to detect things: when the game finishes loading, and when the missions tab is selected
+            // todo: use template matching
+        }
     }
 }

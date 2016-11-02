@@ -44,6 +44,7 @@ namespace EDAP
             this.buttonMap = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.buttonHorn = new System.Windows.Forms.Button();
+            this.button_relog = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
@@ -171,12 +172,28 @@ namespace EDAP
             this.buttonHorn.UseVisualStyleBackColor = true;
             this.buttonHorn.Click += new System.EventHandler(this.button1_Click_2);
             // 
+            // button_relog
+            // 
+            this.button_relog.BackColor = System.Drawing.Color.Black;
+            this.button_relog.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.button_relog.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_relog.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button_relog.ForeColor = System.Drawing.Color.Coral;
+            this.button_relog.Location = new System.Drawing.Point(205, 221);
+            this.button_relog.Name = "button_relog";
+            this.button_relog.Size = new System.Drawing.Size(75, 22);
+            this.button_relog.TabIndex = 12;
+            this.button_relog.Text = "relog";
+            this.button_relog.UseVisualStyleBackColor = true;
+            this.button_relog.Click += new System.EventHandler(this.button_relog_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(292, 255);
+            this.Controls.Add(this.button_relog);
             this.Controls.Add(this.buttonHorn);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.buttonMap);
@@ -211,6 +228,7 @@ namespace EDAP
         private System.Windows.Forms.Button buttonMap;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Button buttonHorn;
+        private System.Windows.Forms.Button button_relog;
     }
 }
 
