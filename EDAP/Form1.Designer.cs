@@ -42,7 +42,7 @@ namespace EDAP
             this.buttonCruise = new System.Windows.Forms.Button();
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
             this.buttonMap = new System.Windows.Forms.Button();
-            this.button2 = new System.Windows.Forms.Button();
+            this.buttonScoop = new System.Windows.Forms.Button();
             this.buttonHorn = new System.Windows.Forms.Button();
             this.button_relog = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
@@ -68,7 +68,7 @@ namespace EDAP
             // 
             this.label1.AutoSize = true;
             this.label1.ForeColor = System.Drawing.Color.Coral;
-            this.label1.Location = new System.Drawing.Point(104, 67);
+            this.label1.Location = new System.Drawing.Point(104, 51);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(35, 13);
             this.label1.TabIndex = 2;
@@ -102,7 +102,7 @@ namespace EDAP
             this.buttonCruise.ForeColor = System.Drawing.Color.Coral;
             this.buttonCruise.Location = new System.Drawing.Point(173, 12);
             this.buttonCruise.Name = "buttonCruise";
-            this.buttonCruise.Size = new System.Drawing.Size(108, 52);
+            this.buttonCruise.Size = new System.Drawing.Size(108, 30);
             this.buttonCruise.TabIndex = 7;
             this.buttonCruise.Text = "CRUISE";
             this.buttonCruise.UseVisualStyleBackColor = false;
@@ -142,33 +142,33 @@ namespace EDAP
             this.buttonMap.UseVisualStyleBackColor = true;
             this.buttonMap.Click += new System.EventHandler(this.button1_Click_1);
             // 
-            // button2
+            // buttonScoop
             // 
-            this.button2.BackColor = System.Drawing.Color.Black;
-            this.button2.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.button2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button2.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button2.ForeColor = System.Drawing.Color.Coral;
-            this.button2.Location = new System.Drawing.Point(205, 178);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(75, 37);
-            this.button2.TabIndex = 10;
-            this.button2.Text = "ALT";
-            this.button2.UseVisualStyleBackColor = true;
-            this.button2.Click += new System.EventHandler(this.button2_Click_1);
+            this.buttonScoop.BackColor = System.Drawing.Color.Black;
+            this.buttonScoop.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.buttonScoop.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.buttonScoop.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonScoop.ForeColor = System.Drawing.Color.Coral;
+            this.buttonScoop.Location = new System.Drawing.Point(205, 178);
+            this.buttonScoop.Name = "buttonScoop";
+            this.buttonScoop.Size = new System.Drawing.Size(75, 37);
+            this.buttonScoop.TabIndex = 10;
+            this.buttonScoop.Text = "SCOOP";
+            this.buttonScoop.UseVisualStyleBackColor = true;
+            this.buttonScoop.Click += new System.EventHandler(this.button2_Click_1);
             // 
             // buttonHorn
             // 
             this.buttonHorn.BackColor = System.Drawing.Color.Black;
             this.buttonHorn.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.buttonHorn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.buttonHorn.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonHorn.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.buttonHorn.ForeColor = System.Drawing.Color.Coral;
             this.buttonHorn.Location = new System.Drawing.Point(206, 135);
             this.buttonHorn.Name = "buttonHorn";
             this.buttonHorn.Size = new System.Drawing.Size(75, 37);
             this.buttonHorn.TabIndex = 11;
-            this.buttonHorn.Text = "HRN";
+            this.buttonHorn.Text = "HORN";
             this.buttonHorn.UseVisualStyleBackColor = true;
             this.buttonHorn.Click += new System.EventHandler(this.button1_Click_2);
             // 
@@ -195,7 +195,7 @@ namespace EDAP
             this.ClientSize = new System.Drawing.Size(292, 255);
             this.Controls.Add(this.button_relog);
             this.Controls.Add(this.buttonHorn);
-            this.Controls.Add(this.button2);
+            this.Controls.Add(this.buttonScoop);
             this.Controls.Add(this.buttonMap);
             this.Controls.Add(this.numericUpDown1);
             this.Controls.Add(this.buttonCruise);
@@ -226,7 +226,7 @@ namespace EDAP
         private System.Windows.Forms.Button buttonCruise;
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         private System.Windows.Forms.Button buttonMap;
-        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button buttonScoop;
         private System.Windows.Forms.Button buttonHorn;
         private System.Windows.Forms.Button button_relog;
     }

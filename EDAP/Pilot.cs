@@ -20,12 +20,11 @@ namespace EDAP
         private DateTime last_jump_time;  // time at which the jump key was (most recently) pressed
         private DateTime last_faceplant_time; // time at which the last faceplant occurred
         private DateTime lastClear = DateTime.UtcNow.AddHours(-1);
+        private DateTime scoopStart = DateTime.UtcNow.AddHours(-1);
         public Keyboard keyboard;
         private int jumps_remaining = 0;
         private uint alignFrames;
         public const int TIMERINTERVAL_MS = 100;
-        const float align_margin = 0.15f; // more -- fine adjustment won't work because target not in view. less -- fine adjustment not fully utilized; noise from compass may cause problems
-
         public string status = "";
 
         [Flags]
@@ -46,6 +45,10 @@ namespace EDAP
             Honk = 1 << 11, // fire discovery scanner when arriving in system?
             Enabled = 1 << 12, // is the pilot enabled?
             Faceplant = 1 << 13, // have we faceplanted the star yet
+            ScoopAlign = 1 << 14, // have we aligned for scooping yet
+            scoopComplete = 1 << 15, // have we finished scooping yet
+            Scoop = 1 << 16, // do we want to scoop at each star?
+            HonkComplete = 1 << 17, // have we fired the discovery scanner yet
         }
 
         public PilotState state;
@@ -60,7 +63,7 @@ namespace EDAP
         {
             // soft reset (after every jump)
             last_faceplant_time = DateTime.UtcNow.AddHours(-1);
-            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
+            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk | PilotState.Scoop; // clear per-jump flags
             if (soft)
                 return;
 
@@ -91,6 +94,8 @@ namespace EDAP
         /// </summary>        
         public void Act()
         {
+            status = "";
+
             if (!state.HasFlag(PilotState.Enabled))
             {
                 Idle();
@@ -127,12 +132,18 @@ namespace EDAP
                     return; // keep waiting
             }
 
+            if (SecondsSinceFaceplant < 2)
+                return;
+
+            if (state.HasFlag(PilotState.Honk) && OncePerJump(PilotState.HonkComplete))
+            {
+                keyboard.Keydown(ScanCode.KEY_O); // hooooooooooooonk
+                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_O)); // stop honking after ten seconds
+            }
+
             // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
             if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
-            {                
-                if (SecondsSinceFaceplant < 2)
-                    return;
-
+            {                      
                 if (OncePerJump(PilotState.swoopEnd))
                     keyboard.Tap(ScanCode.KEY_X); // cut throttle
 
@@ -143,20 +154,23 @@ namespace EDAP
                 return;
             }
 
-            // swoop a bit more if last jump because slow ship kept hitting star
-            if (SecondsSinceFaceplant < (jumps_remaining < 1 ? 10:5))
+            if (state.HasFlag(PilotState.Scoop) && !state.HasFlag(PilotState.scoopComplete) && jumps_remaining > 0)
             {
-                Swoop();
+                Scoop();
                 return;
             }
-
-            if (OncePerJump(PilotState.swoopEnd))
+            else
             {
-                keyboard.Tap(ScanCode.KEY_F); // full throttle
-                if (state.HasFlag(PilotState.Honk))
+                // swoop a bit more if last jump because slow ship kept hitting star
+                if (SecondsSinceFaceplant < (jumps_remaining < 1 ? 10 : 5))
                 {
-                    keyboard.Keydown(ScanCode.KEY_O); // hooooooooooooonk
-                    Task.Delay(10000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_O)); // stop honking after ten seconds
+                    Swoop();
+                    return;
+                }
+
+                if (OncePerJump(PilotState.swoopEnd))
+                {
+                    keyboard.Tap(ScanCode.KEY_F); // full throttle                    
                 }
             }
 
@@ -195,6 +209,37 @@ namespace EDAP
             }
             else if (jumps_remaining > 0 && Align())
                 Jump();
+        }
+
+        private void Scoop()
+        {
+            if (OncePerJump(PilotState.SelectStar))
+            {
+                keyboard.Clear();
+                SelectStar();                
+            }
+
+            if (!state.HasFlag(PilotState.ScoopAlign))
+            {
+                if (Align(x: 0, y: 0.8f, align_margin: 0.15f))
+                {
+                    state |= PilotState.ScoopAlign;
+                    scoopStart = DateTime.UtcNow;
+                    ClearAlignKeys();
+                    keyboard.Tap(ScanCode.KEY_P); // 50% throttle
+                    keyboard.Tap(ScanCode.KEY_N); // reselect next destination                    
+                }
+                status += "Scoop align\n";
+                return;
+            }
+
+            // throttle already at 50%
+
+            double ScoopTime = 10 - (DateTime.UtcNow - scoopStart).TotalSeconds;
+            status += String.Format("Scoop wait + {0}\n", ScoopTime);
+            // cruise for ten seconds (through the corona, hopefully)
+            if (ScoopTime < 0)
+                state |= PilotState.scoopComplete;
         }
 
         // select star
@@ -300,18 +345,27 @@ namespace EDAP
         /// When rolling, try to keep the target down so that when we turn around the sun it doesn't shine on our compass.
         /// </summary>
         /// <param name="compass">The normalized vector pointing from the centre of the compass to the blue dot</param>
+        /// <param name="target">The offset of the compass that we desire. Null for centered.</param>
+        /// <param name="align_margin">0.15 is the default because 
+        ///     more -- fine adjustment won't work because target not in view. 
+        ///     less -- fine adjustment not fully utilized; noise from compass may cause problems
+        /// </param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool Align()
+        private bool Align(float x = 0, float y = 0, float align_margin = 0.15f)
         {
-            // start by looking for the triquadrant target (because that is more reliably recognized, it doesn't change size / skew depending on ship movement)
-            status = "";
-            try
+            bool toTarget = x == 0.0f && y == 0.0f;
+            if (toTarget)
             {
-                return FineAlign();
-            }
-            catch (Exception e)
-            {
-                status = e.Message;                
+                // start by looking for the triquadrant target (because that is more reliably recognized, it doesn't change size / skew depending on ship movement)
+                status = "";
+                try
+                {
+                    return FineAlign();
+                }
+                catch (Exception e)
+                {
+                    status = e.Message;
+                }
             }
 
             // see if we can find the compass
@@ -320,6 +374,8 @@ namespace EDAP
             {
                 compass = compassRecognizer.GetOrientation();
                 status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;
+                compass.X -= x;
+                compass.Y -= y;
             }
             catch (Exception e)
             {
@@ -341,7 +397,10 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X > align_margin); // yaw right
 
-            return false;
+            if (toTarget)
+                return false; // only fine align can confirm we are aligned to the target
+
+            return (Math.Abs(compass.Y) < align_margin && Math.Abs(compass.X) < align_margin);
         }
 
         private List<Tuple<DateTime, Point2f>> finehistory = new List<Tuple<DateTime, Point2f>>();
@@ -446,7 +505,7 @@ namespace EDAP
             else
                 keyboard.Keyup(ScanCode.NUMPAD_4);
 
-            status = string.Format("{0:0}, {1:0}", offset.X, offset.Y);
+            status = string.Format("{0:0}, {1:0}\n", offset.X, offset.Y);
 
             return Math.Abs(offset.X) < 50 && Math.Abs(offset.Y) < 50; // && Math.Abs(velocity.X) < 100 && Math.Abs(velocity.Y) < 100;
         }
@@ -462,7 +521,7 @@ namespace EDAP
             try
             {
                 compass = compassRecognizer.GetOrientation();
-                status = string.Format("{0:0.0}, {1:0.0}", compass.X, compass.Y);
+                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y);
             }
             catch (Exception e)
             {

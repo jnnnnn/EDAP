@@ -46,6 +46,9 @@ namespace EDAP
             pilot.compassRecognizer = compassRecognizer;
             pilot.screen = screen;
             pilot.cruiseSensor = cruiseSensor;
+
+            // If you want to run one of the experiments, call it here so it runs on startup
+            //OpenCVExperiments.MatchSafDisengag2();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
@@ -94,6 +97,7 @@ namespace EDAP
             buttonCruise.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Cruise) ? Color.Green : Color.Coral;
             buttonMap.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.SysMap) ? Color.Green : Color.Coral;
             buttonHorn.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Honk) ? Color.Green : Color.Coral;
+            buttonScoop.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Scoop) ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -124,7 +128,8 @@ namespace EDAP
 
         private void button2_Click_1(object sender, EventArgs e)
         {
-            OpenCVExperiments.MatchSafDisengag2();
+            pilot.state ^= PilotJumper.PilotState.Scoop;
+            Focusize();
         }
 
         private void button1_Click_2(object sender, EventArgs e)
