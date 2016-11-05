@@ -56,15 +56,18 @@ namespace EDAP
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         double SecondsSinceFaceplant {  get { return (DateTime.UtcNow - last_faceplant_time).TotalSeconds; } }
 
-        public void Reset()
+        public void Reset(bool soft)
         {
+            // soft reset (after every jump)
+            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
             state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
-            state |= PilotState.firstjump;
+            if (soft)
+                return;
 
-            overshoots = new System.Drawing.Point();
+            // hard reset (when user activates autopilot)            
+            state |= PilotState.firstjump;
             alignFrames = 0;
             last_jump_time = DateTime.UtcNow.AddHours(-1);
-            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
         }
 
         public int Jumps
@@ -222,9 +225,7 @@ namespace EDAP
             jumps_remaining -= 1;
 
             // reset everything
-            state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk; // clear per-jump flags
-            last_faceplant_time = DateTime.UtcNow.AddHours(-1);
-
+            Reset(soft: true);
 
             if (state.HasFlag(PilotState.SysMap))
             {
@@ -343,7 +344,6 @@ namespace EDAP
             return false;
         }
 
-        private System.Drawing.Point overshoots;
         private List<Tuple<DateTime, Point2f>> finehistory = new List<Tuple<DateTime, Point2f>>();
         /// <summary>
         /// try to point accurately at the target by centering the little yellow square in the triquadrant (the target) on the screen 
@@ -359,12 +359,6 @@ namespace EDAP
             finehistory.Insert(0, new Tuple<DateTime, Point2f>(screen.timestamp_history[0], offset));
             if (finehistory.Count > 3)
                 finehistory.RemoveAt(3);
-            if (finehistory.Count > 1)
-            {
-                overshoots.X += offset.X * finehistory[1].Item2.X < 0 ? 1 : 0;
-                overshoots.Y += offset.Y * finehistory[1].Item2.Y < 0 ? 1 : 0;
-            }
-            
             Point2f velocity = new Point2f();
             List<DateTime> ts = screen.timestamp_history;
             // if we have the two previous frames of finehistory, use that to estimate velocity

@@ -56,7 +56,7 @@ namespace EDAP
                 Sounds.Play("autopilot engaged.mp3");
 
             keyboard.Clear();
-            pilot.Reset();
+            pilot.Reset(soft:false);
 
             Focusize();
 
