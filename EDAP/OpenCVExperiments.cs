@@ -213,5 +213,52 @@ namespace EDAP
             Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);            
             var x = hsv.Mean();
         }
+
+        public static void MatchCorona()
+        {
+            Bitmap screen = new Bitmap("Screenshot_0008.bmp");
+            Bitmap cropped = CompassSensor.Crop(screen, screen.Width * 1 / 3, screen.Height * 1 / 3, screen.Width * 2 / 3, screen.Height * 2 / 3);
+            Mat screenwhole = BitmapConverter.ToMat(cropped);            
+            Mat greenscreen = screenwhole.Split()[1];
+            Mat greenblur = greenscreen - greenscreen.Blur(new OpenCvSharp.Size(2, 2));
+            Window w1 = new Window(greenscreen);
+            Window w2 = new Window(greenblur);
+
+            Mat screenblur = screenwhole - screenwhole.Blur(new OpenCvSharp.Size(10, 10));
+            Window w3 = new Window(screenblur);
+            Window w4 = new Window(screenblur.Split()[1]);
+
+            screenblur.SaveImage("sharplines.png");
+            Mat sourceHSV = screenblur.CvtColor(ColorConversionCodes.BGR2HSV);
+            /* Paint.Net uses HSV [0..360], [0..100], [0..100].
+             * OpenCV uses H: 0 - 180, S: 0 - 255, V: 0 - 255
+             * Paint.NET colors:
+             * 73   100 18     brightest part of green edge
+             * 72   98  9      very dark green
+             * suggested range [70..180], [80..100], [8..100] (paint.net)
+             * suggested range [35..90], [204..255], [20..255] (openCV)
+             * */
+            Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 35, 204, 20 }), InputArray.Create(new int[] { 90, 255, 255 }));
+            Mat sourceHSVFiltered = new Mat();
+            sourceHSV.CopyTo(sourceHSVFiltered, mask);
+            Window w5 = new Window("yellowfilter", sourceHSVFiltered.CvtColor(ColorConversionCodes.HSV2BGR));
+            Mat sourceGrey = sourceHSVFiltered.Split()[2]; // Value channel is pretty good as a greyscale conversion
+            Window w6 = new Window("yellowFilterValue", sourceGrey);
+
+            CircleSegment[] circles = sourceGrey.HoughCircles(
+                HoughMethods.Gradient,
+                dp: 10f, /* resolution scaling factor?  full resolution seems to work better */
+                minDist: 1000, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
+                param1: 30, /* default was fine after experimentation */
+                param2: 10, /* required quality factor. 9 finds too many, 14 finds too few */
+                minRadius: 1000,
+                maxRadius: 1000000);
+            foreach (CircleSegment circle in circles)
+            {
+                var quarterCircle = new OpenCvSharp.Point2f(circle.Radius, circle.Radius);
+                screenwhole.Circle(circle.Center, (int)circle.Radius, new Scalar(0, 255, 0));                
+            }
+            Window w9 = new Window(screenwhole);            
+        }
     }
 }

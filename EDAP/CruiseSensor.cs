@@ -80,5 +80,16 @@ namespace EDAP
             
             return maxVal > 0.4; // see experiments, MatchSafDisengag2
         }
+
+        /// <summary>
+        /// If there is a green circle exclusion zone on the screen, measure how far above the centre of the screen it is (below centre -> negative)
+        /// </summary>
+        /// <returns>Distance in pixels</returns>
+        public float FindGreenBoundary()
+        {
+
+            return 0;
+        }
+
     }
 }

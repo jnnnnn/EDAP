@@ -216,28 +216,26 @@ namespace EDAP
             if (OncePerJump(PilotState.SelectStar))
             {
                 keyboard.Clear();
-                SelectStar();                
+                SelectStar();
+                keyboard.Tap(ScanCode.KEY_P); // 50% throttle        
             }
 
             if (!state.HasFlag(PilotState.ScoopAlign))
             {
-                if (Align(x: 0, y: 0.8f, align_margin: 0.15f))
+                if (Align(x: 0, y: 0.82f, align_margin: 0.05f))
                 {
                     state |= PilotState.ScoopAlign;
                     scoopStart = DateTime.UtcNow;
-                    ClearAlignKeys();
-                    keyboard.Tap(ScanCode.KEY_P); // 50% throttle
-                    keyboard.Tap(ScanCode.KEY_N); // reselect next destination                    
+                    ClearAlignKeys();                   
                 }
                 status += "Scoop align\n";
                 return;
             }
-
-            // throttle already at 50%
-
-            double ScoopTime = 10 - (DateTime.UtcNow - scoopStart).TotalSeconds;
-            status += String.Format("Scoop wait + {0}\n", ScoopTime);
-            // cruise for ten seconds (through the corona, hopefully)
+            
+            // cruise for 15 seconds (through the corona, hopefully)
+            double ScoopTime = 15 - (DateTime.UtcNow - scoopStart).TotalSeconds;
+            status += String.Format("Scoop wait + {0:0.0}\n", ScoopTime);
+            
             if (ScoopTime < 0)
                 state |= PilotState.scoopComplete;
         }

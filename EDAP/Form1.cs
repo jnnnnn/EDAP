@@ -49,6 +49,7 @@ namespace EDAP
 
             // If you want to run one of the experiments, call it here so it runs on startup
             //OpenCVExperiments.MatchSafDisengag2();
+            //OpenCVExperiments.MatchCorona();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
