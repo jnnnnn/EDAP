@@ -273,7 +273,7 @@ namespace EDAP
             double totalDistance = 0.0;
             for (int i = 1; i < compassHistory.Count; i++)
                 totalDistance += sq(compassHistory[i - 1].X - compassHistory[i].X) + sq(compassHistory[i - 1].Y - compassHistory[i].Y);
-            return totalDistance < 0.1 * 0.1 * 1.707 * wobbleFrames; // max "wobble" of 0.1, in two dimensions
+            return totalDistance < sq(0.1) * wobbleFrames; // max "wobble" of 0.1, in two dimensions
         }
     }
 }
