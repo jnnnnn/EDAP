@@ -132,7 +132,7 @@ namespace EDAP
                     return; // keep waiting
             }
 
-            if (SecondsSinceFaceplant < 2)
+            if (SecondsSinceFaceplant < 1)
                 return;
 
             if (state.HasFlag(PilotState.Honk) && OncePerJump(PilotState.HonkComplete))
@@ -226,17 +226,22 @@ namespace EDAP
                 {
                     state |= PilotState.ScoopAlign;
                     scoopStart = DateTime.UtcNow;
-                    ClearAlignKeys();                   
+                    ClearAlignKeys();
+                    Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_F)); // full throttle for flybyscooping
                 }
                 status += "Scoop align\n";
                 return;
             }
             
-            // cruise for 15 seconds (through the corona, hopefully)
-            double ScoopTime = 15 - (DateTime.UtcNow - scoopStart).TotalSeconds;
+            // cruise past the star (through the corona, hopefully)
+            double ScoopTime = (DateTime.UtcNow - scoopStart).TotalSeconds;
+
+            // parallel after five seconds...
+            Align(x: 0, y: (ScoopTime > 5 ? 0.95f : 0.85f), align_margin: 0.05f);
+
             status += String.Format("Scoop wait + {0:0.0}\n", ScoopTime);
             
-            if (ScoopTime < 0)
+            if (ScoopTime > 20)
                 state |= PilotState.scoopComplete;
         }
 
