@@ -104,7 +104,7 @@ namespace EDAP
             // perform the first alignment/jump immediately
             if (state.HasFlag(PilotState.firstjump) && jumps_remaining > 0)
             {
-                if (Align())
+                if (AlignTarget())
                     Jump();
                 return;
             }
@@ -116,7 +116,7 @@ namespace EDAP
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))
             {
-                keyboard.Tap(ScanCode.KEY_X); // cut throttle
+                //keyboard.Tap(ScanCode.KEY_X); // cut throttle
                 keyboard.Clear();
             }
 
@@ -150,7 +150,7 @@ namespace EDAP
                 if (OncePerJump(PilotState.SelectStar))
                     SelectStar();
 
-                Align();
+                AlignTarget();
                 return;
             }
 
@@ -204,10 +204,10 @@ namespace EDAP
             
             if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
-                Align();
+                AlignTarget();
                 Cruise();
             }
-            else if (jumps_remaining > 0 && Align())
+            else if (jumps_remaining > 0 && AlignTarget())
                 Jump();
         }
 
@@ -222,12 +222,23 @@ namespace EDAP
 
             if (!state.HasFlag(PilotState.ScoopAlign))
             {
-                if (Align(x: 0, y: 0.82f, align_margin: 0.05f))
+                if (SecondsSinceFaceplant > 7)
+                    state |= PilotState.scoopComplete; // if we haven't aligned after seven seconds, abandon the attempt to avoid crashing into star.
+
+                try
                 {
-                    state |= PilotState.ScoopAlign;
-                    scoopStart = DateTime.UtcNow;
-                    ClearAlignKeys();
-                    Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_F)); // full throttle for flybyscooping
+                    if (AlignCorona())
+                    { 
+                        state |= PilotState.ScoopAlign;
+                        scoopStart = DateTime.UtcNow;
+                        ClearAlignKeys();
+                        Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_F)); // full throttle for flybyscooping
+                    }
+                }
+                catch (ArgumentException e)
+                {
+                    status = e.Message + "\n" + status;
+                    AlignCompass(x: 0, y: 0.82f, align_margin: 0.05f); // align roughly to the corona
                 }
                 status += "Scoop align\n";
                 return;
@@ -235,10 +246,7 @@ namespace EDAP
             
             // cruise past the star (through the corona, hopefully)
             double ScoopTime = (DateTime.UtcNow - scoopStart).TotalSeconds;
-
-            // parallel after five seconds...
-            Align(x: 0, y: (ScoopTime > 5 ? 0.95f : 0.85f), align_margin: 0.05f);
-
+                        
             status += String.Format("Scoop wait + {0:0.0}\n", ScoopTime);
             
             if (ScoopTime > 20)
@@ -326,7 +334,6 @@ namespace EDAP
             catch (Exception e)
             {
                 ClearAlignKeys();
-                alignFrames = 0;
                 status = e.Message + "\n" + status;
                 return;
             }
@@ -343,6 +350,47 @@ namespace EDAP
             lastClear = DateTime.UtcNow;
         }
 
+        private bool AlignTarget()
+        {
+            try
+            {
+                int centreBox = 150;
+                Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
+                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
+                return FineAlign(-triquadrant);
+            }
+            catch (Exception e)
+            {
+                status = e.Message;
+            }
+            AlignCompass(x:0, y:0, align_margin:0.15f);
+            return false; // only fine align can confirm we are aligned to the target
+        }
+
+        /// <summary>
+        /// Try to point just outside the green circle if it is visible on the screen, or 80% of tangent to the target if it isn't.
+        /// </summary>
+        /// <returns>True once we are aligned</returns>
+        private bool AlignCorona()
+        {
+            try
+            {
+                CircleSegment circle = cruiseSensor.FindCorona();
+                Point2f c = circle.Center;
+                float c_mag = (float)Math.Sqrt(c.X * c.X + c.Y * c.Y);
+                Point2f c_hat = c * (1 / c_mag);
+                Point2f offset = c_hat * (c_mag - circle.Radius - 60); // 60px outside the circle, in the direction of the centre of the screen from the circle centre
+                return FineAlign(-offset);
+            }
+            catch (Exception e)
+            {
+                status = e.Message + "\n" + status;                
+            }
+            AntiAlign();
+            //Align(x: 0, y: 0.82f, align_margin: 0.05f); // align roughly to the corona
+            return false;
+        }
+
         /// <summary>
         /// Press whichever keys will make us point more towards the target.
         /// When rolling, try to keep the target down so that when we turn around the sun it doesn't shine on our compass.
@@ -354,23 +402,8 @@ namespace EDAP
         ///     less -- fine adjustment not fully utilized; noise from compass may cause problems
         /// </param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool Align(float x = 0, float y = 0, float align_margin = 0.15f)
+        private bool AlignCompass(float x, float y, float align_margin)
         {
-            bool toTarget = x == 0.0f && y == 0.0f;
-            if (toTarget)
-            {
-                // start by looking for the triquadrant target (because that is more reliably recognized, it doesn't change size / skew depending on ship movement)
-                status = "";
-                try
-                {
-                    return FineAlign();
-                }
-                catch (Exception e)
-                {
-                    status = e.Message;
-                }
-            }
-
             // see if we can find the compass
             Point2f compass;
             try
@@ -399,25 +432,17 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X > align_margin); // yaw right
-
-            if (toTarget)
-                return false; // only fine align can confirm we are aligned to the target
-
+            
             return (Math.Abs(compass.Y) < align_margin && Math.Abs(compass.X) < align_margin);
         }
-
+        
         private List<Tuple<DateTime, Point2f>> finehistory = new List<Tuple<DateTime, Point2f>>();
         /// <summary>
-        /// try to point accurately at the target by centering the little yellow square in the triquadrant (the target) on the screen 
+        /// try to reduce the offset to within a threshold by pressing buttons
         /// </summary>
-        private bool FineAlign()
+        private bool FineAlign(Point2f offset)
         {
-            int centreBox = 150;
-            Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
-            Point2f offset;
-
-            Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));                
-            offset = -triquadrant;
+            
             finehistory.Insert(0, new Tuple<DateTime, Point2f>(screen.timestamp_history[0], offset));
             if (finehistory.Count > 3)
                 finehistory.RemoveAt(3);
@@ -438,6 +463,7 @@ namespace EDAP
                 // I tried to use the compass' velocity here instead of fine velocity but it was too 
                 // noisy for a quadratic prediction, the fine and rough velocities were basically uncorrelated.
                 // Instead, pause until the fine velocity prediction has enough frames.
+                alignFrames = 0;
                 ClearAlignKeys();
                 return false;
             }
@@ -510,7 +536,13 @@ namespace EDAP
 
             status = string.Format("{0:0}, {1:0}\n", offset.X, offset.Y);
 
-            return Math.Abs(offset.X) < 50 && Math.Abs(offset.Y) < 50; // && Math.Abs(velocity.X) < 100 && Math.Abs(velocity.Y) < 100;
+            alignFrames = (Math.Abs(offset.X) < 50 && Math.Abs(offset.Y) < 50) ? alignFrames + 1 : 0;
+            if (alignFrames > 3)
+            {
+                ClearAlignKeys();
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -545,8 +577,11 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X > 0.1); // yaw left
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X < -0.1); // yaw right
 
+            // If we're scooping, make sure we're really antialigned because we're going closer to the star
+            var margin = state.HasFlag(PilotState.Scoop) ? 0.1 : 0.8;
+
             // antialign doesn't need much accuracy... this will just stop accidental noise
-            alignFrames = (Math.Abs(compass.X) < 0.2 && Math.Abs(compass.Y) > 1.0) ? alignFrames + 1 : 0;
+            alignFrames = (Math.Abs(compass.X) < 0.2 && Math.Abs(compass.Y) > 2 - margin) ? alignFrames + 1 : 0;
             if (alignFrames > 3)
             {
                 ClearAlignKeys();
