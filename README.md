@@ -25,6 +25,3 @@ Things that may kill you if you leave this running unattended include, but are n
 
 1. int er dicts
 2. binaries
-3. less than 5s or more than 20s in the system loading screen
-4. brown system centres seem to be easy to crash into (sorry)
-5. running out of hydrogen
