@@ -178,5 +178,14 @@ namespace EDAP
             return new CircleSegment(new Point2f((float)x, (float)y), (float)r);
         }
 
+        /// <summary>
+        /// See if the IMPACT warning is being displayed
+        /// </summary>
+        public bool MatchImpact()
+        {
+            
+
+            return false;
+        }
     }
 }

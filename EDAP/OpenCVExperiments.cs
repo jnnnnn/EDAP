@@ -259,5 +259,28 @@ namespace EDAP
             darkAreas.Circle(c.Center, (int)c.Radius, new Scalar(255, 255, 0));
             Window w9 = new Window("final", darkAreas);
         }
+
+        public static void MatchImpact()
+        {
+            Bitmap screen = new Bitmap("ImpactTest.png");
+            //Bitmap cropped = CompassSensor.Crop(screen, screen.Width - 400, 0, screen.Width - 100, 300);
+            Mat screenwhole = BitmapConverter.ToMat(screen);
+            
+            Mat brightHSV = screenwhole.CvtColor(ColorConversionCodes.BGR2HSV);
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 250 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 250 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat darkAreas = new Mat();
+            screenwhole.CopyTo(darkAreas, redMask);
+            Mat red = darkAreas.Split()[2];
+            red.SaveImage("impacttemplateraw.png");
+            Mat template = new Mat("res3/impacttemplate.png", ImreadModes.GrayScale);
+            Mat result = new Mat(red.Size(), red.Type());
+            Cv2.MatchTemplate(red, template, result, TemplateMatchModes.CCoeffNormed);
+            Window w2 = new Window(red);
+            Window w3 = new Window(result);
+            Cv2.Threshold(result, result, 0.3, 1.0, ThresholdTypes.Tozero);
+            Window w4 = new Window(result);
+            Window w1 = new Window(screenwhole);
+        }
     }
 }
