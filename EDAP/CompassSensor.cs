@@ -235,13 +235,9 @@ namespace EDAP
         /// </summary>
         public bool MatchFaceplant()
         {
-            // if the compass stops jumping around, we've arrived
-            if (DetectStationaryCompass())
-                return true;
-
             // If the middle of the screen is saturated, there's a star there and we have arrived.
             var d = 30;
-            Bitmap image = CompassSensor.Crop(screen.bitmap, new Rectangle(screen.bitmap.Width / 2 - d, screen.bitmap.Height / 2 - d, 2 * d, 2 * d));
+            Bitmap image = Crop(screen.bitmap, new Rectangle(screen.bitmap.Width / 2 - d, screen.bitmap.Height / 2 - d, 2 * d, 2 * d));
             Mat screencentre = BitmapConverter.ToMat(image);
             Mat hsv = screencentre.CvtColor(ColorConversionCodes.BGR2HSV);
             pictureBox2.Image = BitmapConverter.ToBitmap(hsv.Split()[2]);
@@ -254,7 +250,7 @@ namespace EDAP
         List<Point2f> compassHistory = new List<Point2f>(); // up to the last five compass points
         DateTime lastCompassTime = DateTime.UtcNow.AddHours(-1);
         private double sq(double x) { return x * x; }
-        private bool DetectStationaryCompass()
+        public bool DetectStationaryCompass()
         {
             if ((DateTime.UtcNow - lastCompassTime).TotalSeconds > 2)
                 compassHistory.Clear();

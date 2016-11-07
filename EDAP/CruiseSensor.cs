@@ -183,8 +183,25 @@ namespace EDAP
         /// </summary>
         public bool MatchImpact()
         {
-            
+            Bitmap cropped = CompassSensor.Crop(screen.bitmap, screen.bitmap.Width - 400, 0, screen.bitmap.Width - 100, 300);
+            Mat screenarea = BitmapConverter.ToMat(cropped);
 
+            Mat brightHSV = screenarea.CvtColor(ColorConversionCodes.BGR2HSV);
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 250 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 250 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redAreas = new Mat();
+            screenarea.CopyTo(redAreas, redMask);
+            Mat red = redAreas.Split()[2];
+            Mat template = new Mat("res3/impacttemplate.png", ImreadModes.GrayScale);
+            Mat result = new Mat(red.Size(), red.Type());
+            Cv2.MatchTemplate(red, template, result, TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            result.MinMaxLoc(out minVal, out maxVal);
+            if (maxVal > 0.3)
+            {
+                debugWindow.Image = BitmapConverter.ToBitmap(redAreas);
+                return true;
+            }
             return false;
         }
     }

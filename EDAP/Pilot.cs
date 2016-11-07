@@ -123,7 +123,7 @@ namespace EDAP
             // wait until we hit the star at the end of the loading screen (up to 100 seconds)
             if (!state.HasFlag(PilotState.Faceplant) && SecondsSinceLastJump < 100)
             {
-                if (compassRecognizer.MatchFaceplant())
+                if (compassRecognizer.DetectStationaryCompass() || compassRecognizer.MatchFaceplant())
                 {
                     state |= PilotState.Faceplant;
                     last_faceplant_time = DateTime.UtcNow;
@@ -220,37 +220,18 @@ namespace EDAP
                 keyboard.Tap(ScanCode.KEY_P); // 50% throttle        
             }
 
-            if (!state.HasFlag(PilotState.ScoopAlign))
-            {
-                if (SecondsSinceFaceplant > 7)
-                    state |= PilotState.scoopComplete; // if we haven't aligned after seven seconds, abandon the attempt to avoid crashing into star.
+            if (cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant() )
+                keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up
+            else
+                keyboard.Keyup(ScanCode.NUMPAD_5);
 
-                try
-                {
-                    if (AlignCorona())
-                    { 
-                        state |= PilotState.ScoopAlign;
-                        scoopStart = DateTime.UtcNow;
-                        ClearAlignKeys();
-                        Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_F)); // full throttle for flybyscooping
-                    }
-                }
-                catch (ArgumentException e)
-                {
-                    status = e.Message + "\n" + status;
-                    AlignCompass(x: 0, y: 0.82f, align_margin: 0.05f); // align roughly to the corona
-                }
-                status += "Scoop align\n";
-                return;
-            }
-            
-            // cruise past the star (through the corona, hopefully)
-            double ScoopTime = (DateTime.UtcNow - scoopStart).TotalSeconds;
+            if (SecondsSinceFaceplant > 15 && OncePerJump(PilotState.ScoopAlign))
+                keyboard.Tap(ScanCode.KEY_F);
                         
-            status += String.Format("Scoop wait + {0:0.0}\n", ScoopTime);
+            status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
             
-            if (ScoopTime > 20)
-                state |= PilotState.scoopComplete;
+            if (SecondsSinceFaceplant > 25)            
+                state |= PilotState.scoopComplete;                
         }
 
         // select star
