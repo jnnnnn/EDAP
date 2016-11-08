@@ -131,6 +131,7 @@
     <Content Include="res3\impacttemplate.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="res3\impacttest.png" />
     <Content Include="res3\its dock oclock.mp3">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
