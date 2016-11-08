@@ -60,6 +60,11 @@ namespace EDAP
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         double SecondsSinceFaceplant {  get { return (DateTime.UtcNow - last_faceplant_time).TotalSeconds; } }
 
+        public PilotJumper()
+        {
+            state = PilotState.Scoop | PilotState.Honk | PilotState.Cruise; // these modes are enabled by default, but user can disable
+        }
+
         public void Reset(bool soft)
         {
             // soft reset (after every jump)
@@ -512,7 +517,7 @@ namespace EDAP
             keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X < -0.1); // yaw right
 
             // If we're scooping, make sure we're really antialigned because we're going closer to the star
-            var margin = state.HasFlag(PilotState.Scoop) ? 0.1 : 0.8;
+            var margin = state.HasFlag(PilotState.Scoop) ? 0.8 : 0.8;
 
             // antialign doesn't need much accuracy... this will just stop accidental noise
             alignFrames = (Math.Abs(compass.X) < 0.2 && Math.Abs(compass.Y) > 2 - margin) ? alignFrames + 1 : 0;
@@ -561,7 +566,7 @@ namespace EDAP
 
             status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
             
-            if (SecondsSinceFaceplant > 25)
+            if (SecondsSinceFaceplant > 20)
                 state |= PilotState.scoopComplete;
         }
 
