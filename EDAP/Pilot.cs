@@ -46,10 +46,10 @@ namespace EDAP
             Enabled = 1 << 12, // is the pilot enabled?
             Faceplant = 1 << 13, // have we faceplanted the star yet
             ScoopStart = 1 << 14, // have we done the initial setup for scooping yet
-            ScoopMiddle = 1 << 18, // are we nearly done with scooping yet
-            scoopComplete = 1 << 15, // have we finished scooping yet
-            Scoop = 1 << 16, // do we want to scoop at each star?
-            HonkComplete = 1 << 17, // have we fired the discovery scanner yet
+            ScoopMiddle = 1 << 15, // are we nearly done with scooping yet
+            scoopComplete = 1 << 16, // have we finished scooping yet
+            Scoop = 1 << 17, // do we want to scoop at each star?
+            HonkComplete = 1 << 18, // have we fired the discovery scanner yet
         }
 
         public PilotState state;
