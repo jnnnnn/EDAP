@@ -45,7 +45,8 @@ namespace EDAP
             Honk = 1 << 11, // fire discovery scanner when arriving in system?
             Enabled = 1 << 12, // is the pilot enabled?
             Faceplant = 1 << 13, // have we faceplanted the star yet
-            ScoopAlign = 1 << 14, // have we aligned for scooping yet
+            ScoopStart = 1 << 14, // have we done the initial setup for scooping yet
+            ScoopMiddle = 1 << 18, // are we nearly done with scooping yet
             scoopComplete = 1 << 15, // have we finished scooping yet
             Scoop = 1 << 16, // do we want to scoop at each star?
             HonkComplete = 1 << 17, // have we fired the discovery scanner yet
@@ -116,7 +117,7 @@ namespace EDAP
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))
             {
-                //keyboard.Tap(ScanCode.KEY_X); // cut throttle
+                keyboard.Tap(ScanCode.KEY_X); // cut throttle
                 keyboard.Clear();
             }
 
@@ -209,29 +210,6 @@ namespace EDAP
             }
             else if (jumps_remaining > 0 && AlignTarget())
                 Jump();
-        }
-
-        private void Scoop()
-        {
-            if (OncePerJump(PilotState.SelectStar))
-            {
-                keyboard.Clear();
-                SelectStar();
-                keyboard.Tap(ScanCode.KEY_P); // 50% throttle        
-            }
-
-            if (cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant() )
-                keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up
-            else
-                keyboard.Keyup(ScanCode.NUMPAD_5);
-
-            if (SecondsSinceFaceplant > 15 && OncePerJump(PilotState.ScoopAlign))
-                keyboard.Tap(ScanCode.KEY_F);
-                        
-            status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
-            
-            if (SecondsSinceFaceplant > 25)            
-                state |= PilotState.scoopComplete;                
         }
 
         // select star
@@ -344,34 +322,10 @@ namespace EDAP
             {
                 status = e.Message;
             }
-            AlignCompass(x:0, y:0, align_margin:0.15f);
+            AlignCompass();
             return false; // only fine align can confirm we are aligned to the target
         }
-
-        /// <summary>
-        /// Try to point just outside the green circle if it is visible on the screen, or 80% of tangent to the target if it isn't.
-        /// </summary>
-        /// <returns>True once we are aligned</returns>
-        private bool AlignCorona()
-        {
-            try
-            {
-                CircleSegment circle = cruiseSensor.FindCorona();
-                Point2f c = circle.Center;
-                float c_mag = (float)Math.Sqrt(c.X * c.X + c.Y * c.Y);
-                Point2f c_hat = c * (1 / c_mag);
-                Point2f offset = c_hat * (c_mag - circle.Radius - 60); // 60px outside the circle, in the direction of the centre of the screen from the circle centre
-                return FineAlign(-offset);
-            }
-            catch (Exception e)
-            {
-                status = e.Message + "\n" + status;                
-            }
-            AntiAlign();
-            //Align(x: 0, y: 0.82f, align_margin: 0.05f); // align roughly to the corona
-            return false;
-        }
-
+        
         /// <summary>
         /// Press whichever keys will make us point more towards the target.
         /// When rolling, try to keep the target down so that when we turn around the sun it doesn't shine on our compass.
@@ -383,16 +337,14 @@ namespace EDAP
         ///     less -- fine adjustment not fully utilized; noise from compass may cause problems
         /// </param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool AlignCompass(float x, float y, float align_margin)
+        private bool AlignCompass()
         {
             // see if we can find the compass
             Point2f compass;
             try
             {
                 compass = compassRecognizer.GetOrientation();
-                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;
-                compass.X -= x;
-                compass.Y -= y;
+                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;                
             }
             catch (Exception e)
             {
@@ -401,12 +353,13 @@ namespace EDAP
                 status = e.Message + "\n" + status;
                 return false;
             }
-            
+
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
-
+            
             // press whichever keys will point us toward the target. Coordinate system origin is bottom right
+            const float align_margin = 0.15f;
             keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
             keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
             keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
@@ -420,10 +373,10 @@ namespace EDAP
         private List<Tuple<DateTime, Point2f>> finehistory = new List<Tuple<DateTime, Point2f>>();
         /// <summary>
         /// try to reduce the offset to within a threshold by pressing buttons
+        /// <param name="offset">The offset (in pixels) that we want to reduce</param>
         /// </summary>
         private bool FineAlign(Point2f offset)
         {
-            
             finehistory.Insert(0, new Tuple<DateTime, Point2f>(screen.timestamp_history[0], offset));
             if (finehistory.Count > 3)
                 finehistory.RemoveAt(3);
@@ -518,7 +471,7 @@ namespace EDAP
             status = string.Format("{0:0}, {1:0}\n", offset.X, offset.Y);
 
             alignFrames = (Math.Abs(offset.X) < 50 && Math.Abs(offset.Y) < 50) ? alignFrames + 1 : 0;
-            if (alignFrames > 3)
+            if (alignFrames > 2)
             {
                 ClearAlignKeys();
                 return true;
@@ -574,7 +527,7 @@ namespace EDAP
 
         /// <summary>
         /// At the end of a jump we are always just about to crash into the star. FFS. Pitch up for 5-15 seconds 
-        /// (depending on how long witchspace took) at 50% throttle to avoid it.
+        /// (depending on how long the loading screen took) at 50% throttle to avoid it.
         /// </summary>
         private void Swoop()
         {
@@ -586,6 +539,30 @@ namespace EDAP
             keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up for ~5 seconds on arrival to avoid star.
             Thread.Sleep(100);
             return;
+        }
+
+        /// <summary>
+        /// Fly close past the star
+        /// </summary>
+        private void Scoop()
+        {
+            if (OncePerJump(PilotState.ScoopStart))
+                keyboard.Tap(ScanCode.KEY_P); // 50% throttle
+
+            // (barely) avoid crashing into the star
+            if (cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant())
+                keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up
+            else
+                keyboard.Keyup(ScanCode.NUMPAD_5);
+
+            // start speeding up towards the end so we don't crash/overheat
+            if (SecondsSinceFaceplant > 15 && OncePerJump(PilotState.ScoopMiddle))
+                keyboard.Tap(ScanCode.KEY_F);
+
+            status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
+            
+            if (SecondsSinceFaceplant > 25)
+                state |= PilotState.scoopComplete;
         }
 
         /// <summary>
@@ -616,7 +593,7 @@ namespace EDAP
                 Task.Delay(12000).ContinueWith(t => // request docking
                 {
                     if (!state.HasFlag(PilotState.Cruise))
-                        return; // abort docking thing if cruise gets turned off
+                        return; // abort docking request if cruise gets turned off
 
                     Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3", "autopilot disengaged.mp3");
                     keyboard.Tap(ScanCode.KEY_1); // nav menu
