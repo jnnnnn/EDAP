@@ -267,8 +267,8 @@ namespace EDAP
             Mat screenwhole = BitmapConverter.ToMat(screen);
             
             Mat brightHSV = screenwhole.CvtColor(ColorConversionCodes.BGR2HSV);
-            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 250 }), InputArray.Create(new int[] { 5, 256, 256 }))
-                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 250 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
             Mat darkAreas = new Mat();
             screenwhole.CopyTo(darkAreas, redMask);
             Mat red = darkAreas.Split()[2];
@@ -278,7 +278,7 @@ namespace EDAP
             Cv2.MatchTemplate(red, template, result, TemplateMatchModes.CCoeffNormed);
             Window w2 = new Window(red);
             Window w3 = new Window(result);
-            Cv2.Threshold(result, result, 0.3, 1.0, ThresholdTypes.Tozero);
+            Cv2.Threshold(result, result, 0.4, 1.0, ThresholdTypes.Tozero);
             Window w4 = new Window(result);
             Window w1 = new Window(screenwhole);
         }

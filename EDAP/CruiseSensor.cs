@@ -187,8 +187,8 @@ namespace EDAP
             Mat screenarea = BitmapConverter.ToMat(cropped);
 
             Mat brightHSV = screenarea.CvtColor(ColorConversionCodes.BGR2HSV);
-            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 250 }), InputArray.Create(new int[] { 5, 256, 256 }))
-                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 250 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
             Mat redAreas = new Mat();
             screenarea.CopyTo(redAreas, redMask);
             Mat red = redAreas.Split()[2];
@@ -196,10 +196,11 @@ namespace EDAP
             Mat result = new Mat(red.Size(), red.Type());
             Cv2.MatchTemplate(red, template, result, TemplateMatchModes.CCoeffNormed);
             double minVal, maxVal;
-            result.MinMaxLoc(out minVal, out maxVal);
-            if (maxVal > 0.3)
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            if (maxVal > 0.4)
             {
-                debugWindow.Image = BitmapConverter.ToBitmap(redAreas);
+                debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(redAreas), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
                 return true;
             }
             return false;
