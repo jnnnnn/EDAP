@@ -226,8 +226,8 @@ namespace EDAP
             Mat darkAreasMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 0, 0 }), InputArray.Create(new int[] { 180, 255, 180 }));
             Mat darkAreas = new Mat();
             screenwhole.CopyTo(darkAreas, darkAreasMask);
-            
-            Mat screenblur = darkAreas - darkAreas.Blur(new OpenCvSharp.Size(10,10));
+
+            Mat screenblur = darkAreas - darkAreas.Blur(new OpenCvSharp.Size(10, 10));
             Window w3 = new Window(screenblur);
 
             //screenblur.SaveImage("sharplines.png");
@@ -251,7 +251,7 @@ namespace EDAP
             foreach (var line in result)
             {
                 points.Add(line.P1);
-                points.Add(line.P2);                
+                points.Add(line.P2);
                 darkAreas.Line(line.P1, line.P2, new Scalar(255, 0, 255));
             }
             CircleSegment c = CruiseSensor.ComputeCircle(points);
@@ -265,7 +265,7 @@ namespace EDAP
             Bitmap screen = new Bitmap("ImpactTest.png");
             //Bitmap cropped = CompassSensor.Crop(screen, screen.Width - 400, 0, screen.Width - 100, 300);
             Mat screenwhole = BitmapConverter.ToMat(screen);
-            
+
             Mat brightHSV = screenwhole.CvtColor(ColorConversionCodes.BGR2HSV);
             Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
                 + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
@@ -281,6 +281,16 @@ namespace EDAP
             Cv2.Threshold(result, result, 0.4, 1.0, ThresholdTypes.Tozero);
             Window w4 = new Window(result);
             Window w1 = new Window(screenwhole);
+        }
+
+        public static void MatchMenu()
+        {
+            Mat mscreen = new Mat("Screenshot_0113.bmp");
+            Mat matches = mscreen.MatchTemplate(new Mat("res3/missionboard_selected.png"), TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            matches.MinMaxLoc(out minVal, out maxVal);
+            Window w1 = new Window(matches);
+            Window w2 = new Window(matches.InRange(0.8, 1));
         }
     }
 }

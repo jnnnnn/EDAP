@@ -19,7 +19,7 @@ namespace EDAP
         private PilotJumper pilot;
         private CompassSensor compassRecognizer;
         private CruiseSensor cruiseSensor;
-
+        private MenuSensor menuSensor;
         private IntPtr hwnd;
 
         private DateTime lastClick = DateTime.UtcNow;
@@ -40,7 +40,8 @@ namespace EDAP
             cruiseSensor = new CruiseSensor();
             cruiseSensor.screen = screen;
             cruiseSensor.debugWindow = pictureBox2;
-            compassRecognizer = new CompassSensor(screen, pictureBox2);            
+            compassRecognizer = new CompassSensor(screen, pictureBox2);
+            menuSensor = new MenuSensor(screen, pictureBox2);            
             pilot = new PilotJumper();
             pilot.keyboard = keyboard;
             pilot.compassRecognizer = compassRecognizer;
@@ -51,6 +52,7 @@ namespace EDAP
             //OpenCVExperiments.MatchSafDisengag2();
             //OpenCVExperiments.MatchCorona();
             //OpenCVExperiments.MatchImpact();
+            //OpenCVExperiments.MatchMenu();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
@@ -146,7 +148,7 @@ namespace EDAP
             pilot.state &= ~PilotJumper.PilotState.Enabled;
         }
 
-        bool bPrivate = false; // which one to log into next. first is open.
+        bool bPrivate = true; // which one to log into next (open or private)
         private void button_relog_Click(object sender, EventArgs e)
         {
             Focusize();
@@ -163,10 +165,13 @@ namespace EDAP
             keyboard.Tap(SendInput.ScanCode.KEY_D);
             Thread.Sleep(100);
             keyboard.Tap(SendInput.ScanCode.SPACEBAR); // confirm
-            Thread.Sleep(5000);
+
+            // wait for the menu to come up
+            while (!menuSensor.MatchScreen(menuSensor.template_start))
+                Thread.Sleep(100);
 
             keyboard.Tap(SendInput.ScanCode.KEY_S);
-            Thread.Sleep(1000);
+            Thread.Sleep(100);
             keyboard.Tap(SendInput.ScanCode.SPACEBAR); // play game
             Thread.Sleep(1000); 
             if (bPrivate)
@@ -178,10 +183,36 @@ namespace EDAP
             }
             bPrivate = !bPrivate;
             keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select solo or open
-            return; 
-            
-            // to do more here, need to detect things: when the game finishes loading, and when the missions tab is selected
-            // todo: use template matching
+
+            DateTime loadStartWaiting = DateTime.UtcNow;
+            while (!menuSensor.MatchScreen(menuSensor.template_stationmenu))
+            {
+                // don't wait more than 30 seconds for the game to load
+                if ((DateTime.UtcNow - loadStartWaiting).TotalSeconds > 30)
+                    return;
+                Thread.Sleep(100);
+            }
+
+            keyboard.Tap(SendInput.ScanCode.KEY_S);
+            Thread.Sleep(100);
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select Return To Surface
+            Thread.Sleep(100);
+            keyboard.Tap(SendInput.ScanCode.KEY_W);
+            Thread.Sleep(100);
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select Station Services
+
+            // Wait for the station menu to open
+            while (!menuSensor.MatchScreen(menuSensor.template_mission_unselected) && !menuSensor.MatchScreen(menuSensor.template_mission_selected))
+                Thread.Sleep(100);
+
+            // scroll down to mission board
+            while (!menuSensor.MatchScreen(menuSensor.template_mission_selected))
+            {
+                keyboard.Tap(SendInput.ScanCode.KEY_S);
+                Thread.Sleep(100);
+            }
+
+            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // open mission board
         }
     }
 }
