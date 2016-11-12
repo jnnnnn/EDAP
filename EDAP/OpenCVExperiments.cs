@@ -285,8 +285,8 @@ namespace EDAP
 
         public static void MatchMenu()
         {
-            Mat mscreen = new Mat("Screenshot_0113.bmp");
-            Mat matches = mscreen.MatchTemplate(new Mat("res3/missionboard_selected.png"), TemplateMatchModes.CCoeffNormed);
+            Mat mscreen = new Mat("menutest.png");
+            Mat matches = mscreen.MatchTemplate(new Mat("res3/startport_services_selected.png"), TemplateMatchModes.CCoeffNormed);
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
             Window w1 = new Window(matches);

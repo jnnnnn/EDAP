@@ -35,7 +35,7 @@ namespace EDAP
             Mat matches = mscreen.MatchTemplate(template, TemplateMatchModes.CCoeffNormed);
             double minVal, maxVal;
             matches.MinMaxLoc(out minVal, out maxVal);
-            return maxVal > 0.9;
+            return maxVal > 0.8;
         }
 
 

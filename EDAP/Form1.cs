@@ -173,7 +173,7 @@ namespace EDAP
             keyboard.Tap(SendInput.ScanCode.KEY_S);
             Thread.Sleep(100);
             keyboard.Tap(SendInput.ScanCode.SPACEBAR); // play game
-            Thread.Sleep(1000); 
+            Thread.Sleep(2000); // sleep a little longer in case the user wants to choose somethingssss
             if (bPrivate)
             {
                 // choose solo
