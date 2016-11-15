@@ -50,6 +50,7 @@ namespace EDAP
             scoopComplete = 1 << 16, // have we finished scooping yet
             Scoop = 1 << 17, // do we want to scoop at each star?
             HonkComplete = 1 << 18, // have we fired the discovery scanner yet
+            SkipThisScoop = 1 << 19, // we want to skip scooping for this jump
         }
 
         public PilotState state;
@@ -127,17 +128,24 @@ namespace EDAP
             }
 
             // wait until we hit the star at the end of the loading screen (up to 100 seconds)
-            if (!state.HasFlag(PilotState.Faceplant) && SecondsSinceLastJump < 100)
+            if (!state.HasFlag(PilotState.Faceplant))
             {
-                if (compassRecognizer.DetectStationaryCompass() || compassRecognizer.MatchFaceplant())
+                bool stationaryCompass = compassRecognizer.DetectStationaryCompass();
+                if (stationaryCompass || compassRecognizer.MatchFaceplant() || SecondsSinceLastJump < 100)
                 {
                     state |= PilotState.Faceplant;
                     last_faceplant_time = DateTime.UtcNow;
+                    if (stationaryCompass)
+                    {
+                        // if the jump ended without detecting a star, it's probably a neutron star or black hole, so skip fuel scooping.
+                        state |= PilotState.SkipThisScoop;
+                    }
                 }
                 else
                     return; // keep waiting
             }
 
+            // don't do anything for a second after faceplant detection because the game sometimes doesn't register inputs 
             if (SecondsSinceFaceplant < 1)
                 return;
 
@@ -160,7 +168,10 @@ namespace EDAP
                 return;
             }
 
-            if (state.HasFlag(PilotState.Scoop) && !state.HasFlag(PilotState.scoopComplete) && jumps_remaining > 0)
+            if (state.HasFlag(PilotState.Scoop) 
+                && !state.HasFlag(PilotState.scoopComplete) 
+                && !state.HasFlag(PilotState.SkipThisScoop) 
+                && jumps_remaining > 0)
             {
                 Scoop();
                 return;
