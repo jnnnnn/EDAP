@@ -76,6 +76,7 @@ namespace EDAP
 
             // hard reset (when user activates autopilot)            
             state |= PilotState.firstjump;
+            state |= PilotState.Faceplant; // assume we have already dodged the star
             alignFrames = 0;
             last_jump_time = DateTime.UtcNow.AddHours(-1);
         }
