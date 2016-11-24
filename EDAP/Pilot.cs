@@ -118,7 +118,10 @@ namespace EDAP
 
             // charging frendship drive (15s) / countdown (5s) / loading screen (~14-16s)
             if (SecondsSinceLastJump < 30)
+            {
+                status = string.Format("Waiting for jump, {0:0.0}", SecondsSinceLastJump);
                 return;
+            }
 
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))
@@ -142,7 +145,11 @@ namespace EDAP
                     }
                 }
                 else
+                {
+                    status = string.Format("Waiting for jump end, {0:0.0}", SecondsSinceLastJump);
                     return; // keep waiting
+                }
+                    
             }
 
             // don't do anything for a second after faceplant detection because the game sometimes doesn't register inputs 

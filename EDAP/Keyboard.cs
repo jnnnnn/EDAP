@@ -32,6 +32,14 @@ namespace EDAP
             pressed_keys = new HashSet<ScanCode>();
         }
         
+        public string ToString()
+        {
+            lock (pressed_keys)
+            {
+                return string.Join(", ", pressed_keys);
+            }
+        }
+
         public void SetKeyState(ScanCode key, bool down)
         {
             if (down)

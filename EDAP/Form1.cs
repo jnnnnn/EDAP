@@ -92,7 +92,7 @@ namespace EDAP
             label1.Text = pilot.status;
             
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
-            label2.Text = string.Join(", ", keyboard.pressed_keys);            
+            label2.Text = keyboard.ToString();
         }
 
         private void SetButtonColors()
