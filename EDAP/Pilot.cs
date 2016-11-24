@@ -76,7 +76,7 @@ namespace EDAP
 
             // hard reset (when user activates autopilot)            
             state |= PilotState.firstjump;
-            state |= PilotState.Faceplant; // assume we have already dodged the star
+            state |= PilotState.Faceplant; // no need to dodge the star until we have initiated a jump -- stops cruising from trying to dodge a star
             alignFrames = 0;
             last_jump_time = DateTime.UtcNow.AddHours(-1);
         }
