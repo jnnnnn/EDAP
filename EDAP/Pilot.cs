@@ -131,7 +131,7 @@ namespace EDAP
             if (!state.HasFlag(PilotState.Faceplant))
             {
                 bool stationaryCompass = compassRecognizer.DetectStationaryCompass();
-                if (stationaryCompass || compassRecognizer.MatchFaceplant() || SecondsSinceLastJump < 100)
+                if (stationaryCompass || compassRecognizer.MatchFaceplant() || SecondsSinceLastJump > 100)
                 {
                     state |= PilotState.Faceplant;
                     last_faceplant_time = DateTime.UtcNow;
