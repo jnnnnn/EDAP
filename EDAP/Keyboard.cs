@@ -129,6 +129,18 @@ namespace EDAP
         }
 
         /// <summary>
+        /// Same as Tap but also waits a bit after letting go so that we don't get ahead of ourselves
+        /// </summary>
+        /// <param name="key"></param>
+        public void TapWait(ScanCode key)
+        {
+            Keydown(key);
+            Thread.Sleep(100);
+            Keyup(key);
+            Thread.Sleep(100);
+        }
+
+        /// <summary>
         /// Release all pressed keys immediately.
         /// </summary>
         public void Clear()

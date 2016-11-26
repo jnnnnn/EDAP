@@ -20,6 +20,7 @@ namespace EDAP
         private CompassSensor compassRecognizer;
         private CruiseSensor cruiseSensor;
         private MenuSensor menuSensor;
+        private Relogger relogger;
         private IntPtr hwnd;
 
         private DateTime lastClick = DateTime.UtcNow;
@@ -28,7 +29,7 @@ namespace EDAP
         private void Focusize()
         {
             SwitchToThisWindow(hwnd, true);
-            Thread.Sleep(10);
+            Thread.Sleep(100);
         }
 
         public Form1()
@@ -47,6 +48,9 @@ namespace EDAP
             pilot.compassRecognizer = compassRecognizer;
             pilot.screen = screen;
             pilot.cruiseSensor = cruiseSensor;
+            relogger = new Relogger();
+            relogger.keyboard = keyboard;
+            relogger.menuSensor = menuSensor;
 
             // If you want to run one of the experiments, call it here so it runs on startup
             //OpenCVExperiments.MatchSafDisengag2();
@@ -88,9 +92,12 @@ namespace EDAP
             numericUpDown1.Value = pilot.Jumps;
 
             SetButtonColors();
-            pilot.Act();
+            if (relogger.state.HasFlag(Relogger.MenuState.Enabled))
+                relogger.Act();
+            else
+                pilot.Act();
             label1.Text = pilot.status;
-            
+
             Text = (DateTime.UtcNow - t0).TotalMilliseconds.ToString();
             label2.Text = keyboard.ToString();
         }
@@ -102,6 +109,8 @@ namespace EDAP
             buttonMap.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.SysMap) ? Color.Green : Color.Coral;
             buttonHorn.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Honk) ? Color.Green : Color.Coral;
             buttonScoop.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Scoop) ? Color.Green : Color.Coral;
+            button_relog_group.ForeColor = relogger.state.HasFlag(Relogger.MenuState.Enabled) && !relogger.state.HasFlag(Relogger.MenuState.Solo) ? Color.Green : Color.Coral;
+            button_relog_solo.ForeColor = relogger.state.HasFlag(Relogger.MenuState.Enabled) && relogger.state.HasFlag(Relogger.MenuState.Solo) ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -147,72 +156,23 @@ namespace EDAP
             // disable when the mouse goes down on the jump count control (so that key presses don't interrupt user input)
             pilot.state &= ~PilotJumper.PilotState.Enabled;
         }
-
-        bool bPrivate = true; // which one to log into next (open or private)
+        
         private void button_relog_Click(object sender, EventArgs e)
         {
             Focusize();
-            // exit to main menu
-            Thread.Sleep(200);
-            keyboard.Tap(SendInput.ScanCode.ESC);
-            Thread.Sleep(1000); // wait for the menu to come up
-            keyboard.Tap(SendInput.ScanCode.KEY_W);
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.KEY_W);
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // quit to menu
-            Thread.Sleep(800);
-            keyboard.Tap(SendInput.ScanCode.KEY_D);
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // confirm
+            if (relogger.state.HasFlag(Relogger.MenuState.Enabled))
+                relogger.state ^= Relogger.MenuState.Enabled;
+            else
+                relogger.state = Relogger.MenuState.Enabled | Relogger.MenuState.Solo;
+        }
 
-            // wait for the menu to come up
-            while (!menuSensor.MatchScreen(menuSensor.template_start))
-                Thread.Sleep(100);
-
-            keyboard.Tap(SendInput.ScanCode.KEY_S);
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // play game
-            Thread.Sleep(2000); // sleep a little longer in case the user wants to choose somethingssss
-            if (bPrivate)
-            {
-                // choose solo
-                keyboard.Tap(SendInput.ScanCode.KEY_S);
-                Thread.Sleep(100);
-                keyboard.Tap(SendInput.ScanCode.KEY_S);
-            }
-            bPrivate = !bPrivate;
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select solo or open
-
-            DateTime loadStartWaiting = DateTime.UtcNow;
-            while (!menuSensor.MatchScreen(menuSensor.template_stationmenu))
-            {
-                // don't wait more than 30 seconds for the game to load
-                if ((DateTime.UtcNow - loadStartWaiting).TotalSeconds > 30)
-                    return;
-                Thread.Sleep(100);
-            }
-
-            keyboard.Tap(SendInput.ScanCode.KEY_S);
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select Return To Surface
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.KEY_W);
-            Thread.Sleep(100);
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // select Station Services
-
-            // Wait for the station menu to open
-            while (!menuSensor.MatchScreen(menuSensor.template_mission_unselected) && !menuSensor.MatchScreen(menuSensor.template_mission_selected))
-                Thread.Sleep(100);
-
-            // scroll down to mission board
-            while (!menuSensor.MatchScreen(menuSensor.template_mission_selected))
-            {
-                keyboard.Tap(SendInput.ScanCode.KEY_S);
-                Thread.Sleep(100);
-            }
-
-            keyboard.Tap(SendInput.ScanCode.SPACEBAR); // open mission board
+        private void relogGroup_Click(object sender, EventArgs e)
+        {
+            Focusize();
+            if (relogger.state.HasFlag(Relogger.MenuState.Enabled))
+                relogger.state ^= Relogger.MenuState.Enabled;
+            else
+                relogger.state = Relogger.MenuState.Enabled;
         }
     }
 }

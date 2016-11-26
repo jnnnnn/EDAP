@@ -44,7 +44,8 @@ namespace EDAP
             this.buttonMap = new System.Windows.Forms.Button();
             this.buttonScoop = new System.Windows.Forms.Button();
             this.buttonHorn = new System.Windows.Forms.Button();
-            this.button_relog = new System.Windows.Forms.Button();
+            this.button_relog_solo = new System.Windows.Forms.Button();
+            this.button_relog_group = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             this.SuspendLayout();
@@ -172,20 +173,35 @@ namespace EDAP
             this.buttonHorn.UseVisualStyleBackColor = true;
             this.buttonHorn.Click += new System.EventHandler(this.button1_Click_2);
             // 
-            // button_relog
+            // button_relog_solo
             // 
-            this.button_relog.BackColor = System.Drawing.Color.Black;
-            this.button_relog.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.button_relog.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button_relog.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button_relog.ForeColor = System.Drawing.Color.Coral;
-            this.button_relog.Location = new System.Drawing.Point(205, 221);
-            this.button_relog.Name = "button_relog";
-            this.button_relog.Size = new System.Drawing.Size(75, 22);
-            this.button_relog.TabIndex = 12;
-            this.button_relog.Text = "relog";
-            this.button_relog.UseVisualStyleBackColor = true;
-            this.button_relog.Click += new System.EventHandler(this.button_relog_Click);
+            this.button_relog_solo.BackColor = System.Drawing.Color.Black;
+            this.button_relog_solo.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.button_relog_solo.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_relog_solo.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button_relog_solo.ForeColor = System.Drawing.Color.Coral;
+            this.button_relog_solo.Location = new System.Drawing.Point(205, 221);
+            this.button_relog_solo.Name = "button_relog_solo";
+            this.button_relog_solo.Size = new System.Drawing.Size(37, 22);
+            this.button_relog_solo.TabIndex = 12;
+            this.button_relog_solo.Text = "solo";
+            this.button_relog_solo.UseVisualStyleBackColor = true;
+            this.button_relog_solo.Click += new System.EventHandler(this.button_relog_Click);
+            // 
+            // button_relog_group
+            // 
+            this.button_relog_group.BackColor = System.Drawing.Color.Black;
+            this.button_relog_group.FlatAppearance.BorderColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.button_relog_group.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button_relog_group.Font = new System.Drawing.Font("Microsoft Sans Serif", 8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button_relog_group.ForeColor = System.Drawing.Color.Coral;
+            this.button_relog_group.Location = new System.Drawing.Point(241, 221);
+            this.button_relog_group.Name = "button_relog_group";
+            this.button_relog_group.Size = new System.Drawing.Size(40, 22);
+            this.button_relog_group.TabIndex = 13;
+            this.button_relog_group.Text = "group";
+            this.button_relog_group.UseVisualStyleBackColor = true;
+            this.button_relog_group.Click += new System.EventHandler(this.relogGroup_Click);
             // 
             // Form1
             // 
@@ -193,7 +209,8 @@ namespace EDAP
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
             this.ClientSize = new System.Drawing.Size(292, 255);
-            this.Controls.Add(this.button_relog);
+            this.Controls.Add(this.button_relog_group);
+            this.Controls.Add(this.button_relog_solo);
             this.Controls.Add(this.buttonHorn);
             this.Controls.Add(this.buttonScoop);
             this.Controls.Add(this.buttonMap);
@@ -228,7 +245,8 @@ namespace EDAP
         private System.Windows.Forms.Button buttonMap;
         private System.Windows.Forms.Button buttonScoop;
         private System.Windows.Forms.Button buttonHorn;
-        private System.Windows.Forms.Button button_relog;
+        private System.Windows.Forms.Button button_relog_solo;
+        private System.Windows.Forms.Button button_relog_group;
     }
 }
 
