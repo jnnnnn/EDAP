@@ -27,7 +27,8 @@ namespace EDAP
         }
         
         /// <summary>
-        /// See if we can find the given image anywhere on the screen.
+        /// See if we can find the given image anywhere on the screen. Matches the Value channel so bright red will look the same as bright white.
+        /// Matching one channel takes 80ms on my machine, matching three channels 240ms. Color conversion takes less than 5ms (basically free in comparison)
         /// </summary>
         /// <param name="template">The image to look for</param>        
         public bool MatchScreen(Mat template)
@@ -42,6 +43,20 @@ namespace EDAP
             return maxVal > match_threshold;
         }
 
+        /// <summary>
+        /// Similar to match screen but matches only the blue channel. Good for telling the difference between red and white.
+        /// </summary>
+        public bool MatchBlue(Mat template)
+        {
+            Mat mscreen = BitmapConverter.ToMat(screen.bitmap);
+            Mat mscreenValue = mscreen.Split()[0];
+            Mat templateValue = template.Split()[0];
+
+            Mat matches = mscreenValue.MatchTemplate(templateValue, TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            matches.MinMaxLoc(out minVal, out maxVal);
+            return maxVal > match_threshold;
+        }
 
     }
 }

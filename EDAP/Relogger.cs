@@ -52,8 +52,8 @@ namespace EDAP
             if (!state.HasFlag(MenuState.YesExit))
             {
                 // in case there is a logout timer, wait until yes goes white
-                if (menuSensor.MatchScreen(menuSensor.template_yes))
-                {
+                if (menuSensor.MatchBlue(menuSensor.template_yes))
+                {                    
                     keyboard.TapWait(SendInput.ScanCode.SPACEBAR); // confirm
                     state |= MenuState.YesExit;
                 }
