@@ -27,7 +27,7 @@ This project uses OpenCVSharp, which should be downloaded automatically when you
 See Pilot.cs. tldr: 
 
 1. press jump
-2. wait 30 seconds
+2. wait 30 seconds then throttle 0%
 3. wait until centre of screen goes bright (star appears -- (a)) or compass stops moving (non-sequence star -- (b))
 4a. 50% throttle, pitch up if IMPACT warning is displayed, wait 20 seconds (scoop)
 4b. select star, use compass to point away from star
