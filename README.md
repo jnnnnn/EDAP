@@ -3,7 +3,8 @@
 Demo: https://youtu.be/k5QqXoVuOv8
 
 Build/Run:
-Open EDAP.sln with Visual Studio Community 2015 and press F5.
+1. Download and install Visual Studio Community (free download, https://www.visualstudio.com/vs/community/ )
+2. Open EDAP.sln and press F5
 
 Required settings:
 
@@ -21,11 +22,27 @@ To see the key mappings used you will need to read the code, see Pilot.cs. You c
 
 This project uses OpenCVSharp, which should be downloaded automatically when you try to build the project. (The Nuget package management system is part of Visual Studio.)
 
+# Algorithm
+
+See Pilot.cs. tldr: 
+
+1. press jump
+2. wait 30 seconds
+3. wait until centre of screen goes bright (star appears -- (a)) or compass stops moving (non-sequence star -- (b))
+4a. 50% throttle, pitch up if IMPACT warning is displayed, wait 20 seconds (scoop)
+4b. select star, use compass to point away from star
+5. select next destination, use compass to point at it
+6. go to step 1 until jump counter is 0
+7. set throttle to 75%, point at target continuously
+8. if "safe disengage" is displayed, press docking key sequence (disengage, wait, boost, 0% throttle, request docking)
+
 # Watch out
 
-Things that may kill you if you leave this running unattended include, but are not limited to:
+Things that may kill you if you leave this running unattended include:
 
-1. int er dicts
-2. binaries
-3. overheating
-4. bugs / bad code
+1. interdiction (if you use this in the bubble, keep an eye on it)
+2. binaries / multiple stars (it will pitch up to avoid collisions while scooping but otherwise takes no evasive measures)
+3. white dwarfs, black holes, and neutron stars (it won't try to scoop these but may still hit the cones)
+4. overheating near big stars -- the 20-second scoop wait is not long enough for some stars, it will start charging to jump too early
+5. bugs / bad code -- i've tested it fairly extensively but it may stil have weird shit
+6. aliens
