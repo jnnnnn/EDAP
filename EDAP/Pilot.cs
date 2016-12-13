@@ -239,13 +239,10 @@ namespace EDAP
         // select star
         private void SelectStar()
         {
-            keyboard.Tap(ScanCode.KEY_1); // nav menu
-            Thread.Sleep(100); // game takes a while to catch up with this.
-            keyboard.Tap(ScanCode.KEY_D); // right to select nearest object in system (the central star)
-            keyboard.Tap(ScanCode.SPACEBAR); // open menu
-            Thread.Sleep(100);
+            keyboard.TapWait(ScanCode.KEY_1); // nav menu            
+            keyboard.TapWait(ScanCode.KEY_D); // right to select nearest object in system (the central star)
+            keyboard.TapWait(ScanCode.SPACEBAR); // open menu            
             keyboard.Tap(ScanCode.SPACEBAR); // select the object
-            Thread.Sleep(100);
             keyboard.Tap(ScanCode.KEY_1); // close nav menu
         }
 
@@ -620,10 +617,8 @@ namespace EDAP
                         return; // abort docking request if cruise gets turned off
 
                     Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3", "autopilot disengaged.mp3");
-                    keyboard.Tap(ScanCode.KEY_1); // nav menu
-                    Thread.Sleep(200); // game needs time to open this menu
-                    keyboard.Tap(ScanCode.KEY_E); // tab right
-                    Thread.Sleep(200); // game needs time to realise key was unpressed
+                    keyboard.TapWait(ScanCode.KEY_1); // nav menu
+                    keyboard.TapWait(ScanCode.KEY_E); // tab right
                     keyboard.Tap(ScanCode.KEY_E); // tab right
                     keyboard.Tap(ScanCode.SPACEBAR); // select first contact (the station)
                     keyboard.Tap(ScanCode.KEY_S); // down to the second option (request docking)

@@ -2,3 +2,4 @@ debug/
 release/
 *.suo
 packages/
+/EDAP/EDAP.VC.db
