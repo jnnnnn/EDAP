@@ -27,30 +27,35 @@ namespace EDAP
         public const int TIMERINTERVAL_MS = 100;
         public string status = "";
 
-        private ScanCode keyThrottle0 = ScanCode.KEY_X;
-        private ScanCode keyThrottle50 = ScanCode.KEY_P;
-        private ScanCode keyThrottleReduce25 = ScanCode.KEY_Q;
-        private ScanCode keyThrottle100 = ScanCode.KEY_F;
-        private ScanCode keyBoost = ScanCode.TAB;
-        private ScanCode keyNextDestination = ScanCode.KEY_N;
-        private ScanCode keyFire1 = ScanCode.KEY_O; // fire discovery scanner
-        private ScanCode keyHyperspace = ScanCode.KEY_G;
+        private ScanCode keyThrottle0 = parseKeyBinding(Properties.Settings.Default.keyThrottle0);
+        private ScanCode keyThrottle50 = parseKeyBinding(Properties.Settings.Default.keyThrottle50);
+        private ScanCode keyThrottleReduce25 = parseKeyBinding(Properties.Settings.Default.keyThrottleReduce25);
+        private ScanCode keyThrottle100 = parseKeyBinding(Properties.Settings.Default.keyThrottle100);
+        private ScanCode keyBoost = parseKeyBinding(Properties.Settings.Default.keyBoost);
+        private ScanCode keyNextDestination = parseKeyBinding(Properties.Settings.Default.keyNextDestination);
+        private ScanCode keyFire1 = parseKeyBinding(Properties.Settings.Default.keyFire1);
+        private ScanCode keyHyperspace = parseKeyBinding(Properties.Settings.Default.keyHyperspace);
 
-        private ScanCode keyNavMenu = ScanCode.KEY_1;
-        private ScanCode keyRight = ScanCode.KEY_D;
-        private ScanCode keySelect = ScanCode.SPACEBAR;
-        private ScanCode keyMenuTabRight = ScanCode.KEY_E;
-        private ScanCode keyDown = ScanCode.KEY_S;
-        private ScanCode keySystemMap = ScanCode.KEY_6;
-        private ScanCode keySysMapScrollRight = ScanCode.KEY_K;
-        private ScanCode keyScreenshot = ScanCode.F10;
+        private ScanCode keyNavMenu = parseKeyBinding(Properties.Settings.Default.keyNavMenu);
+        private ScanCode keyRight = parseKeyBinding(Properties.Settings.Default.keyRight);
+        private ScanCode keySelect = parseKeyBinding(Properties.Settings.Default.keySelect);
+        private ScanCode keyMenuTabRight = parseKeyBinding(Properties.Settings.Default.keyMenuTabRight);
+        private ScanCode keyDown = parseKeyBinding(Properties.Settings.Default.keyDown);
+        private ScanCode keySystemMap = parseKeyBinding(Properties.Settings.Default.keySystemMap);
+        private ScanCode keySysMapScrollRight = parseKeyBinding(Properties.Settings.Default.keySysMapScrollRight);
+        private ScanCode keyScreenshot = parseKeyBinding(Properties.Settings.Default.keyScreenshot);
 
-        private ScanCode keyRollLeft = ScanCode.NUMPAD_7;
-        private ScanCode keyRollRight = ScanCode.NUMPAD_9;
-        private ScanCode keyPitchUp = ScanCode.NUMPAD_5;
-        private ScanCode keyPitchDown = ScanCode.NUMPAD_8;
-        private ScanCode keyYawLeft = ScanCode.NUMPAD_4;
-        private ScanCode keyYawRight = ScanCode.NUMPAD_6;
+        private ScanCode keyRollLeft = parseKeyBinding(Properties.Settings.Default.keyRollLeft);
+        private ScanCode keyRollRight = parseKeyBinding(Properties.Settings.Default.keyRollRight);
+        private ScanCode keyPitchUp = parseKeyBinding(Properties.Settings.Default.keyPitchUp);
+        private ScanCode keyPitchDown = parseKeyBinding(Properties.Settings.Default.keyPitchDown);
+        private ScanCode keyYawLeft = parseKeyBinding(Properties.Settings.Default.keyYawLeft);
+        private ScanCode keyYawRight = parseKeyBinding(Properties.Settings.Default.keyYawRight);
+
+        static private ScanCode parseKeyBinding(string s)
+        {
+            return (ScanCode)Enum.Parse(typeof(ScanCode), s);
+        }
 
         [Flags]
         public enum PilotState
@@ -152,7 +157,7 @@ namespace EDAP
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))
             {
-                keyboard.Tap(throttle0); // cut throttle
+                keyboard.Tap(keyThrottle0); // cut throttle
                 keyboard.Clear();
             }
 
