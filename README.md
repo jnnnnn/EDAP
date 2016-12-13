@@ -3,6 +3,7 @@
 Demo: https://youtu.be/k5QqXoVuOv8
 
 Instructions:
+
 1. click Releases, above, 
 2. download the archive (it's about 8 MB because of the opencv dll) 
 3. modify the key bindings in EDAP.exe.config (or change your in-game bindings to match)
