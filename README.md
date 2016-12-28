@@ -16,6 +16,7 @@ Required settings:
   4. Saf Diseng: blue channel
 4. Disable GUI effects (the animation when you open a side panel, speeds up panel opening)
 5. Interface brightness should be set to three pips below max (I don't know how much this matters though, there is some leeway in most of the detectors)
+6. The Mouse Widget should be on because this is used to align to the target circle while the camera is waving around (just using the centre of the screen caused oscillation)
 
 To see the key mappings used you will need to read the code, see Pilot.cs. You can (obviously) change them before build/run. The numpad is used for orientation; F, P, X are various throttle, etc.
 
@@ -27,3 +28,10 @@ Things that may kill you if you leave this running unattended include, but are n
 
 1. int er dicts
 2. binaries
+
+# Additional notes
+
+When the jump counter reaches 0, this program will behave differently:
+
+- if cruise is on, it will try to land at the targetted station
+- if cruise is off, it will cut throttle and point at the targetted star (waiting for manual scooping)
