@@ -597,6 +597,9 @@ namespace EDAP
         /// </summary>
         private void Scoop()
         {
+            int scoopWaitSeconds = Properties.Settings.Default.scoopWaitSeconds;
+            int scoopFinishSeconds = Properties.Settings.Default.scoopFinishSeconds;
+
             if (OncePerJump(PilotState.ScoopStart))
                 keyboard.Tap(keyThrottle50); // 50% throttle
 
@@ -607,12 +610,12 @@ namespace EDAP
                 keyboard.Keyup(keyPitchUp);
 
             // start speeding up towards the end so we don't crash/overheat
-            if (SecondsSinceFaceplant > 15 && OncePerJump(PilotState.ScoopMiddle))
+            if (SecondsSinceFaceplant > scoopWaitSeconds && OncePerJump(PilotState.ScoopMiddle))
                 keyboard.Tap(keyThrottle100);
 
             status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
             
-            if (SecondsSinceFaceplant > 20)
+            if (SecondsSinceFaceplant > scoopWaitSeconds + scoopFinishSeconds)
                 state |= PilotState.scoopComplete;
         }
 
