@@ -17,6 +17,7 @@ Required settings:
   4. Saf Diseng: blue channel
 4. Disable GUI effects (the animation when you open a side panel, speeds up panel opening)
 5. Interface brightness should be set to three pips below max (I don't know how much this matters though, there is some leeway in the detectors)
+6. Mouse Widget (the little 5x5px solid yellow square in the middle of the screen) should be enabled as otherwise the fine alignment won't work
 
 This project uses OpenCVSharp.
 
@@ -31,8 +32,9 @@ See Pilot.cs. tldr:
   2. select star, use compass to point away from star
 4. select next destination, use compass to point at it
 5. go to step 1 until jump counter is 0
-6. set throttle to 75%, point at target continuously
+6. set throttle to 75%, point at target continuously (if Cruise is active; otherwise just cut throttle and take no further action)
 7. if "safe disengage" is displayed, press docking key sequence (disengage, wait, boost, 0% throttle, request docking)
+
 
 # Watch out
 
