@@ -2,12 +2,16 @@
 
 Demo: https://youtu.be/k5QqXoVuOv8
 
-Build/Run:
-1. Download and install Visual Studio Community (free download, https://www.visualstudio.com/vs/community/ )
-2. Open EDAP.sln and press F5
+Instructions:
+
+1. click Releases, above, 
+2. download the archive (it's about 8 MB because of the opencv dll) 
+3. modify the key bindings in EDAP.exe.config (or change your in-game bindings to match)
+3. run EDAP.exe
 
 Required settings:
 
+0. Key bindings (see EDAP.exe.config)
 1. Resolution is hardcoded to 1920x1080 (changing this is gonna mean changing lots of numbers and template images)
 2. Executable is hardcoded as the 64-bit version
 3. The colours looked for are (if you've changed your HUD colours, these things won't work):
@@ -18,8 +22,6 @@ Required settings:
 4. Disable GUI effects (the animation when you open a side panel, speeds up panel opening)
 5. Interface brightness should be set to three pips below max (I don't know how much this matters though, there is some leeway in the detectors)
 
-To see the key mappings used you will need to read the code, see Pilot.cs. You can (obviously) change them before build/run. The numpad is used for orientation; F, P, X are various throttle, etc.
-
 This project uses OpenCVSharp, which should be downloaded automatically when you try to build the project. (The Nuget package management system is part of Visual Studio.)
 
 # Algorithm
@@ -28,13 +30,13 @@ See Pilot.cs. tldr:
 
 1. press jump, throttle 100%
 2. wait 30 seconds then throttle 0%
-3. wait until centre of screen goes bright (star appears -- (a)) or compass stops moving (non-sequence star -- (b))
-4a. 50% throttle, pitch up if IMPACT warning is displayed, wait 20 seconds (scoop)
-4b. select star, use compass to point away from star
-5. select next destination, use compass to point at it
-6. go to step 1 until jump counter is 0
-7. set throttle to 75%, point at target continuously
-8. if "safe disengage" is displayed, press docking key sequence (disengage, wait, boost, 0% throttle, request docking)
+3. wait until centre of screen goes bright (star appears -- (1)) or compass stops moving (non-sequence star -- (2))
+  1. 50% throttle, pitch up if IMPACT warning is displayed, wait 20 seconds (scoop)
+  2. select star, use compass to point away from star
+4. select next destination, use compass to point at it
+5. go to step 1 until jump counter is 0
+6. set throttle to 75%, point at target continuously
+7. if "safe disengage" is displayed, press docking key sequence (disengage, wait, boost, 0% throttle, request docking)
 
 # Watch out
 
