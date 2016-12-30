@@ -199,12 +199,11 @@ namespace EDAP
         /// </summary>
         public Point2f GetLastGoodOrientation(double ageSeconds)
         {
-            Exception compassError;
             try
             {
                 return GetOrientation();
             }
-            catch (Exception e)
+            catch
             {
                 if ((DateTime.UtcNow - lastGoodOrientationTimestamp).TotalSeconds < ageSeconds)
                     return lastGoodOrientation;

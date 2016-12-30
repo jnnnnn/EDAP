@@ -186,13 +186,14 @@ namespace EDAP
             // don't do anything for a second after faceplant detection because the game sometimes doesn't register inputs 
             if (SecondsSinceFaceplant < 1)
                 return;
-
+            
             if (state.HasFlag(PilotState.Honk) && OncePerJump(PilotState.HonkComplete))
             {
                 keyboard.Keydown(keyFire1); // hooooooooooooonk
                 Task.Delay(10000).ContinueWith(t => keyboard.Keyup(keyFire1)); // stop honking after ten seconds
+                return;
             }
-
+                        
             // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
             if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
             {                      
@@ -383,7 +384,7 @@ namespace EDAP
             AlignCompass();
             return false; // only fine align can confirm we are aligned to the target
         }
-        
+
         /// <summary>
         /// Press whichever keys will make us point more towards the target.
         /// When rolling, try to keep the target down so that when we turn around the sun it doesn't shine on our compass.
@@ -394,8 +395,9 @@ namespace EDAP
         ///     more -- fine adjustment won't work because target not in view. 
         ///     less -- fine adjustment not fully utilized; noise from compass may cause problems
         /// </param>
+        /// <param name="bPitchYaw">If this is false, roll the ship but don't pitch or yaw.</param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool AlignCompass()
+        private bool AlignCompass(bool bPitchYaw=true)
         {
             // see if we can find the compass
             Point2f compass;
@@ -420,11 +422,14 @@ namespace EDAP
             const float align_margin = 0.15f;
             keyboard.SetKeyState(keyRollRight, compass.X < -0.3); // roll right
             keyboard.SetKeyState(keyRollLeft, compass.X > 0.3); // roll left
-            keyboard.SetKeyState(keyPitchUp, compass.Y < -align_margin); // pitch up
-            keyboard.SetKeyState(keyPitchDown, compass.Y > align_margin); // pitch down
-            keyboard.SetKeyState(keyYawLeft, compass.X < -align_margin); // yaw left
-            keyboard.SetKeyState(keyYawRight, compass.X > align_margin); // yaw right
-            
+            if (bPitchYaw)
+            {
+                keyboard.SetKeyState(keyPitchUp, compass.Y < -align_margin); // pitch up
+                keyboard.SetKeyState(keyPitchDown, compass.Y > align_margin); // pitch down
+                keyboard.SetKeyState(keyYawLeft, compass.X < -align_margin); // yaw left
+                keyboard.SetKeyState(keyYawRight, compass.X > align_margin); // yaw right
+            }
+
             return (Math.Abs(compass.Y) < align_margin && Math.Abs(compass.X) < align_margin);
         }
         
@@ -624,6 +629,11 @@ namespace EDAP
             
             if (SecondsSinceFaceplant > scoopWaitSeconds + scoopFinishSeconds)
                 state |= PilotState.scoopComplete;
+
+            // roll so that the star is below (makes pitch up quicker -- less likely to collide in slow ships)
+            if (OncePerJump(PilotState.SelectStar))
+                SelectStar();
+            AlignCompass(bPitchYaw: false);
         }
 
         /// <summary>
