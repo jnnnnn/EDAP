@@ -142,6 +142,7 @@ namespace EDAP
             // perform the first alignment/jump immediately
             if (state.HasFlag(PilotState.firstjump) && jumps_remaining > 0)
             {
+                StartJump();
                 if (AlignTarget())
                     Jump();
                 return;
@@ -275,12 +276,13 @@ namespace EDAP
             }
         }
 
+        private DateTime lastChargeTime = DateTime.UtcNow;
         private void StartJump()
         {
             if (OncePerJump(PilotState.jumpCharge))
             {
                 keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
-                last_jump_time = DateTime.UtcNow;
+                lastChargeTime = DateTime.UtcNow;
             }
         }
 
@@ -298,6 +300,7 @@ namespace EDAP
         {
             ClearAlignKeys();
             StartJump();
+            last_jump_time = lastChargeTime;
             
             // If it took us a long time to align, fix the timer
             if ((DateTime.UtcNow - last_jump_time).TotalSeconds > 15)
