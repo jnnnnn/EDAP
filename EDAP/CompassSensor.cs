@@ -197,19 +197,12 @@ namespace EDAP
         /// <summary>
         /// returns the most recent orientation that we recognized (up to ageSeconds ago) or nothing
         /// </summary>
-        public Point2f GetLastGoodOrientation(double ageSeconds)
+        public Point2f? GetLastGoodOrientation(double ageSeconds)
         {
-            try
-            {
-                return GetOrientation();
-            }
-            catch
-            {
-                if ((DateTime.UtcNow - lastGoodOrientationTimestamp).TotalSeconds < ageSeconds)
-                    return lastGoodOrientation;
-                else
-                    throw;
-            }
+            if ((DateTime.UtcNow - lastGoodOrientationTimestamp).TotalSeconds < ageSeconds)
+                return lastGoodOrientation;
+            else
+                return null;
         }
 
         /// <summary>

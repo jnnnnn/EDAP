@@ -397,21 +397,32 @@ namespace EDAP
         /// </param>
         /// <param name="bPitchYaw">If this is false, roll the ship but don't pitch or yaw.</param>
         /// <returns>true if we are pointing at the target</returns>
-        private bool AlignCompass(bool bPitchYaw=true)
+        private bool AlignCompass(bool bPitchYaw=true, bool bRoll=true)
         {
             // see if we can find the compass
             Point2f compass;
             try
             {
-                compass = compassRecognizer.GetLastGoodOrientation(ageSeconds:0.5f);
-                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;                
+                compass = compassRecognizer.GetOrientation();
+                status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;
             }
             catch (Exception e)
             {
-                ClearAlignKeys();
-                alignFrames = 0;
-                status = e.Message + "\n" + status;
-                return false;
+                Point2f? maybeOldCompass = compassRecognizer.GetLastGoodOrientation(ageSeconds: 1.0);
+                if (maybeOldCompass.HasValue)
+                {
+                    // If we have an old value for the compass, use that. Rolling gets a bit crazy though so don't do that part.
+                    bRoll = false;
+                    compass = maybeOldCompass.Value;
+                }
+                else
+                {
+                    // otherwise just unpress everything and wait for a better compass reading
+                    ClearAlignKeys();
+                    alignFrames = 0;
+                    status = e.Message + "\n" + status;
+                    return false;
+                }
             }
 
             // re-press keys regularly in case the game missed a keydown (maybe because it wasn't focused)
@@ -420,8 +431,11 @@ namespace EDAP
             
             // press whichever keys will point us toward the target. Coordinate system origin is bottom right
             const float align_margin = 0.15f;
-            keyboard.SetKeyState(keyRollRight, compass.X < -0.3); // roll right
-            keyboard.SetKeyState(keyRollLeft, compass.X > 0.3); // roll left
+            if (bRoll)
+            {
+                keyboard.SetKeyState(keyRollRight, compass.X < -0.3 || compass.Y < 0.3 && compass.X < 0); // roll right
+                keyboard.SetKeyState(keyRollLeft, compass.X > 0.3 || compass.Y < 0.3 && compass.X > 0); // roll left
+            }
             if (bPitchYaw)
             {
                 keyboard.SetKeyState(keyPitchUp, compass.Y < -align_margin); // pitch up
@@ -612,7 +626,16 @@ namespace EDAP
             int scoopWaitSeconds = Properties.Settings.Default.scoopWaitSeconds;
             int scoopFinishSeconds = Properties.Settings.Default.scoopFinishSeconds;
 
-            if (OncePerJump(PilotState.ScoopStart))
+
+            // roll so that the star is below (makes pitch up quicker -- less likely to collide in slow ships)
+            if (OncePerJump(PilotState.SelectStar))
+                SelectStar();
+            AlignCompass(bPitchYaw: false);
+
+            if (SecondsSinceFaceplant < 3)
+                return;
+            
+            if OncePerJump(PilotState.ScoopStart))
                 keyboard.Tap(keyThrottle50); // 50% throttle
 
             // (barely) avoid crashing into the star
@@ -628,12 +651,7 @@ namespace EDAP
             status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
             
             if (SecondsSinceFaceplant > scoopWaitSeconds + scoopFinishSeconds)
-                state |= PilotState.scoopComplete;
-
-            // roll so that the star is below (makes pitch up quicker -- less likely to collide in slow ships)
-            if (OncePerJump(PilotState.SelectStar))
-                SelectStar();
-            AlignCompass(bPitchYaw: false);
+                state |= PilotState.scoopComplete;            
         }
 
         /// <summary>
