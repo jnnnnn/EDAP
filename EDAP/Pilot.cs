@@ -433,8 +433,9 @@ namespace EDAP
             const float align_margin = 0.15f;
             if (bRoll)
             {
-                keyboard.SetKeyState(keyRollRight, compass.X < -0.3 || compass.Y < 0.3 && compass.X < 0); // roll right
-                keyboard.SetKeyState(keyRollLeft, compass.X > 0.3 || compass.Y < 0.3 && compass.X > 0); // roll left
+                double xMargin = compass.Y > -0.1 ? 0.3 : 0.0; // always roll if target is above us
+                keyboard.SetKeyState(keyRollRight, compass.X < -xMargin); // roll right
+                keyboard.SetKeyState(keyRollLeft, compass.X > xMargin); // roll left
             }
             if (bPitchYaw)
             {
@@ -635,7 +636,7 @@ namespace EDAP
             if (SecondsSinceFaceplant < 3)
                 return;
             
-            if OncePerJump(PilotState.ScoopStart))
+            if (OncePerJump(PilotState.ScoopStart))
                 keyboard.Tap(keyThrottle50); // 50% throttle
 
             // (barely) avoid crashing into the star
