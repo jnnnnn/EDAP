@@ -15,7 +15,6 @@ namespace EDAP
         
         private Mat template_open = new Mat("res3/target-open.png", ImreadModes.GrayScale);
         private Mat template_closed = new Mat("res3/target-closed.png", ImreadModes.GrayScale);
-        private const float match_threshold = 0.7f;
         private Screenshot screen;
         public CompassSensor(Screenshot screen, PictureBox pictureBox2)
         {
@@ -100,7 +99,7 @@ namespace EDAP
         /// Use template matching to find the small blue circle. HoughCircles didn't work because the dot/circle is too small.
         /// </summary>
         /// <param name="croppedCompass"></param>
-        /// <returns>The normalized vector from the center of the compass to the blue dot (y values are [1..2] if dot is a circle)</returns>
+        /// <returns>The normalized vector from the center of the compass to the blue dot (y value is in [-2..-1]U[1..2] if dot is an empty circle)</returns>
         public Point2f FindTarget2(Bitmap croppedCompass)
         {
             Mat source = BitmapConverter.ToMat(croppedCompass);
@@ -122,6 +121,7 @@ namespace EDAP
             Cv2.MatchTemplate(clean, template_open, result_open, TemplateMatchModes.CCoeffNormed);
             Cv2.MinMaxLoc(result_open, out minval, out maxval_open, out minloc, out maxloc_open);
             Graphics g = Graphics.FromImage(croppedCompass);
+            const float match_threshold = 0.7f;
             if (maxval_open > maxval_closed && maxval_open > match_threshold)
             {
                 CircleSegment c = FindCircle(croppedCompass);

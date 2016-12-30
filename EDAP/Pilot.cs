@@ -266,7 +266,7 @@ namespace EDAP
             else if (jumps_remaining > 0)
             {
                 // start charging before we are aligned (saves time)
-                if (OncePerJump(PilotState.jumpCharge))
+                if (!state.HasFlag(PilotState.SysMap) && OncePerJump(PilotState.jumpCharge))
                     keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
 
                 if (AlignTarget())
