@@ -27,6 +27,36 @@ namespace EDAP
         public const int TIMERINTERVAL_MS = 100;
         public string status = "";
 
+        private ScanCode keyThrottle0 = parseKeyBinding(Properties.Settings.Default.keyThrottle0);
+        private ScanCode keyThrottle50 = parseKeyBinding(Properties.Settings.Default.keyThrottle50);
+        private ScanCode keyThrottleReduce25 = parseKeyBinding(Properties.Settings.Default.keyThrottleReduce25);
+        private ScanCode keyThrottle100 = parseKeyBinding(Properties.Settings.Default.keyThrottle100);
+        private ScanCode keyBoost = parseKeyBinding(Properties.Settings.Default.keyBoost);
+        private ScanCode keyNextDestination = parseKeyBinding(Properties.Settings.Default.keyNextDestination);
+        private ScanCode keyFire1 = parseKeyBinding(Properties.Settings.Default.keyFire1);
+        private ScanCode keyHyperspace = parseKeyBinding(Properties.Settings.Default.keyHyperspace);
+
+        private ScanCode keyNavMenu = parseKeyBinding(Properties.Settings.Default.keyNavMenu);
+        private ScanCode keyRight = parseKeyBinding(Properties.Settings.Default.keyRight);
+        private ScanCode keySelect = parseKeyBinding(Properties.Settings.Default.keySelect);
+        private ScanCode keyMenuTabRight = parseKeyBinding(Properties.Settings.Default.keyMenuTabRight);
+        private ScanCode keyDown = parseKeyBinding(Properties.Settings.Default.keyDown);
+        private ScanCode keySystemMap = parseKeyBinding(Properties.Settings.Default.keySystemMap);
+        private ScanCode keySysMapScrollRight = parseKeyBinding(Properties.Settings.Default.keySysMapScrollRight);
+        private ScanCode keyScreenshot = parseKeyBinding(Properties.Settings.Default.keyScreenshot);
+
+        private ScanCode keyRollLeft = parseKeyBinding(Properties.Settings.Default.keyRollLeft);
+        private ScanCode keyRollRight = parseKeyBinding(Properties.Settings.Default.keyRollRight);
+        private ScanCode keyPitchUp = parseKeyBinding(Properties.Settings.Default.keyPitchUp);
+        private ScanCode keyPitchDown = parseKeyBinding(Properties.Settings.Default.keyPitchDown);
+        private ScanCode keyYawLeft = parseKeyBinding(Properties.Settings.Default.keyYawLeft);
+        private ScanCode keyYawRight = parseKeyBinding(Properties.Settings.Default.keyYawRight);
+
+        static private ScanCode parseKeyBinding(string s)
+        {
+            return (ScanCode)Enum.Parse(typeof(ScanCode), s);
+        }
+
         [Flags]
         public enum PilotState
         {
@@ -127,7 +157,7 @@ namespace EDAP
             // just in case, we should make sure no keys have been forgotten about
             if (OncePerJump(PilotState.clearedJump))
             {
-                keyboard.Tap(ScanCode.KEY_X); // cut throttle
+                keyboard.Tap(keyThrottle0); // cut throttle
                 keyboard.Clear();
             }
 
@@ -159,15 +189,15 @@ namespace EDAP
 
             if (state.HasFlag(PilotState.Honk) && OncePerJump(PilotState.HonkComplete))
             {
-                keyboard.Keydown(ScanCode.KEY_O); // hooooooooooooonk
-                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_O)); // stop honking after ten seconds
+                keyboard.Keydown(keyFire1); // hooooooooooooonk
+                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(keyFire1)); // stop honking after ten seconds
             }
 
             // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
             if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
             {                      
                 if (OncePerJump(PilotState.swoopEnd))
-                    keyboard.Tap(ScanCode.KEY_X); // cut throttle
+                    keyboard.Tap(keyThrottle0); // cut throttle
 
                 if (OncePerJump(PilotState.SelectStar))
                     SelectStar();
@@ -195,7 +225,7 @@ namespace EDAP
 
                 if (OncePerJump(PilotState.swoopEnd))
                 {
-                    keyboard.Tap(ScanCode.KEY_F); // full throttle                    
+                    keyboard.Tap(keyThrottle100);
                 }
             }
 
@@ -217,8 +247,8 @@ namespace EDAP
                 if (AntiAlign() && SecondsSinceFaceplant > 10)
                 {
                     state |= PilotState.AwayFromStar;
-                    keyboard.Tap(ScanCode.KEY_N); // select the next destination
-                    keyboard.Tap(ScanCode.KEY_F); // full throttle                    
+                    keyboard.Tap(keyNextDestination);
+                    keyboard.Tap(keyThrottle100);
                 }
                 else
                     return;
@@ -239,14 +269,11 @@ namespace EDAP
         // select star
         private void SelectStar()
         {
-            keyboard.Tap(ScanCode.KEY_1); // nav menu
-            Thread.Sleep(100); // game takes a while to catch up with this.
-            keyboard.Tap(ScanCode.KEY_D); // right to select nearest object in system (the central star)
-            keyboard.Tap(ScanCode.SPACEBAR); // open menu
-            Thread.Sleep(100);
-            keyboard.Tap(ScanCode.SPACEBAR); // select the object
-            Thread.Sleep(100);
-            keyboard.Tap(ScanCode.KEY_1); // close nav menu
+            keyboard.TapWait(keyNavMenu); // nav menu            
+            keyboard.TapWait(keyRight); // right to select nearest object in system (the central star)
+            keyboard.TapWait(keySelect); // open menu            
+            keyboard.Tap(keySelect); // select the object
+            keyboard.Tap(keyNavMenu); // close nav menu
         }
 
         private void Jump()
@@ -254,13 +281,13 @@ namespace EDAP
             ClearAlignKeys();
             if (OncePerJump(PilotState.jumpCharge))
             {
-                keyboard.Tap(ScanCode.KEY_G); // jump (frameshift drive charging)
+                keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
                 last_jump_time = DateTime.UtcNow;
             }
             else
                 last_jump_time = DateTime.UtcNow.AddSeconds(-15); // because we might have charged for up to 15 seconds...
 
-            keyboard.Tap(ScanCode.KEY_F); // full throttle
+            keyboard.Tap(keyThrottle100); // full throttle
             jumps_remaining -= 1;
 
             // reset everything
@@ -268,10 +295,10 @@ namespace EDAP
 
             if (state.HasFlag(PilotState.SysMap))
             {
-                keyboard.Tap(ScanCode.KEY_6); // open system map
-                Task.Delay(6000).ContinueWith(t => keyboard.Keydown(ScanCode.KEY_K)); // scroll right on system map
-                Task.Delay(7000).ContinueWith(t => keyboard.Keyup(ScanCode.KEY_K));
-                Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.F10)); // screenshot the system map                
+                keyboard.Tap(keySystemMap); // open system map
+                Task.Delay(6000).ContinueWith(t => keyboard.Keydown(keySysMapScrollRight)); // scroll right on system map
+                Task.Delay(7000).ContinueWith(t => keyboard.Keyup(keySysMapScrollRight));
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap(keyScreenshot)); // screenshot the system map                
             }
 
             if (jumps_remaining < 1)
@@ -280,11 +307,11 @@ namespace EDAP
                 Task.Delay(30000).ContinueWith(t =>
                 {
                     // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
-                    keyboard.Keydown(ScanCode.KEY_X);  // cut throttle
+                    keyboard.Keydown(keyThrottle0);  // cut throttle
                 });
                 Task.Delay(50000).ContinueWith(_ =>
                 {
-                    keyboard.Keyup(ScanCode.KEY_X);
+                    keyboard.Keyup(keyThrottle0);
                     Sounds.Play("you have arrived.mp3");
                 });
             }
@@ -324,12 +351,12 @@ namespace EDAP
         
         private void ClearAlignKeys()
         {
-            keyboard.Keyup(ScanCode.NUMPAD_7);
-            keyboard.Keyup(ScanCode.NUMPAD_9);
-            keyboard.Keyup(ScanCode.NUMPAD_5);
-            keyboard.Keyup(ScanCode.NUMPAD_8);
-            keyboard.Keyup(ScanCode.NUMPAD_4);
-            keyboard.Keyup(ScanCode.NUMPAD_6);
+            keyboard.Keyup(keyRollLeft);
+            keyboard.Keyup(keyRollRight);
+            keyboard.Keyup(keyPitchUp);
+            keyboard.Keyup(keyPitchDown);
+            keyboard.Keyup(keyYawLeft);
+            keyboard.Keyup(keyYawRight);
             lastClear = DateTime.UtcNow;
         }
 
@@ -384,12 +411,12 @@ namespace EDAP
             
             // press whichever keys will point us toward the target. Coordinate system origin is bottom right
             const float align_margin = 0.15f;
-            keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll right
-            keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll left
-            keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y < -align_margin); // pitch up
-            keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y > align_margin); // pitch down
-            keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X < -align_margin); // yaw left
-            keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X > align_margin); // yaw right
+            keyboard.SetKeyState(keyRollRight, compass.X < -0.3); // roll right
+            keyboard.SetKeyState(keyRollLeft, compass.X > 0.3); // roll left
+            keyboard.SetKeyState(keyPitchUp, compass.Y < -align_margin); // pitch up
+            keyboard.SetKeyState(keyPitchDown, compass.Y > align_margin); // pitch down
+            keyboard.SetKeyState(keyYawLeft, compass.X < -align_margin); // yaw left
+            keyboard.SetKeyState(keyYawRight, compass.X > align_margin); // yaw right
             
             return (Math.Abs(compass.Y) < align_margin && Math.Abs(compass.X) < align_margin);
         }
@@ -461,13 +488,13 @@ namespace EDAP
             tY -= 0.02; // take off 20ms to stop overshooting
 
             if (offset.Y < -deadzone && aY > 0 && tY > 0.05 /* don't press a key for less than 50ms */)
-                keyboard.TimedTap(ScanCode.NUMPAD_8, (int)(tY * 1000)); // pitch down when offset.Y < 0
+                keyboard.TimedTap(keyPitchDown, (int)(tY * 1000)); // pitch down when offset.Y < 0
             else
-                keyboard.Keyup(ScanCode.NUMPAD_8);
+                keyboard.Keyup(keyPitchDown);
             if (offset.Y > deadzone && aY < 0 && tY > 0.05)
-                keyboard.TimedTap(ScanCode.NUMPAD_5, (int)(tY * 1000)); // pitch up when offset.Y > 0
+                keyboard.TimedTap(keyPitchUp, (int)(tY * 1000)); // pitch up when offset.Y > 0
             else
-                keyboard.Keyup(ScanCode.NUMPAD_5);
+                keyboard.Keyup(keyPitchUp);
 
             // now do it all again for the x axis
 
@@ -484,13 +511,13 @@ namespace EDAP
 
             //status = string.Format("v = {0:0}, x = {1}, t = {2:0}", vX, xX, tX * 1000);
             if (offset.X < -deadzone && aX > 0 && tX > 0.05)
-                keyboard.TimedTap(ScanCode.NUMPAD_6, (int)(tX * 1000)); // yaw right when offset.X < 0
+                keyboard.TimedTap(keyYawRight, (int)(tX * 1000)); // yaw right when offset.X < 0
             else
-                keyboard.Keyup(ScanCode.NUMPAD_6);
+                keyboard.Keyup(keyYawRight);
             if (offset.X > deadzone && aX < 0 && tX > 0.05)
-                keyboard.TimedTap(ScanCode.NUMPAD_4, (int)(tX * 1000)); // yaw left when offset.X > 0
+                keyboard.TimedTap(keyYawLeft, (int)(tX * 1000)); // yaw left when offset.X > 0
             else
-                keyboard.Keyup(ScanCode.NUMPAD_4);
+                keyboard.Keyup(keyYawLeft);
 
             status = string.Format("{0:0}, {1:0}\n", offset.X, offset.Y);
 
@@ -528,12 +555,12 @@ namespace EDAP
             if ((DateTime.UtcNow - lastClear).TotalSeconds > 1)
                 ClearAlignKeys();
 
-            keyboard.SetKeyState(ScanCode.NUMPAD_7, compass.X > 0.3); // roll right
-            keyboard.SetKeyState(ScanCode.NUMPAD_9, compass.X < -0.3); // roll left
-            keyboard.SetKeyState(ScanCode.NUMPAD_5, compass.Y > 0 && compass.Y < 1.9); // pitch up
-            keyboard.SetKeyState(ScanCode.NUMPAD_8, compass.Y < 0 && compass.Y > -1.9); // pitch down
-            keyboard.SetKeyState(ScanCode.NUMPAD_4, compass.X > 0.1); // yaw left
-            keyboard.SetKeyState(ScanCode.NUMPAD_6, compass.X < -0.1); // yaw right
+            keyboard.SetKeyState(keyRollLeft, compass.X > 0.3); // roll left
+            keyboard.SetKeyState(keyRollRight, compass.X < -0.3); // roll right
+            keyboard.SetKeyState(keyPitchUp, compass.Y > 0 && compass.Y < 1.9); // pitch up
+            keyboard.SetKeyState(keyPitchDown, compass.Y < 0 && compass.Y > -1.9); // pitch down
+            keyboard.SetKeyState(keyYawLeft, compass.X > 0.1); // yaw left
+            keyboard.SetKeyState(keyYawRight, compass.X < -0.1); // yaw right
 
             // If we're scooping, make sure we're really antialigned because we're going closer to the star
             var margin = state.HasFlag(PilotState.Scoop) ? 0.8 : 0.8;
@@ -556,11 +583,11 @@ namespace EDAP
         private void Swoop()
         {
             if (SecondsSinceFaceplant > 2 && OncePerJump(PilotState.swoopStart))
-                keyboard.Tap(ScanCode.KEY_P); // set throttle to 50%
+                keyboard.Tap(keyThrottle50); // set throttle to 50%
 
-            keyboard.Keyup(ScanCode.NUMPAD_5);
+            keyboard.Keyup(keyPitchUp);
             Thread.Sleep(10);
-            keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up for ~5 seconds on arrival to avoid star.
+            keyboard.Keydown(keyPitchUp); // pitch up for ~5 seconds on arrival to avoid star.
             Thread.Sleep(100);
             return;
         }
@@ -571,17 +598,17 @@ namespace EDAP
         private void Scoop()
         {
             if (OncePerJump(PilotState.ScoopStart))
-                keyboard.Tap(ScanCode.KEY_P); // 50% throttle
+                keyboard.Tap(keyThrottle50); // 50% throttle
 
             // (barely) avoid crashing into the star
             if (cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant())
-                keyboard.Keydown(ScanCode.NUMPAD_5); // pitch up
+                keyboard.Keydown(keyPitchUp); // pitch up
             else
-                keyboard.Keyup(ScanCode.NUMPAD_5);
+                keyboard.Keyup(keyPitchUp);
 
             // start speeding up towards the end so we don't crash/overheat
             if (SecondsSinceFaceplant > 15 && OncePerJump(PilotState.ScoopMiddle))
-                keyboard.Tap(ScanCode.KEY_F);
+                keyboard.Tap(keyThrottle100);
 
             status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
             
@@ -602,33 +629,31 @@ namespace EDAP
             if (SecondsSinceFaceplant > 20 && OncePerJump(PilotState.cruiseStart))
             {
                 Sounds.Play("cruise mode engaged.mp3");
-                keyboard.Tap(ScanCode.KEY_F); // full throttle
-                keyboard.Tap(ScanCode.KEY_Q); // drop 25% throttle, to 75%
+                keyboard.Tap(keyThrottle100); // full throttle
+                keyboard.Tap(keyThrottleReduce25); // drop 25% throttle, to 75%
             }
 
             if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
             {
-                keyboard.Tap(ScanCode.KEY_G); // "Safe Disengage"
+                keyboard.Tap(keyHyperspace); // "Safe Disengage"
                 state |= PilotState.CruiseEnd;
                 state &= ~PilotState.Enabled; // disable! we've arrived!
                 // these commands will initiate docking if we have a computer
-                Task.Delay(6000).ContinueWith(t => keyboard.Tap(ScanCode.TAB)); // boost
-                Task.Delay(10000).ContinueWith(t => keyboard.Tap(ScanCode.KEY_X)); // cut throttle
+                Task.Delay(6000).ContinueWith(t => keyboard.Tap(keyBoost)); // boost
+                Task.Delay(10000).ContinueWith(t => keyboard.Tap(keyThrottle0)); // cut throttle
                 Task.Delay(12000).ContinueWith(t => // request docking
                 {
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking request if cruise gets turned off
 
                     Sounds.PlayOneOf("time to dock.mp3", "its dock oclock.mp3", "autopilot disengaged.mp3");
-                    keyboard.Tap(ScanCode.KEY_1); // nav menu
-                    Thread.Sleep(200); // game needs time to open this menu
-                    keyboard.Tap(ScanCode.KEY_E); // tab right
-                    Thread.Sleep(200); // game needs time to realise key was unpressed
-                    keyboard.Tap(ScanCode.KEY_E); // tab right
-                    keyboard.Tap(ScanCode.SPACEBAR); // select first contact (the station)
-                    keyboard.Tap(ScanCode.KEY_S); // down to the second option (request docking)
-                    keyboard.Tap(ScanCode.SPACEBAR); // select request docking
-                    keyboard.Tap(ScanCode.KEY_1); // close nav menu
+                    keyboard.TapWait(keyNavMenu); // nav menu
+                    keyboard.TapWait(keyMenuTabRight); // tab right
+                    keyboard.Tap(keyMenuTabRight); // tab right
+                    keyboard.Tap(keySelect); // select first contact (the station)
+                    keyboard.Tap(keyDown); // down to the second option (request docking)
+                    keyboard.Tap(keySelect); // select request docking
+                    keyboard.Tap(keyNavMenu); // close nav menu
 
                     state &= ~PilotState.Cruise; // disable! we've arrived!
                 });

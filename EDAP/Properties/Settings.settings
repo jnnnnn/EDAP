@@ -20,5 +20,71 @@
     <Setting Name="Scale" Type="System.Single" Scope="Application">
       <Value Profile="(Default)">1</Value>
     </Setting>
+    <Setting Name="keyThrottle0" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_X</Value>
+    </Setting>
+    <Setting Name="keyThrottle50" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_P</Value>
+    </Setting>
+    <Setting Name="keyThrottleReduce25" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_Q</Value>
+    </Setting>
+    <Setting Name="keyThrottle100" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_F</Value>
+    </Setting>
+    <Setting Name="keyBoost" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">TAB</Value>
+    </Setting>
+    <Setting Name="keyNextDestination" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_N</Value>
+    </Setting>
+    <Setting Name="keyFire1" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_O</Value>
+    </Setting>
+    <Setting Name="keyHyperspace" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_G</Value>
+    </Setting>
+    <Setting Name="keyNavMenu" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_1</Value>
+    </Setting>
+    <Setting Name="keyRight" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_D</Value>
+    </Setting>
+    <Setting Name="keySelect" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">SPACEBAR</Value>
+    </Setting>
+    <Setting Name="keyMenuTabRight" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_E</Value>
+    </Setting>
+    <Setting Name="keyDown" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_S</Value>
+    </Setting>
+    <Setting Name="keySystemMap" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_6</Value>
+    </Setting>
+    <Setting Name="keySysMapScrollRight" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_K</Value>
+    </Setting>
+    <Setting Name="keyScreenshot" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">F10</Value>
+    </Setting>
+    <Setting Name="keyRollLeft" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NUMPAD_7</Value>
+    </Setting>
+    <Setting Name="keyRollRight" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NUMPAD_9</Value>
+    </Setting>
+    <Setting Name="keyPitchUp" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NUMPAD_5</Value>
+    </Setting>
+    <Setting Name="keyPitchDown" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NUMPAD_8</Value>
+    </Setting>
+    <Setting Name="keyYawLeft" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NUMPAD_4</Value>
+    </Setting>
+    <Setting Name="keyYawRight" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">NUMPAD_6</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

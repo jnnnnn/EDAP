@@ -76,5 +76,203 @@ namespace EDAP.Properties {
                 return ((float)(this["Scale"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_X")]
+        public string keyThrottle0 {
+            get {
+                return ((string)(this["keyThrottle0"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_P")]
+        public string keyThrottle50 {
+            get {
+                return ((string)(this["keyThrottle50"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_Q")]
+        public string keyThrottleReduce25 {
+            get {
+                return ((string)(this["keyThrottleReduce25"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_F")]
+        public string keyThrottle100 {
+            get {
+                return ((string)(this["keyThrottle100"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("TAB")]
+        public string keyBoost {
+            get {
+                return ((string)(this["keyBoost"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_N")]
+        public string keyNextDestination {
+            get {
+                return ((string)(this["keyNextDestination"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_O")]
+        public string keyFire1 {
+            get {
+                return ((string)(this["keyFire1"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_G")]
+        public string keyHyperspace {
+            get {
+                return ((string)(this["keyHyperspace"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_1")]
+        public string keyNavMenu {
+            get {
+                return ((string)(this["keyNavMenu"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_D")]
+        public string keyRight {
+            get {
+                return ((string)(this["keyRight"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("SPACEBAR")]
+        public string keySelect {
+            get {
+                return ((string)(this["keySelect"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_E")]
+        public string keyMenuTabRight {
+            get {
+                return ((string)(this["keyMenuTabRight"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_S")]
+        public string keyDown {
+            get {
+                return ((string)(this["keyDown"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_6")]
+        public string keySystemMap {
+            get {
+                return ((string)(this["keySystemMap"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("KEY_K")]
+        public string keySysMapScrollRight {
+            get {
+                return ((string)(this["keySysMapScrollRight"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("F10")]
+        public string keyScreenshot {
+            get {
+                return ((string)(this["keyScreenshot"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NUMPAD_7")]
+        public string keyRollLeft {
+            get {
+                return ((string)(this["keyRollLeft"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NUMPAD_9")]
+        public string keyRollRight {
+            get {
+                return ((string)(this["keyRollRight"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NUMPAD_5")]
+        public string keyPitchUp {
+            get {
+                return ((string)(this["keyPitchUp"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NUMPAD_8")]
+        public string keyPitchDown {
+            get {
+                return ((string)(this["keyPitchDown"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NUMPAD_4")]
+        public string keyYawLeft {
+            get {
+                return ((string)(this["keyYawLeft"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("NUMPAD_6")]
+        public string keyYawRight {
+            get {
+                return ((string)(this["keyYawRight"]));
+            }
+        }
     }
 }

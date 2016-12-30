@@ -13,10 +13,10 @@ namespace EDAP
     /// This class keeps track of which keys are pressed and automatically unpresses them after a certain amount of time.
     /// </summary>
     class Keyboard
-    {        
+    {
         public HashSet<ScanCode> pressed_keys;
         public IntPtr hWnd;
-        
+
         [DllImport("user32.dll")]
         public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
         [DllImport("user32.dll")]
@@ -26,13 +26,13 @@ namespace EDAP
         const int WM_KEYUP = 0x101;
         const int WM_SYSCOMMAND = 0x018;
         const int SC_CLOSE = 0x053;
-        
+
         public Keyboard()
         {
             pressed_keys = new HashSet<ScanCode>();
         }
-        
-        public string ToString()
+
+        public override string ToString()
         {
             lock (pressed_keys)
             {
@@ -47,7 +47,7 @@ namespace EDAP
             else
                 Keyup(key);
         }
-        
+
         /// <summary>
         /// Start pressing down on a key. Sends a "keydown" event to the game.
         /// </summary>
@@ -86,7 +86,7 @@ namespace EDAP
                 }
             });
         }
-        
+
         /// <summary>
         /// Immediately release a key, by sending a keyup event to the game.
         /// </summary>
@@ -116,7 +116,7 @@ namespace EDAP
                 }
             });
         }
-        
+
         /// <summary>
         /// Send a keydown and then, soon after, a keyup, event to the game.
         /// </summary>

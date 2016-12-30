@@ -66,13 +66,14 @@ namespace EDAP.SendInput
         public uint Time;
         public IntPtr ExtraInfo;
     }
-    
+
+    [Serializable]
     public enum ScanCode : ushort
     {
         // from http://www.philipstorr.id.au/pcbook/book3/scancode.htm
         // see also https://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
 
-        // 29 	` 	~ 	
+        KEY_BACKQUOTE = 0x29, // ~ 	
         KEY_1 = 0x02, // ! 	
         KEY_2 = 0x03, // @
         KEY_3 = 0x04, // # 	
@@ -83,9 +84,9 @@ namespace EDAP.SendInput
         KEY_8 = 0x09, // *
         KEY_9 = 0x0A, // ( 	
         KEY_0 = 0x0B, // ) 	
-        // 0C 	- 	_
-        // 0D 	= 	+ 	
-        // 0E 	Backspace 	Backspace 	
+        KEY_MINUS = 0x0C, // _
+        KEY_EQUALS = 0x0D, // + 	
+        KEY_BACKSPACE = 0x0E, // Backspace 	
         TAB = 0x0F, // Back Tab
         KEY_Q = 0x10,
         KEY_W = 0x11,
@@ -97,10 +98,10 @@ namespace EDAP.SendInput
         KEY_I = 0x17,
         KEY_O = 0x18,
         KEY_P = 0x19,
-        // 1A 	[ 	{ 	
-        // 1B 	] 	}
-        // 2B 	\ 	| 	
-        // 3A note 1 	Caps Lock 	na 	
+        KEY_LEFTSQUAREBRACKET = 0x1A, // { 	
+        KEY_RIGHTSQUAREBRACKET = 0x1B, // }
+        KEY_BACKSLASH = 0x2B, // | 	
+        KEY_CAPS_LOCK = 0x3A,
         KEY_A = 0x1E,
         KEY_S = 0x1F,
         KEY_D = 0x20,
@@ -110,8 +111,8 @@ namespace EDAP.SendInput
         KEY_J = 0x24,
         KEY_K = 0x25,
         KEY_L = 0x26,
-        // 27 	; 	:
-        // 28 	' 	" 	
+        KEY_SEMICOLON = 0x27, // :
+        KEY_APOSTROPHE = 0x28, // " 	
         // 2B note 2 	# 	~ 	
         ENTER = 0x1C,
         SHIFT_L = 0x2A,
@@ -123,9 +124,9 @@ namespace EDAP.SendInput
         KEY_B = 0x30,
         KEY_N = 0x31,
         KEY_M = 0x32,
-        // 33 	, 	< 	
-        // 34 	. 	> 	
-        // 35 	/ 	?
+        KEY_COMMA = 0x33, // < 	
+        KEY_DOT = 0x34, // > 	
+        KEY_SLASH = 0x35, // ?
         SHIFT_R = 0x36,
         CTRL_L = 0x1D,
         ALT_L = 0x38, 
@@ -154,9 +155,9 @@ namespace EDAP.SendInput
         NUMPAD_9 = 0x49, // Pg Up 	
         NUMPAD_6 = 0x4D, // Right Arrow
         NUMPAD_3 = 0x51, // Pg Dn 	
-        // 53 	Keypad . 	Delete 	
-        // 4A 	Keypad - 	Keypad -
-        // 4E 	Keypad + 	Keypad + 	
+        NUMPAD_DOT = 0x53, // Delete
+        NUMPAD_MINUS = 0x4A, // Keypad -
+        NUMPAD_PLUS = 0x4E, // Keypad + 	
         // E0,1C 	Keypad Enter 	Keypad Enter 	
         ESC = 0x01,
         F1  = 0x3B,
@@ -175,6 +176,7 @@ namespace EDAP.SendInput
         // 46 	Scroll Lock 	na 	
     }
 
+    [Serializable]
     public enum VKeyCode : ushort
     {
         ADD = 0x6b,
