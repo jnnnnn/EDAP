@@ -251,8 +251,8 @@ namespace EDAP
                     keyboard.Tap(keyNextDestination);
                     keyboard.Tap(keyThrottle100);
                 }
-                else
-                    return;
+
+                return;
             }
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
