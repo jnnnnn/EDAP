@@ -274,5 +274,23 @@ namespace EDAP.Properties {
                 return ((string)(this["keyYawRight"]));
             }
         }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("15")]
+        public int scoopWaitSeconds {
+            get {
+                return ((int)(this["scoopWaitSeconds"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("5")]
+        public int scoopFinishSeconds {
+            get {
+                return ((int)(this["scoopFinishSeconds"]));
+            }
+        }
     }
 }

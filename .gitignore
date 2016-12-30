@@ -3,3 +3,4 @@ release/
 *.suo
 packages/
 /EDAP/EDAP.VC.db
+*.7z
