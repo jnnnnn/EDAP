@@ -162,7 +162,8 @@ namespace EDAP
         }
 
         public List<Point2f> history = new List<Point2f>(); // newest element at the front
-                
+        public Point2f lastGoodOrientation = new Point2f();
+        public DateTime lastGoodOrientationTimestamp = DateTime.UtcNow; 
         // returns the normalized vector from the compass center to the blue dot
         public Point2f GetOrientation()
         {
@@ -182,12 +183,33 @@ namespace EDAP
                 history.Insert(0, result);
                 if (history.Count > 5)
                     history.RemoveAt(5);
+                lastGoodOrientation = result;
+                lastGoodOrientationTimestamp = DateTime.UtcNow;
                 return result;
             }
             catch
             {
                 history.Clear();
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// returns the most recent orientation that we recognized (up to ageSeconds ago) or nothing
+        /// </summary>
+        public Point2f GetLastGoodOrientation(double ageSeconds)
+        {
+            Exception compassError;
+            try
+            {
+                return GetOrientation();
+            }
+            catch (Exception e)
+            {
+                if ((DateTime.UtcNow - lastGoodOrientationTimestamp).TotalSeconds < ageSeconds)
+                    return lastGoodOrientation;
+                else
+                    throw;
             }
         }
 

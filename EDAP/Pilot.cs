@@ -63,7 +63,7 @@ namespace EDAP
             None = 0,
             firstjump = 1 << 0, // is this the first jump? (skip waiting and swooping and go straight to aligning)
             clearedJump = 1 << 1, // at the start of the jump-loop process, we need to reset everything
-            jumpCharge = 1 << 2, 
+            jumpCharge = 1 << 2, // have we started charging for the jump yet
             swoopStart = 1 << 3, // have we set the throttle to 50% at the start of the swoop
             swoopEnd = 1 << 4, // have we finished turning away from the star
             cruiseStart = 1 << 5, // have we set throttle to 75% to start cruise at destination
@@ -256,14 +256,21 @@ namespace EDAP
 
             // okay, by this point we are cruising away from the star and are ready to align and jump. We can't start 
             // charging to jump until 10 seconds after witchspace ends, but we can start aligning.
-            
+
             if (jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
             {
                 AlignTarget();
                 Cruise();
             }
-            else if (jumps_remaining > 0 && AlignTarget())
-                Jump();
+            else if (jumps_remaining > 0)
+            {
+                // start charging before we are aligned (saves time)
+                if (OncePerJump(PilotState.jumpCharge))
+                    keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
+
+                if (AlignTarget())
+                    Jump(); // do everything else
+            }
         }
 
         // select star
@@ -394,7 +401,7 @@ namespace EDAP
             Point2f compass;
             try
             {
-                compass = compassRecognizer.GetOrientation();
+                compass = compassRecognizer.GetLastGoodOrientation(ageSeconds:0.5f);
                 status = string.Format("{0:0.0}, {1:0.0}\n", compass.X, compass.Y) + status;                
             }
             catch (Exception e)
