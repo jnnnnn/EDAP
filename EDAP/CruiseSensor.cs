@@ -20,7 +20,7 @@ namespace EDAP
         public Mat IsolateYellow(Mat source)
         {
             Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
-            Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 27, 255, 255 }));
+            Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 30, 255, 255 }));
             Mat sourceHSVFiltered = new Mat();
             sourceHSV.CopyTo(sourceHSVFiltered, mask);
             Mat valueChannel = sourceHSVFiltered.Split()[2];
