@@ -17,7 +17,7 @@ namespace EDAP
         /// <summary>
         /// Filter the given image to select certain yellow hues (returned as grayscale)
         /// </summary>
-        public Mat IsolateYellow(Mat source)
+        public static Mat IsolateYellow(Mat source)
         {
             Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
             Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 30, 255, 255 }));

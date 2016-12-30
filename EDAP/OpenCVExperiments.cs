@@ -16,95 +16,74 @@ namespace EDAP
             return result;
         }
 
-        public System.Drawing.Point FindTarget1(Bitmap croppedCompass)
+        /// <summary>
+        /// Filter the given image to select certain yellow hues (returned as grayscale)
+        /// </summary>
+        public static Mat IsolateYellow(Mat source)
         {
-            // I'm not happy with this yet.
-            Mat source = BitmapConverter.ToMat(croppedCompass);
-            Mat blues = Levels(source, channel: 0);
-            CircleSegment[] circles = Cv2.HoughCircles(blues,
-                HoughMethods.Gradient,
-                dp: 1f, /* full resolution seems to work better */
-                minDist: 10, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
-                param1: 500,
-                param2: 7, /* small circles are harder to detect, need a lower quality standard*/
-                minRadius: 3,
-                maxRadius: 8);
-
-            if (circles.Length == 1)
-                return new System.Drawing.Point((int)circles[0].Center.X, (int)circles[0].Center.Y);
-            if (circles.Length > 1)
-                throw new ArgumentException("Too many blue matches");
-            return new System.Drawing.Point(0, 0);
+            Mat sourceHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
+            Mat mask = sourceHSV.InRange(InputArray.Create(new int[] { 10, 200, 128 }), InputArray.Create(new int[] { 30, 255, 255 }));
+            Mat sourceHSVFiltered = new Mat();
+            sourceHSV.CopyTo(sourceHSVFiltered, mask);
+            Mat valueChannel = sourceHSVFiltered.Split()[2];
+            return valueChannel;
         }
 
-        public static void FindTargetsTest(Bitmap compasses)
+        public static void FindCompasses()
         {
-            Mat source = BitmapConverter.ToMat(compasses);
-            /*
-            Mat blues = Levels(source, channel: 0);
-            CircleSegment[] circles = Cv2.HoughCircles(blues,
-                HoughMethods.Gradient,
-                dp: 1f, // full resolution seems to work better 
-                minDist: 10, // if we find more than one then we go to the second analysis, the crosshair is probably blue as well
-                param1: 500,
-                param2: 7, // small circles are harder to detect, need a lower quality standard
-                minRadius: 3,
-                maxRadius: 8);
-            Window w = new Window(blues);
-            Graphics g = Graphics.FromImage(compasses);
-            foreach (CircleSegment circle in circles)
-            {
-                g.DrawRectangle(new Pen(Color.FromName("red"), 2), circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Radius * 2, circle.Radius * 2);
-            }
-            */
 
+            Mat source = new Mat("res3/compass_tests.png");
+            Window w0 = new Window(source);
+
+            //Convert input images to gray
+            Mat reds = Levels(source, channel: 2);
+            reds = IsolateYellow(source);
+            Window w239048 = new Window(reds);
+            // these parameters were tuned using the test functionality
+            CircleSegment[] circles = Cv2.HoughCircles(reds,
+                HoughMethods.Gradient,
+                dp: 2f, // this was tuned by experimentation
+                minDist: 20, // this is huge so we only find the best one
+                param1: 200, // this was tuned by experimentation
+                param2: 30, // this is quite low so we usually find something
+                minRadius: 22,
+                maxRadius: 28);
+            
+            foreach (CircleSegment c in circles)
+                source.Circle(c.Center, (int)c.Radius, new Scalar(0, 255, 0));
+            Window w1 = new Window(source);
+        }
+
+        public static void FindTargetsTest()
+        {
+            Mat source = new Mat("res3/compass_tests.png");
+            Window w0 = new Window(source);
+
+
+            Mat template_open = new Mat("res3/target-open.png", ImreadModes.GrayScale);
+            Mat template_closed = new Mat("res3/target-closed.png", ImreadModes.GrayScale);
             Mat[] channels = source.Split();
             Mat blues2 = channels[0];
             Mat clean = blues2.EmptyClone();
             clean.SetTo(0);
             blues2.CopyTo(clean, blues2.InRange(128, 255));
-            Window w2 = new Window(clean);
-            Graphics g2 = Graphics.FromImage(compasses);
-            CircleSegment[] circles2 = Cv2.HoughCircles(clean,
-                HoughMethods.Gradient,
-                dp: 1f, /* full resolution seems to work better */
-                minDist: 10, /* if we find more than one then we go to the second analysis, the crosshair is probably blue as well*/
-                param1: 500,
-                param2: 7, /* small circles are harder to detect, need a lower quality standard*/
-                minRadius: 3,
-                maxRadius: 8);
-            foreach (CircleSegment circle in circles2)
-            {
-                g2.DrawRectangle(new Pen(Color.FromName("green"), 2), circle.Center.X - circle.Radius, circle.Center.Y - circle.Radius, circle.Radius * 2, circle.Radius * 2);
-            }
+            
+            double minval, maxval_closed, maxval_open;
+            OpenCvSharp.Point minloc, maxloc_closed, maxloc_open;
 
-            Mat template1 = new Mat("target-open.png", ImreadModes.GrayScale);
-            Mat template2 = new Mat("target-closed.png", ImreadModes.GrayScale);
-            Mat result = new Mat(clean.Size(), clean.Type());
+            const float match_threshold = 0.7f;
 
-            //cv::Mat greyMat, colorMat;
-            //cv::cvtColor(colorMat, greyMat, cv::COLOR_BGR2GRAY);
+            Mat result_closed = clean.EmptyClone();
+            Cv2.MatchTemplate(clean, template_closed, result_closed, TemplateMatchModes.CCoeffNormed);
+            Cv2.MinMaxLoc(result_closed, out minval, out maxval_closed, out minloc, out maxloc_closed);
+            Cv2.Threshold(result_closed, result_closed, match_threshold, 10000, ThresholdTypes.Tozero);
+            Window w1 = new Window(result_closed);
 
-            Cv2.MatchTemplate(clean, template2, result, TemplateMatchModes.CCoeffNormed);
-            Cv2.Threshold(result, result, 0.8, 1.0, ThresholdTypes.Tozero);
-
-            while (true)
-            {
-                double minval, maxval, threshold = 0.8;
-                OpenCvSharp.Point minloc, maxloc;
-                Cv2.MinMaxLoc(result, out minval, out maxval, out minloc, out maxloc);
-
-                if (maxval >= threshold)
-                {
-                    Rect r = new Rect(maxloc.X, maxloc.Y, template1.Width, template1.Height);
-                    g2.DrawRectangle(new Pen(Color.FromName("red"), 1), maxloc.X, maxloc.Y, template1.Width, template1.Height);
-
-                    Rect outRect;
-                    Cv2.FloodFill(result, maxloc, new Scalar(0), out outRect, new Scalar(0.1), new Scalar(1.0));
-                }
-                else
-                    break;
-            }
+            Mat result_open = clean.EmptyClone();
+            Cv2.MatchTemplate(clean, template_open, result_open, TemplateMatchModes.CCoeffNormed);
+            Cv2.MinMaxLoc(result_open, out minval, out maxval_open, out minloc, out maxloc_open);
+            Cv2.Threshold(result_open, result_open, match_threshold, 10000, ThresholdTypes.Tozero);
+            Window w2 = new Window(result_open);
         }
 
         public static void FindTriQuadrant()

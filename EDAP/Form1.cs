@@ -57,6 +57,8 @@ namespace EDAP
             //OpenCVExperiments.MatchCorona();
             //OpenCVExperiments.MatchImpact();
             //OpenCVExperiments.MatchMenu();
+            //OpenCVExperiments.FindTargetsTest();
+            //OpenCVExperiments.FindCompasses();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)

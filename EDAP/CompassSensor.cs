@@ -72,14 +72,14 @@ namespace EDAP
         {
             Mat source = BitmapConverter.ToMat(image);
             //Convert input images to gray
-            Mat reds = Levels(source, channel: 2);
+            Mat reds = CruiseSensor.IsolateYellow(source);
             // these parameters were tuned using the test functionality
             CircleSegment[] circles = Cv2.HoughCircles(reds, 
                 HoughMethods.Gradient, 
                 dp:2f, // this was tuned by experimentation
                 minDist: 500, // this is huge so we only find the best one
                 param1: 200, // this was tuned by experimentation
-                param2: 50, // this is quite low so we usually find something
+                param2: 30, // this is quite low so we usually find something
                 minRadius: 22, 
                 maxRadius: 28);
 

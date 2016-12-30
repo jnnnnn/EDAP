@@ -265,12 +265,22 @@ namespace EDAP
             }
             else if (jumps_remaining > 0)
             {
+
                 // start charging before we are aligned (saves time)
-                if (!state.HasFlag(PilotState.SysMap) && OncePerJump(PilotState.jumpCharge))
-                    keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
+                if (!state.HasFlag(PilotState.SysMap))
+                    StartJump();
 
                 if (AlignTarget())
                     Jump(); // do everything else
+            }
+        }
+
+        private void StartJump()
+        {
+            if (OncePerJump(PilotState.jumpCharge))
+            {
+                keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
+                last_jump_time = DateTime.UtcNow;
             }
         }
 
@@ -287,13 +297,11 @@ namespace EDAP
         private void Jump()
         {
             ClearAlignKeys();
-            if (OncePerJump(PilotState.jumpCharge))
-            {
-                keyboard.Tap(keyHyperspace); // jump (frameshift drive charging)
-                last_jump_time = DateTime.UtcNow;
-            }
-            else
-                last_jump_time = DateTime.UtcNow.AddSeconds(-15); // because we might have charged for up to 15 seconds...
+            StartJump();
+            
+            // If it took us a long time to align, fix the timer
+            if ((DateTime.UtcNow - last_jump_time).TotalSeconds > 15)
+                last_jump_time = DateTime.UtcNow.AddSeconds(-15);
 
             keyboard.Tap(keyThrottle100); // full throttle
             jumps_remaining -= 1;
