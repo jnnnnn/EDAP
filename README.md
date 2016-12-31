@@ -11,7 +11,7 @@ Instructions:
 
 Required settings:
 
-0. Key bindings (see EDAP.exe.config)
+0. Key bindings. Edit EDAP.exe.config with your key bindings. A list of recognized keys is in Keyboard.cs and in the readme included with releases.
 1. Resolution is hardcoded to 1920x1080 (changing this is gonna mean changing lots of numbers and template images)
 2. Executable is hardcoded as the 64-bit version
 3. The colours looked for are (if you've changed your HUD colours, these things won't work):
@@ -21,8 +21,9 @@ Required settings:
   4. Saf Diseng: blue channel
 4. Disable GUI effects (the animation when you open a side panel, speeds up panel opening)
 5. Interface brightness should be set to three pips below max (I don't know how much this matters though, there is some leeway in the detectors)
-
-This project uses OpenCVSharp, which should be downloaded automatically when you try to build the project. (The Nuget package management system is part of Visual Studio.)
+6. Mouse Widget (the little 5x5px solid yellow square in the middle of the screen) should be enabled as otherwise the fine alignment won't work.
+7. Just after each faceplant, there's a macro to target the star we just arrived at. This macro works better if you remove "Systems" from the left-hand-side Navigation list using "Set Filter".
+8. It's better to avoid scooping the hotter stars (there aren't many of them anyway). Set your galmap filter to only show stars of class F, G, K and M (and select the "Apply Filter To Route" option).
 
 # Algorithm
 
