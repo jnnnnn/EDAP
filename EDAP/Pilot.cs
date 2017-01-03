@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace EDAP
 {
@@ -81,12 +82,14 @@ namespace EDAP
             Scoop = 1 << 17, // do we want to scoop at each star?
             HonkComplete = 1 << 18, // have we fired the discovery scanner yet
             SkipThisScoop = 1 << 19, // we want to skip scooping for this jump
+            SlowJump = 1 << 20, // Have we raised a warning about this jump taking longer than usual?
         }
 
         public PilotState state;
         public Screenshot screen;
         internal CompassSensor compassRecognizer;
         internal CruiseSensor cruiseSensor;
+        public Notifications notifications;
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         double SecondsSinceFaceplant {  get { return (DateTime.UtcNow - last_faceplant_time).TotalSeconds; } }
@@ -144,7 +147,10 @@ namespace EDAP
             {
                 StartJump();
                 if (AlignTarget())
+                {
+                    notifications.messages.Post(string.Format("Starting {0} jumps", jumps_remaining));
                     Jump();
+                }
                 return;
             }
 
@@ -266,6 +272,8 @@ namespace EDAP
             }
             else if (jumps_remaining > 0)
             {
+                if (SecondsSinceLastJump > 90 && OncePerJump(PilotState.SlowJump))
+                    notifications.messages.Post("This jump is taking a long time");
 
                 // start charging before we are aligned (saves time)
                 if (!state.HasFlag(PilotState.SysMap))
@@ -328,11 +336,10 @@ namespace EDAP
                     // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
                     keyboard.Keydown(keyThrottle0);  // cut throttle
                 });
-                Task.Delay(50000).ContinueWith(_ =>
-                {
-                    keyboard.Keyup(keyThrottle0);
-                    Sounds.Play("you have arrived.mp3");
-                });
+
+                keyboard.Keyup(keyThrottle0);
+                Sounds.Play("you have arrived.mp3");
+                notifications.messages.Post("You have arrived");
             }
         }
 
