@@ -449,20 +449,15 @@ namespace EDAP
             
             // press whichever keys will point us toward the target. Coordinate system origin is bottom right
             const float align_margin = 0.15f;
-            if (bRoll)
-            {
-                double xMargin = compass.Y > -0.1 ? 0.3 : 0.0; // always roll if target is above us
-                keyboard.SetKeyState(keyRollRight, compass.X < -xMargin); // roll right
-                keyboard.SetKeyState(keyRollLeft, compass.X > xMargin); // roll left
-            }
-            if (bPitchYaw)
-            {
-                keyboard.SetKeyState(keyPitchUp, compass.Y < -align_margin); // pitch up
-                keyboard.SetKeyState(keyPitchDown, compass.Y > align_margin); // pitch down
-                keyboard.SetKeyState(keyYawLeft, compass.X < -align_margin); // yaw left
-                keyboard.SetKeyState(keyYawRight, compass.X > align_margin); // yaw right
-            }
-
+            double xMargin = compass.Y > -0.1 ? 0.3 : 0.0; // always roll if target is above us
+            keyboard.SetKeyState(keyRollRight, bRoll && compass.X < -xMargin); // roll right
+            keyboard.SetKeyState(keyRollLeft, bRoll && compass.X > xMargin); // roll left
+            
+            keyboard.SetKeyState(keyPitchUp, bPitchYaw && compass.Y < -align_margin); // pitch up
+            keyboard.SetKeyState(keyPitchDown, bPitchYaw && compass.Y > align_margin); // pitch down
+            keyboard.SetKeyState(keyYawLeft, bPitchYaw && compass.X < -align_margin); // yaw left
+            keyboard.SetKeyState(keyYawRight, bPitchYaw && compass.X > align_margin); // yaw right
+            
             return (Math.Abs(compass.Y) < align_margin && Math.Abs(compass.X) < align_margin);
         }
         
