@@ -638,15 +638,15 @@ namespace EDAP
             int scoopWaitSeconds = Properties.Settings.Default.scoopWaitSeconds;
             int scoopFinishSeconds = Properties.Settings.Default.scoopFinishSeconds;
 
+            // if we try to select the star earlier than this, sometimes it selects the wrong thing
+            if (SecondsSinceFaceplant < 2)
+                return;
 
             // roll so that the star is below (makes pitch up quicker -- less likely to collide in slow ships)
             if (OncePerJump(PilotState.SelectStar))
                 SelectStar();
             AlignCompass(bPitchYaw: false);
-
-            if (SecondsSinceFaceplant < 3)
-                return;
-            
+                        
             if (OncePerJump(PilotState.ScoopStart))
                 keyboard.Tap(keyThrottle50); // 50% throttle
 
