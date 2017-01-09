@@ -653,10 +653,8 @@ namespace EDAP
                 keyboard.Tap(keyThrottle50); // 50% throttle
 
             // (barely) avoid crashing into the star
-            if (cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant())
-                keyboard.Keydown(keyPitchUp); // pitch up
-            else
-                keyboard.Keyup(keyPitchUp);
+            bool collisionImminent = cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant();
+            keyboard.SetKeyState(keyPitchUp, collisionImminent);
 
             // start speeding up towards the end so we don't crash/overheat
             if (SecondsSinceFaceplant > scoopWaitSeconds && OncePerJump(PilotState.ScoopMiddle))
