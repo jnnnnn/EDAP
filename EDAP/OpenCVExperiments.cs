@@ -3,6 +3,7 @@ using OpenCvSharp.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 
 namespace EDAP
 {
@@ -267,13 +268,18 @@ namespace EDAP
             Mat mscreen = new Mat("menutest.png");
             Mat template = new Mat("res3/startport_services_selected.png");
 
-            Mat mscreenValue = mscreen.CvtColor(ColorConversionCodes.BGR2HSV).Split()[2];
-            Mat templateValue = template.CvtColor(ColorConversionCodes.BGR2HSV).Split()[2];
-            Mat matches = mscreenValue.MatchTemplate(templateValue, TemplateMatchModes.CCoeffNormed);
-            double minVal, maxVal;
-            matches.MinMaxLoc(out minVal, out maxVal);
-            Window w1 = new Window(matches);
-            Window w2 = new Window(matches.InRange(0.8, 1));
+
+            Mat mscreenValue = IsolateYellow(mscreen);
+            Mat templateValue = IsolateYellow(template);
+            //foreach (var matchmode in Enum.GetValues(typeof(TemplateMatchModes)).Cast<TemplateMatchModes>())
+            {
+                var matchmode = TemplateMatchModes.CCorrNormed;
+                Mat matches = mscreenValue.MatchTemplate(templateValue, matchmode);
+                double minVal, maxVal;
+                matches.MinMaxLoc(out minVal, out maxVal);
+                //Window w1 = new Window(matches);
+                Window w2 = new Window(matchmode.ToString(), matches.InRange(0.9, 1));
+            }            
         }
     }
 }

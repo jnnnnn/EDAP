@@ -58,5 +58,19 @@ namespace EDAP
             return maxVal > match_threshold;
         }
 
+        /// <summary>
+        /// Similar to match screen but matches by rough colour blob. Good for menu elements that scale in some ships (so the text is too hard to match directly).
+        /// </summary>
+        /// <returns></returns>
+        public bool MatchMenuColour(Mat template)
+        {
+            Mat mscreenValue = CruiseSensor.IsolateYellow(BitmapConverter.ToMat(screen.bitmap));
+            Mat templateValue = CruiseSensor.IsolateYellow(template);
+
+            Mat matches = mscreenValue.MatchTemplate(templateValue, TemplateMatchModes.CCorrNormed);
+            double minVal, maxVal;
+            matches.MinMaxLoc(out minVal, out maxVal);
+            return maxVal > 0.9;
+        }
     }
 }

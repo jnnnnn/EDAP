@@ -15,7 +15,8 @@ namespace EDAP
         public Keyboard keyboard;
         public MenuSensor menuSensor;
 
-        DateTime loadStartWaiting = DateTime.UtcNow;
+        DateTime loadStartWaiting = DateTime.UtcNow;        
+        int nPrivateGroup = 0;
 
         [Flags]
         public enum MenuState
@@ -83,10 +84,13 @@ namespace EDAP
                 }
                 else
                 {
-                    // choose first private group
+                    // choose nth private group
                     keyboard.TapWait(SendInput.ScanCode.KEY_S);
                     keyboard.TapWait(SendInput.ScanCode.SPACEBAR);
                     Thread.Sleep(500); // wait for list of groups to open
+                    for (int i = 0; i < nPrivateGroup; i++)
+                        keyboard.TapWait(SendInput.ScanCode.KEY_S);
+                    nPrivateGroup++;
                     keyboard.TapWait(SendInput.ScanCode.SPACEBAR);
                 }                
                 state |= MenuState.ChooseMode;                
@@ -95,8 +99,7 @@ namespace EDAP
             
             if (!state.HasFlag(MenuState.LandedMenu))
             {
-                // todo: this isn't matching for some reason, gets stuck here
-                if (menuSensor.MatchScreen(menuSensor.template_landedmenu))
+                if (menuSensor.MatchMenuColour(menuSensor.template_landedmenu))
                 {
                     keyboard.TapWait(SendInput.ScanCode.KEY_S);
                     keyboard.TapWait(SendInput.ScanCode.SPACEBAR); // select Return To Surface
