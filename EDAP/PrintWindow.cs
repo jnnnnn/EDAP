@@ -1,4 +1,6 @@
-﻿using System;
+﻿using OpenCvSharp;
+using OpenCvSharp.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -52,6 +54,20 @@ namespace EDAP
                 }
                 return screenshot;
             }
+        }
+
+        /// <summary>
+        /// Crop out the central region of the screen (convenience function)
+        /// </summary>
+        /// <param name="diameter"></param>
+        /// <returns></returns>
+        public Mat ScreenCentre(int diameter)
+        {
+            Bitmap s = bitmap;
+            OpenCvSharp.Point centre = new OpenCvSharp.Point(s.Width, s.Height);
+            Rectangle screenCentre = new Rectangle((int)((s.Width - diameter) * 0.5), (int)((s.Height - diameter) * 0.5), diameter, diameter);
+            Bitmap image = CompassSensor.Crop(s, screenCentre);
+            return BitmapConverter.ToMat(image);
         }
 
         public void ClearSaved()
