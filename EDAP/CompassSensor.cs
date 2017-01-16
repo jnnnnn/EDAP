@@ -204,31 +204,7 @@ namespace EDAP
             else
                 return null;
         }
-
-        /// <summary>
-        /// Compute the final velocity from a quadratic fit
-        /// </summary>
-        /// <returns>dx/dt at t2</returns>
-        public static double QuadFitFinalVelocity(double x1, double x2, double x3, DateTime dt1, DateTime dt2, DateTime dt3)
-        {
-            double t3 = (dt3 - dt3).TotalSeconds;
-            double t2 = (dt3 - dt2).TotalSeconds;
-            double t1 = (dt3 - dt1).TotalSeconds;
-
-            // http://www.vb-helper.com/howto_find_quadratic_curve.html
-            var atop = (x2 - x1) * (t1 - t3) + (x3 - x1) * (t2 - t1);
-            var abottom = (t1 - t3) * (t2 * t2 - t1 * t1) + (t2 - t1) * (t3 * t3 - t1 * t1);
-            if (abottom == 0.0)
-                throw new Exception("no quad fit");
-
-            var btop = (x2 - x1) - atop / abottom * (t2 * t2 - t1 * t1);
-            var bbottom = (t2 - t1);
-            if (bbottom == 0.0)
-                throw new Exception("no quad fit");
-
-            return /*2 * atop / abottom * t3 +*/ btop / bbottom;
-        }
-
+        
         public Point2f GetOrientationVelocity()
         {
             if (history.Count < 2)
@@ -238,8 +214,8 @@ namespace EDAP
                 return history[1] - history[0];
             // quadratic if more than two
             List<DateTime> ts = screen.timestamp_history;
-            double vx = QuadFitFinalVelocity(history[2].X, history[1].X, history[0].X, ts[2], ts[1], ts[0]);
-            double vy = QuadFitFinalVelocity(history[2].Y, history[1].Y, history[0].Y, ts[2], ts[1], ts[0]);
+            double vx = Controller.QuadFitFinalVelocity(history[2].X, history[1].X, history[0].X, ts[2], ts[1], ts[0]);
+            double vy = Controller.QuadFitFinalVelocity(history[2].Y, history[1].Y, history[0].Y, ts[2], ts[1], ts[0]);
             return new Point2f((float)vx, (float)vy);
         }
 

@@ -24,6 +24,7 @@ namespace EDAP
         private Relogger relogger;
         private IntPtr hwnd;
         private Notifications notifications;
+        private SmartTrigger smartTrigger;
 
         private DateTime lastClick = DateTime.UtcNow;
 
@@ -47,12 +48,18 @@ namespace EDAP
             menuSensor = new MenuSensor(screen, pictureBox2);
             notifications = new EDAP.Notifications();
             Task.Run(() => notifications.Start());
+            smartTrigger = new SmartTrigger();
+            smartTrigger.screen = screen;
+            smartTrigger.keyboard = keyboard;
+            smartTrigger.cruiseSensor = cruiseSensor;
+            smartTrigger.debugWindow = pictureBox2;
             pilot = new PilotJumper();
             pilot.keyboard = keyboard;
             pilot.compassRecognizer = compassRecognizer;
             pilot.screen = screen;
             pilot.cruiseSensor = cruiseSensor;
             pilot.notifications = notifications;
+            pilot.smartTrigger = smartTrigger;
             relogger = new Relogger();
             relogger.keyboard = keyboard;
             relogger.menuSensor = menuSensor;
@@ -64,6 +71,7 @@ namespace EDAP
             //OpenCVExperiments.MatchMenu();
             //OpenCVExperiments.FindTargetsTest();
             //OpenCVExperiments.FindCompasses();
+            //OpenCVExperiments.Subtarget();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
@@ -83,6 +91,13 @@ namespace EDAP
 
         private void Timer_Tick(object sender, EventArgs e)
         {
+            // emergency kill
+            if (System.Windows.Input.KeyStates.Down == System.Windows.Input.Keyboard.GetKeyStates(System.Windows.Input.Key.Escape))
+            {
+                pilot.state = 0;
+                relogger.state = 0;
+            }
+
             screen.ClearSaved();
 
             var t0 = DateTime.UtcNow;
@@ -118,6 +133,7 @@ namespace EDAP
             buttonScoop.ForeColor = pilot.state.HasFlag(PilotJumper.PilotState.Scoop) ? Color.Green : Color.Coral;
             button_relog_group.ForeColor = relogger.state.HasFlag(Relogger.MenuState.Enabled) && !relogger.state.HasFlag(Relogger.MenuState.Solo) ? Color.Green : Color.Coral;
             button_relog_solo.ForeColor = relogger.state.HasFlag(Relogger.MenuState.Enabled) && relogger.state.HasFlag(Relogger.MenuState.Solo) ? Color.Green : Color.Coral;
+            buttonSmartTrigger.ForeColor = smartTrigger.state.HasFlag(SmartTrigger.TriggerState.Enabled) ? Color.Green : Color.Coral;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -132,6 +148,7 @@ namespace EDAP
         {
             Focusize();
             pilot.state ^= PilotJumper.PilotState.Cruise;
+            smartTrigger.state ^= SmartTrigger.TriggerState.AimAssist;
             lastClick = DateTime.UtcNow;
         }
 
@@ -180,6 +197,11 @@ namespace EDAP
                 relogger.state ^= Relogger.MenuState.Enabled;
             else
                 relogger.state = Relogger.MenuState.Enabled;
+        }
+        
+        private void buttonSmartTrigger_Click(object sender, EventArgs e)
+        {
+            smartTrigger.state ^= SmartTrigger.TriggerState.Enabled;
         }
     }
 }

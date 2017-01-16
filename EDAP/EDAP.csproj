@@ -35,7 +35,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>0</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup>    
     <Reference Include="Discord.Net, Version=0.9.6.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Discord.Net.0.9.6\lib\net45\Discord.Net.dll</HintPath>
       <Private>True</Private>
@@ -101,6 +101,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CompassSensor.cs" />
+    <Compile Include="Controller.cs" />
     <Compile Include="CruiseSensor.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

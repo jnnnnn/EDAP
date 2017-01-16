@@ -8,7 +8,7 @@ using System.Windows.Forms;
 
 namespace EDAP
 {
-    class CruiseSensor
+    public class CruiseSensor
     {
         public Screenshot screen;
 
@@ -27,12 +27,26 @@ namespace EDAP
             return valueChannel;
         }
 
-        public Point2f FindTriQuadrant(Bitmap screen)
+        /// <summary>
+        /// Filter the given image to select red areas (returned as greyscale)
+        /// </summary>
+        public static Mat IsolateRed(Mat source)
+        {
+            Mat brightHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redAreas = new Mat();
+            source.CopyTo(redAreas, redMask);
+            Mat red = redAreas.Split()[2];
+            return red;
+        }
+
+        public Point2f FindTriQuadrant(Mat screen)
         {
             // todo: detect the dotted circle that means the target is obscured.
 
             // See the Experiments for how this works.
-            Mat yellowValue = IsolateYellow(BitmapConverter.ToMat(screen));
+            Mat yellowValue = IsolateYellow(screen);
 
             CircleSegment[] circles = yellowValue.HoughCircles(
                 HoughMethods.Gradient,
@@ -56,8 +70,8 @@ namespace EDAP
                 throw new Exception("Too many possible triquadrants.");
             if (circles.Length < 1)
                 throw new Exception("No possible triquadrants.");
-            
-            return circles[0].Center - FindShipPointer(yellowValue);            
+
+            return circles[0].Center;            
         }
 
         Mat templatepointer = new Mat("res3/squaretarget.png", ImreadModes.GrayScale);
@@ -184,14 +198,9 @@ namespace EDAP
         public bool MatchImpact()
         {
             Bitmap cropped = CompassSensor.Crop(screen.bitmap, screen.bitmap.Width - 400, 0, screen.bitmap.Width - 100, 300);
-            Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat screenarea = BitmapConverter.ToMat(cropped);            
+            Mat red = IsolateRed(screenarea);
 
-            Mat brightHSV = screenarea.CvtColor(ColorConversionCodes.BGR2HSV);
-            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
-                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
-            Mat redAreas = new Mat();
-            screenarea.CopyTo(redAreas, redMask);
-            Mat red = redAreas.Split()[2];
             Mat template = new Mat("res3/impacttemplate.png", ImreadModes.GrayScale);
             Mat result = new Mat(red.Size(), red.Type());
             Cv2.MatchTemplate(red, template, result, TemplateMatchModes.CCoeffNormed);
@@ -200,7 +209,7 @@ namespace EDAP
             result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
             if (maxVal > 0.4)
             {
-                debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(redAreas), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+                debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(red), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
                 return true;
             }
             return false;

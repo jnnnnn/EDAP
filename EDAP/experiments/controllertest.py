@@ -1,11 +1,11 @@
 import matplotlib, pylab
 
 tstep = 0.03
-ts = [x * tstep for x in range((int)(5 / tstep))] 
+ts = [x * tstep for x in range((int)(10 / tstep))] 
 
 pylab.figure()
 
-max_accel = 2000
+max_accel = 1000
 def clamp(value, absmax):
 	if abs(value) > absmax:
 		return absmax if value > 0 else -absmax
@@ -17,7 +17,7 @@ def sim(v0, x0, controller):
 	vs = [v0,v0]
 
 	for t in ts[:-1]:
-		xs.append(xs[-1] + vs[-1] * tstep)
+		xs.append(xs[-1] + vs[-2] * tstep)
 
 		a = controller(vs[-2], xs[-1])
 		a = clamp(a, max_accel)
@@ -38,7 +38,7 @@ def controllerLinear(v, x):
 
 def controllerQuadratic(v, x, amax=max_accel):
 	"""return the desired acceleration for the next timestep"""
-	a = amax;		
+	a = amax/3;		
 	# work out the initial acceleration direction
 	# 1. find the acceleration direction that will give us a stationary point
 	if a * v >= 0: a *= -1
@@ -54,13 +54,18 @@ def controllerQuadratic(v, x, amax=max_accel):
 	t1 = -v/a + rootpart;
 	t2 = -v/a - rootpart;	
 	t0 = max(t1, t2)
-	return a
+	if t0 > 2*tstep:
+		return a
+	return a * (t0 / tstep)
 
 def controllerQuadraticDamped(v, x):	
-	if abs(x) < 2:
+	if abs(x) < 1:
 		return controllerLinear(v, x)
 
-	return controllerQuadratic(v, x)
+	a = controllerQuadratic(v, x)
+	if v*x < 0 and a*v > 0:
+		a *= 0.5
+	return a
 	
 controller = controllerQuadraticDamped
 for i in range(-500, 500, 100):

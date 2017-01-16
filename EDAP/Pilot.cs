@@ -350,10 +350,7 @@ namespace EDAP
         {
             try
             {
-
-                int centreBox = 150;
-                Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
-                cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
+                cruiseSensor.FindTriQuadrant(screen.ScreenCentre(diameter:300));
                 return;
             }
             catch (Exception e)
@@ -390,10 +387,9 @@ namespace EDAP
         {
             try
             {
-                int centreBox = 150;
-                Rectangle screenCentre = new Rectangle(1920 / 2 - centreBox, 1080 / 2 - centreBox, centreBox * 2, centreBox * 2);
-                Point2f triquadrant = cruiseSensor.FindTriQuadrant(CompassSensor.Crop(screen.bitmap, screenCentre));
-                return FineAlign(-triquadrant);
+                Mat screenCentre = screen.ScreenCentre(diameter: 300);
+                Point2f offset = cruiseSensor.FindTriQuadrant(screenCentre) - cruiseSensor.FindShipPointer(CruiseSensor.IsolateYellow(screenCentre));
+                return FineAlign(-offset);
             }
             catch (Exception e)
             {
@@ -479,8 +475,8 @@ namespace EDAP
                 finehistory[1].Item1 == ts[1] &&
                 finehistory[2].Item1 == ts[2])
             {
-                velocity.X = -(float)CompassSensor.QuadFitFinalVelocity(finehistory[2].Item2.X, finehistory[1].Item2.X, finehistory[0].Item2.X, ts[2], ts[1], ts[0]);
-                velocity.Y = -(float)CompassSensor.QuadFitFinalVelocity(finehistory[2].Item2.Y, finehistory[1].Item2.Y, finehistory[0].Item2.Y, ts[2], ts[1], ts[0]);
+                velocity.X = -(float)Controller.QuadFitFinalVelocity(finehistory[2].Item2.X, finehistory[1].Item2.X, finehistory[0].Item2.X, ts[2], ts[1], ts[0]);
+                velocity.Y = -(float)Controller.QuadFitFinalVelocity(finehistory[2].Item2.Y, finehistory[1].Item2.Y, finehistory[0].Item2.Y, ts[2], ts[1], ts[0]);
                 Console.WriteLine(string.Format("velocity: {0}; {1}", velocity, compassRecognizer.GetOrientationVelocity()));
             }
             else
@@ -494,7 +490,7 @@ namespace EDAP
             }
 
             const float deadzone = 20; // size of deadzone (in pixels)
-            
+
             /* I've had a few goes at this. This algorithm predicts the effect of pressing a key, assumes constant acceleration while the key is pressed, and constant when released to stop at exactly the right spot. 
              * This is not quite accurate as:
              *  - the game will cut acceleration to 0 once we reach the maximum pitching speed
@@ -519,7 +515,7 @@ namespace EDAP
             double xY = offset.Y; // px
 
             if (vY * vY - 2 * aY * xY < 0)
-		        aY *= -1; // make sure sqrt is not imaginary
+                aY *= -1; // make sure sqrt is not imaginary
             double rootpartY = Math.Sqrt(0.5 * (vY * vY - 2 * aY * xY));
             double tY1 = -vY / aY + 1 / aY * rootpartY;
             double tY2 = -vY / aY - 1 / aY * rootpartY;
@@ -541,7 +537,7 @@ namespace EDAP
             double aX = 2000; // // yaw acceleration while key pressed (deceleration while unpressed), in px/s/s.
             double vX = velocity.X; // px/s
             double xX = offset.X; // px
-                
+
             if (vX * vX - 2 * aX * xX < 0)
                 aX *= -1;
             double rootpartX = Math.Sqrt(0.5 * (vX * vX - 2 * aX * xX));
@@ -569,7 +565,7 @@ namespace EDAP
             }
             return false;
         }
-
+        
         /// <summary>
         /// Press whichever keys will make us point more away from the target.
         /// </summary>
