@@ -12,7 +12,7 @@ namespace EDAP
     /// <summary>
     /// This class keeps track of which keys are pressed and automatically unpresses them after a certain amount of time.
     /// </summary>
-    class Keyboard
+    public class Keyboard
     {
         public HashSet<ScanCode> pressed_keys;
         public IntPtr hWnd;
@@ -161,5 +161,47 @@ namespace EDAP
             Keydown(key);
             Task.Delay(milliseconds).ContinueWith(t => Keyup(key));
         }
+        
+        /// <summary>
+        /// Move the mouse. Takes doubles for convenience.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        public void MouseMoveRelative(double x, double y)
+        {
+            SendInputWrapper.SendInput(new INPUT
+            {
+                Type = (uint)InputType.Mouse,
+                Data =
+                {
+                    Mouse = new MOUSEINPUT
+                    {
+                        X = (int)x,
+                        Y = (int)y,
+                        MouseData = 0,
+                        Flags = 0,
+                        Time = 0,
+                        ExtraInfo = (IntPtr)null,
+                    }
+                }
+            });
+        }
+
+        /*
+         * buffer->type = INPUT_MOUSE;
+    buffer->mi.dx = (0 * (0xFFFF / SCREEN_WIDTH));
+    buffer->mi.dy = (0 * (0xFFFF / SCREEN_HEIGHT));
+    buffer->mi.mouseData = 0;
+    buffer->mi.dwFlags = MOUSEEVENTF_ABSOLUTE;
+    buffer->mi.time = 0;
+    buffer->mi.dwExtraInfo = 0;
+
+            buffer->mi.dx = (x * (0xFFFF / SCREEN_WIDTH));
+    buffer->mi.dy = (y * (0xFFFF / SCREEN_HEIGHT));
+    buffer->mi.dwFlags = (MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_MOVE);
+
+    SendInput(1, buffer, sizeof(INPUT));
+         * 
+         * */
     }
 }

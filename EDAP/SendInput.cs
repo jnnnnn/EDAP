@@ -326,6 +326,23 @@ namespace EDAP.SendInput
         ScanCode = 0x0008,
     }
 
+    [Flags]
+    internal enum MouseFlag : uint
+    {
+        MOUSEEVENTF_ABSOLUTE = 0x8000, // The dx and dy parameters contain normalized absolute coordinates. If not set, those parameters contain relative data: the change in position since the last reported position. 
+        MOUSEEVENTF_LEFTDOWN = 0x0002, // The left button is down.
+        MOUSEEVENTF_LEFTUP = 0x0004, // The left button is up.
+        MOUSEEVENTF_MIDDLEDOWN = 0x0020, // The middle button is down.
+        MOUSEEVENTF_MIDDLEUP = 0x0040, // The middle button is up.
+        MOUSEEVENTF_MOVE = 0x0001, // Movement occurred.
+        MOUSEEVENTF_RIGHTDOWN = 0x0008, // The right button is down.
+        MOUSEEVENTF_RIGHTUP = 0x0010, // The right button is up.
+        MOUSEEVENTF_WHEEL = 0x0800, // The wheel has been moved, if the mouse has a wheel. The amount of movement is specified in dwData
+        MOUSEEVENTF_XDOWN = 0x0080, // An X button was pressed.
+        MOUSEEVENTF_XUP = 0x0100, // An X button was released.
+        MOUSEEVENTF_HWHEEL = 0x01000, // The wheel button is tilted.
+    }
+
     internal enum InputType : uint
     {
         Mouse = 0,
