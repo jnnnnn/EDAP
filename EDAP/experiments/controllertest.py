@@ -19,7 +19,7 @@ def sim(v0, x0, controller):
 	for t in ts[:-1]:
 		xs.append(xs[-1] + vs[-1] * tstep)
 
-		a = controller(vs[-1], xs[-1])
+		a = controller(vs[-2], xs[-1])
 		a = clamp(a, max_accel)
 		v = vs[-1] + a * tstep
 		v = clamp(v, 300)
@@ -71,5 +71,5 @@ for i in range(-500, 500, 100):
 	sim(500, i, controller)
 
 pylab.plot([ts[0], ts[-1]], [0, 0])
-pylab.ylim([-600, 600])
+pylab.ylim([-30, 30])
 pylab.show()
