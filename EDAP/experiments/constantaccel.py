@@ -2,17 +2,27 @@ import matplotlib, pylab
 
 
 tstep = 0.001
-ts = [x / 1000 for x in range(2000)] 
+ts = [x / 1000 for x in range(5000)] 
 
 pylab.figure()
 
+def sign(n): return 1 if n > 0 else -1
+
 def sim(v, x):
-	a = 720.;	
-	if v*v - 2*a*x < 0:
-		a *= -1; # make sure sqrt is not imaginary
-	t1 = -v/a + 1/(a*2**.5) * (v*v - 2*a*x)**.5;
-	t2 = -v/a - 1/(a*2**.5) * (v*v - 2*a*x)**.5;
-	print (t1, t2)
+	a = 720.;		
+	# work out the initial acceleration direction
+	# 1. find the acceleration direction that will give us a stationary point
+	if a * v >= 0: a *= -1
+	inflection = x - v*v/(2*a)
+	if inflection * x >= 0:
+		a = abs(a) * -sign(x)
+	else:
+		a = abs(a) * sign(x)
+
+	rootpart = 1/(a*2**.5) * (v*v - 2*a*x)**.5
+	t1 = -v/a + rootpart;
+	t2 = -v/a - rootpart;
+	print (("{:0.3} "*2).format(t1, t2))
 	
 	t0 = max(t1, t2)
 	xs = [x]
@@ -23,12 +33,9 @@ def sim(v, x):
 	
 	pylab.plot(ts, xs)
 
-sim(-142, 150)
-sim(0, 150)
-sim(0, 0)
-sim(-100, 0)
-sim(142, -150)
-sim(-40., 300.)
-
-pylab.plot([ts[0], ts[-1]], [0, 0])
+#sim(700,-200)
+for i in range(-1001, 1000, 100):
+	sim(-700, i)
+	sim( 700, i)
+#pylab.plot([ts[0], ts[-1]], [0, 0])
 pylab.show()
