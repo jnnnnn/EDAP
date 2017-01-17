@@ -87,6 +87,20 @@ namespace EDAP
             Window w2 = new Window(result_open);
         }
 
+        internal static void Subtarget()
+        {
+            Mat source = new Mat("res3/subtarget-test.png");
+            Mat targettemplate = new Mat("res3/subtarget.png");
+            Mat redSource = CruiseSensor.IsolateRed(source);
+            Mat redTarget = CruiseSensor.IsolateRed(targettemplate);
+
+            Mat matchImage = new Mat();
+            Cv2.MatchTemplate(redSource, redTarget, matchImage, TemplateMatchModes.CCorrNormed);
+            Window w0 = new Window(redSource);
+            Window w1 = new Window(matchImage);
+            Window w2 = new Window(matchImage.Threshold(0.7, 1.0, ThresholdTypes.Tozero));
+        }
+
         public static void FindTriQuadrant()
         {
             Bitmap image = (Bitmap)Image.FromFile("res3/supercruisetarget.png");
