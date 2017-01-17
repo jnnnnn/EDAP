@@ -183,7 +183,7 @@ namespace EDAP
         /// </summary>
         /// <param name="measurementError">stddev^2 (in px^2) of measurement's gaussian distribution. increase this for slower and smoother response</param>
         /// <param name="controlGain">how much a control movement affects the current acceleration. Basically the mouse sensitivity: (resulting acceleration px/s/s) / (mouse px)</param>
-        public void KalmanInit(double measurementError = 1, double accelerationGain = 0.01)
+        public void KalmanInit(double measurementError = 2, double accelerationGain = 0.01)
         {
             float timedelta = 1f;
 
@@ -206,10 +206,10 @@ namespace EDAP
 
             // No idea what these are, messed around with values until they seemed good
             k.MeasurementMatrix.SetIdentity();
-            k.ProcessNoiseCov.SetIdentity(0.001); // stddev^2 of Transition error gaussian distribution. increase this to rely more on measurements (faster but noiser response)
+            k.ProcessNoiseCov.SetIdentity(0.01); // stddev^2 of Transition error gaussian distribution. increase this to rely more on measurements (faster but noiser response)
             k.MeasurementNoiseCov.SetIdentity(measurementError);
             k.ErrorCovPost.SetIdentity(0.01); // large values (100) make initial transients huge
-            k.ErrorCovPre.SetTo(0.01); // large values make initial transients huge
+            k.ErrorCovPre.SetIdentity(0); // large values make initial transients huge
         }
     }
 }

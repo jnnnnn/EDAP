@@ -318,7 +318,7 @@ namespace EDAP
 
             // No idea what these are, messed around with values until they seemed good
             k.MeasurementMatrix.SetIdentity();
-            k.ProcessNoiseCov.SetIdentity(0.001); // stddev^2 of Transition error gaussian distribution. increase this for faster but noiser response
+            k.ProcessNoiseCov.SetIdentity(0.01); // stddev^2 of Transition error gaussian distribution. increase this for faster but noiser response
             k.MeasurementNoiseCov.SetIdentity(1); // stddev^2 of measurement gaussian distribution. increase this for slower and smoother response
             k.ErrorCovPost.SetIdentity(0.01); // large values (100) make initial transients huge
             k.ErrorCovPre.SetTo(0); // large values make initial transients huge
