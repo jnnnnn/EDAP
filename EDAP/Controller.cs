@@ -12,7 +12,7 @@ namespace EDAP
     /// </summary>
     class Controller
     {
-        public double maxAccel = 0;
+        public double maxAccel = 10;
         public double timestep = PilotJumper.TIMERINTERVAL_MS / 1000;
 
         private List<Tuple<DateTime, double>> positionHistory = new List<Tuple<DateTime, double>>();
@@ -41,6 +41,7 @@ namespace EDAP
         public double QuadraticController(double x, double v)
         {
             var a = maxAccel;
+            
             // work out the initial acceleration direction
             // 1. find the acceleration direction that will give us a stationary point
             if (a * v >= 0)
@@ -58,10 +59,27 @@ namespace EDAP
             var t1 = -v / a + rootpart;
             var t2 = -v / a - rootpart;
             var t0 = Math.Max(t1, t2); // one is probably negative
-
+            
             if (t0 > 1)
                 return a;
             return a * t0;
+        }
+
+        /// <summary>
+        /// A lag-compensated quadratic predictor. Runs the current trajectory for "lag" frames before performing input calculation.
+        /// Should be more careful about overshooting.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="v"></param>
+        /// <param name="a"></param>
+        /// <param name="lag"></param>
+        /// <returns></returns>
+        public double QuadraticControllerDelag(double x, double v, double a, double lag)
+        {
+            x = v * lag + 0.5 * a * lag * lag;
+            v = a * lag;
+            a = a * Math.Pow(0.9, lag);
+            return QuadraticController(x, v);
         }
 
         public double QuadraticControllerDamped(double x, double v)
@@ -108,11 +126,11 @@ namespace EDAP
             */
             double v, a_current;
             KalmanStep(offset, out offset_fixed, out v, out a_current);
-            double future_offset = offset_fixed + 5 * v;
 
-            var a_desired = QuadraticController(offset_fixed, v);
-            //var a_delta = a_desired - a_current;
-            var a_delta = Clamp(-2*v - future_offset/5, 5);
+            var a_desired = QuadraticControllerDelag(offset_fixed, v, a_current, 3);
+            a_desired = Clamp(a_desired, maxAccel);
+            var a_delta = a_desired - a_current;
+            
             KalmanInput(a_delta);
             file.WriteLineAsync(string.Format("{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}", offset, offset_fixed, v, a_delta));
             return a_delta;
@@ -183,7 +201,7 @@ namespace EDAP
         /// </summary>
         /// <param name="measurementError">stddev^2 (in px^2) of measurement's gaussian distribution. increase this for slower and smoother response</param>
         /// <param name="controlGain">how much a control movement affects the current acceleration. Basically the mouse sensitivity: (resulting acceleration px/s/s) / (mouse px)</param>
-        public void KalmanInit(double measurementError = 2, double accelerationGain = 0.01)
+        public void KalmanInit(double measurementError = 1, double accelerationGain = 0.01)
         {
             float timedelta = 1f;
 
