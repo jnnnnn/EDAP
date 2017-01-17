@@ -72,6 +72,7 @@ namespace EDAP
             //OpenCVExperiments.FindTargetsTest();
             //OpenCVExperiments.FindCompasses();
             //OpenCVExperiments.Subtarget();
+            //OpenCVExperiments.Kalman();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)
