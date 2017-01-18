@@ -24,8 +24,7 @@ namespace EDAP
         private Relogger relogger;
         private IntPtr hwnd;
         private Notifications notifications;
-        private SmartTrigger smartTrigger;
-
+        
         private DateTime lastClick = DateTime.UtcNow;
 
         // make sure we focus back to the game window so that it registers keypresses
