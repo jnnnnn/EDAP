@@ -295,13 +295,24 @@ namespace EDAP
                 Window w2 = new Window(matchmode.ToString(), matches.InRange(0.9, 1));
             }
         }
-        
+
+
+        class PlotState
+        {
+            public int prevValue;
+            public int currentValue;
+            public Scalar color;
+        }
+                        
         public static void Kalman()
         {
             // https://www.youtube.com/watch?v=FkCT_LV9Syk -- what is a Kalman filter
             // http://dsp.stackexchange.com/a/8869/25966 -- example of how good they can be
             // https://en.wikipedia.org/wiki/Kalman_filter -- technical description
             // http://www.morethantechnical.com/2011/06/17/simple-kalman-filter-for-tracking-using-opencv-2-2-w-code/ -- example implementation for a kinematic system
+
+            // control theory https://www.cds.caltech.edu/~murray/courses/cds101/fa02/caltech/astrom-ch4.pdf
+            // http://www-bcf.usc.edu/~ioannou/RobustAdaptiveBook95pdf/Robust_Adaptive_Control.pdf
 
             // A kalman filter with three state variables (position, velocity, acceleration); one measurement (position); and one control input (acceleration input)
             KalmanFilter k = new KalmanFilter(dynamParams: 3, measureParams: 1, controlParams: 1);
@@ -310,52 +321,89 @@ namespace EDAP
             // this matrix is used to update our state estimate at each step
             k.TransitionMatrix.SetArray(row: 0, col: 0, data: new float[,] {
                 { 1, timedelta, timedelta * timedelta / 2 }, // position = old position + v Δt + a Δt^2 /2
-                { 0, 1, timedelta }, // velocity = old velocity + a Δt
-                { 0, 0, 0.9f} }); // acceleration = old acceleration * 0.9 (natural decay due to relative mouse)
+                { 0, 0.98f, timedelta }, // velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
+                { 0, 0, 0.8f} }); // acceleration = old acceleration * 0.9 (natural decay due to relative mouse)
 
             // this matrix indicates how much each control parameter affects each state variable
-            k.ControlMatrix.SetArray(row: 0, col: 0, data: new float[,] { { 0 }, { 0 }, { 0.01f } });
+            k.ControlMatrix.SetArray(row: 0, col: 0, data: new float[,] { { 0 }, { 0 }, { 0.03f } });
 
             // No idea what these are, messed around with values until they seemed good
             k.MeasurementMatrix.SetIdentity();
-            k.ProcessNoiseCov.SetIdentity(0.01); // stddev^2 of Transition error gaussian distribution. increase this for faster but noiser response
+            k.ProcessNoiseCov.SetIdentity(0.001); // stddev^2 of Transition error gaussian distribution. increase this for faster but noiser response
             k.MeasurementNoiseCov.SetIdentity(1); // stddev^2 of measurement gaussian distribution. increase this for slower and smoother response
-            k.ErrorCovPost.SetIdentity(0.01); // large values (100) make initial transients huge
-            k.ErrorCovPre.SetTo(0); // large values make initial transients huge
+            k.ErrorCovPost.SetIdentity(0.1); // large values (100) make initial transients huge
+            k.ErrorCovPre.SetTo(0.1); // large values make initial transients huge
 
-            // {position measurement, accel control input}
-            double[,] points = { { 12.50, -1.05 }, { 12.50, -2.67 }, { 12.50, -5.40 }, { 12.50, -8.89 }, { 12.50, -10.33 }, { -35.50, +8.78 }, { -37.50, +10.43 }, { -36.50, +10.48 }, { -35.50, +10.43 }, { -34.50, +10.36 }, { -35.50, +10.30 }, { -34.50, +10.23 }, { -29.50, +10.16 }, { -28.50, +10.10 }, { -25.50, +10.05 }, { -23.50, +10.01 }, { -19.50, +9.97 }, { -10.50, +9.93 }, { -6.50, +9.89 }, { -9.50, +9.87 }, { -2.50, +9.86 }, { -2.50, +9.48 }, { 3.50, +6.25 }, { 5.50, +2.27 }, { 4.50, -7.88 }, { 11.50, -10.15 }, { 14.50, -10.14 }, { 14.50, -10.12 }, { 17.50, -10.11 }, { 18.50, -10.09 }, { 16.50, -10.07 }, { 17.50, -10.04 }, { 13.50, -10.02 }, { 8.50, -9.98 }, { 4.50, -9.95 }, { 3.50, -9.93 }, { 2.50, -9.91 }, { 0.50, -9.89 }, { -5.50, -7.40 }, { -9.50, -3.20 }, { -9.50, +6.68 }, { -9.50, +9.96 }, { -16.50, +10.13 }, { -16.50, +10.13 }, { -15.50, +10.11 }, { -14.50, +10.09 }, { -11.50, +10.07 }, { -12.50, +10.05 }, { -8.50, +10.02 }, { -8.50, +10.00 }, { -6.50, +9.98 }, { -2.50, +9.95 }, { -0.50, +9.94 }, { 4.50, +8.18 }, { 6.50, +5.10 }, { 7.50, +0.30 }, { 13.50, -8.69 }, { 13.50, -10.11 }, { 15.50, -10.11 }, { 17.50, -10.11 }, { 17.50, -10.09 }, { 13.50, -10.07 }, { 16.50, -10.06 }, { 10.50, -10.03 }, { 13.50, -10.01 }, { 10.50, -9.99 }, { 7.50, -9.97 }, { -1.50, -9.94 }, { 0.50, -9.93 }, { -4.50, -7.57 }, { -3.50, -5.02 }, { -11.50, +4.91 }, { -10.50, +9.09 }, { -16.50, +10.12 }, { -16.50, +10.11 }, { -21.50, +10.11 }, { -19.50, +10.10 }, { -19.50, +10.08 }, { -18.50, +10.06 }, { -15.50, +10.04 }, { -13.50, +10.01 }, { -9.50, +9.98 }, { -8.50, +9.96 }, { -3.50, +9.94 }, { -2.50, +9.92 }, { 1.50, +9.25 }, { 2.50, +6.80 }, { 6.50, +3.23 }, { 7.50, -6.06 }, { 11.50, -10.07 }, { 13.50, -10.11 }, { 16.50, -10.11 }, { 16.50, -10.10 }, { 15.50, -10.08 }, { 16.50, -10.07 }, { 14.50, -10.05 }, { 13.50, -10.02 }, { 9.50, -10.00 }, { 5.50, -9.97 }, { 2.50, -9.95 }, { 0.50, -9.93 }, { -1.50, -9.07 }, { -4.50, -6.40 }, { -6.50, -2.86 }, { -7.50, +6.00 }, { -13.50, +10.12 }, { -16.50, +10.12 }, { -15.50, +10.11 }, { -14.50, +10.10 }, { -14.50, +10.08 }, { -14.50, +10.06 }, { -13.50, +10.04 }, { -12.50, +10.02 }, { -9.50, +10.00 }, { -8.50, +9.98 }, { -5.50, +9.96 }, { -1.50, +9.94 }, { 0.50, +9.60 }, { 7.50, +6.37 }, { 8.50, +2.16 }, { 12.50, -7.93 }, { 13.50, -10.12 }, { 13.50, -10.11 }, { 18.50, -10.11 }, { 19.50, -10.10 }, { 18.50, -10.09 }, { 17.50, -10.07 }, { 15.50, -10.05 }, { 9.50, -10.02 }, { 11.50, -9.99 }, { 5.50, -9.97 }, { 3.50, -9.94 }, { 3.50, -9.93 }, { -0.50, -9.45 }, { -4.50, -6.71 }, { -9.50, -2.28 }, { -10.50, +7.55 }, { -13.50, +10.12 }, { -13.50, +10.12 }, { -15.50, +10.11 }, { -20.50, +10.10 }, { -20.50, +10.09 }, { -16.50, +10.07 }, { -16.50, +10.05 }, { -15.50, +10.03 }, { -7.50, +9.99 }, { -10.50, +9.97 }, { -6.50, +9.95 }, { -4.50, +9.93 }, { 0.50, +9.91 }, { 2.50, +8.09 }, { 6.50, +4.80 }, { 8.50, -4.03 }, { 10.50, -9.05 }, { 14.50, -10.12 }, { 16.50, -10.12 }, { 14.50, -10.10 }, { 17.50, -10.09 }, { 17.50, -10.08 }, { 15.50, -10.06 }, { 12.50, -10.03 }, { 11.50, -10.01 }, { 7.50, -9.98 }, { 7.50, -9.96 }, { 4.50, -9.94 }, { 1.50, -9.93 }, { -1.50, -8.87 }, { -7.50, -5.52 }, { -9.50, +0.01 }, { -12.50, +8.98 }, { -19.50, +10.13 }, { -17.50, +10.13 }, { -20.50, +10.12 }, { -18.50, +10.10 }, { -19.50, +10.09 }, { -19.50, +10.07 }, { -20.50, +10.05 }, { -16.50, +10.02 }, { -16.50, +10.00 }, { -9.50, +9.97 }, { -11.50, +9.95 }, { -5.50, +9.93 }, { -1.50, +9.91 }, { 3.50, +9.00 }, { 6.50, +5.64 }, { 11.50, -4.12 }, { 14.50, -10.14 }, { 14.50, -10.14 }, { 20.50, -10.14 }, { 16.50, -10.12 }, { 19.50, -10.11 }, { 19.50, -10.09 }, { 16.50, -10.06 }, { 16.50, -10.04 }, { 13.50, -10.01 }, { 12.50, -9.98 }, { 10.50, -9.96 }, { 4.50, -9.94 }, { 6.50, -9.92 }, { 4.50, -9.91 } };
-
+            // get data {position measurement, accel control input}
+            List<Tuple<double, double>> points = new List<Tuple<double, double>>();            
+            using (var file = new System.IO.StreamReader(@"C:\users\public\trajectory.txt"))
+            {
+                while (true)
+                {
+                    var line = file.ReadLine();
+                    if (line == null)
+                        break;
+                    string[] parts = line.Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Count() < 4)
+                        break;
+                    float measure = float.Parse(parts[0]);
+                    float control = float.Parse(parts[3]);
+                    points.Add(new Tuple<double, double>(measure, control));
+                }
+            }
+            
             Mat matMeasure = new Mat(new OpenCvSharp.Size(1, 1), MatType.CV_32F);
             Mat matControl = new Mat(new OpenCvSharp.Size(1, 1), MatType.CV_32F);
-
-            Mat graph = new Mat(new OpenCvSharp.Size(1000, 500), MatType.CV_8UC3);
+            
+            Mat graph = new Mat(new OpenCvSharp.Size(1500, 500), MatType.CV_8UC3);
             graph.SetTo(new Scalar(0,0,0));
-            int prevPrediction = 0;
-            int prevMeasurement = 0;
-            int prevControl = 0;
-            int prevFilteredVelocity = 0;
-            k.StatePre.SetArray(row: 0, col: 0, data: new double[] { points[0, 0], points[1, 0] - points[0, 0] });
-            for (int i = 0; i < points.GetLength(0); i++)
+
+            List<PlotState> plots = new List<PlotState>();
+            plots.Add(new PlotState { color = new Scalar(255, 0, 0) }); // measured position
+            plots.Add(new PlotState { color = new Scalar(255, 255, 0) }); // predicted position
+            plots.Add(new PlotState { color = new Scalar(255, 0, 255) }); // control signal
+            plots.Add(new PlotState { color = new Scalar(0, 0, 255) }); // predicted velocity
+            plots.Add(new PlotState { color = new Scalar(0, 255, 255) }); // predicted acceleration
+            plots.Add(new PlotState { color = new Scalar(255, 255, 255) }); // gain (prediction accuracy)
+
+            k.StatePre.SetArray(row: 0, col: 0, data: new double[] { 0, 0, 0 });
+            graph.Line(0, 250, 5000, 250, new Scalar(255, 255, 255));
+
+            double controlGain = 0.024;
+
+            float acceleration_predicted = 0;
+            for (int i = 10; i < points.Count && i < 1500; i++)
             {
-                float control = (float)points[i, 1];
+                // need to make controlGain adaptive because mouse movement * controlGain => acceleration and this depends on ship translation speed (lol)
+                double measuredControlGain = points[i - 4].Item2 / acceleration_predicted;
+                k.ControlMatrix.SetArray(row: 0, col: 0, data: new double[,] { { 0 }, { 0 }, { controlGain } });
+
+                float control = (float)points[i].Item2;
                 matControl.Set(0, 0, control);
                 k.Predict(matControl);
-                float prediction = k.StatePost.At<float>(0, 0);
-                int filteredVelocity = (int)(10 * k.StatePost.At<float>(0, 1));
-                float measure = (float)points[i, 0];
-                matMeasure.Set(0, 0, measure);
-                k.Correct(matMeasure);
-                int xratio = 5;
-                graph.Line(i * xratio, prevMeasurement + 250, (i + 1) * xratio, (int)measure + 250, new Scalar(255, 0, 0));
-                graph.Line(i * xratio, prevPrediction + 250, (i + 1) * xratio, (int)prediction + 250, new Scalar(0, 255, 0));
-                graph.Line(i * xratio, prevControl + 250, (i + 1) * xratio, (int)control + 250, new Scalar(0, 0, 255));
-                graph.Line(i * xratio, prevFilteredVelocity + 250, (i + 1) * xratio, filteredVelocity + 250, new Scalar(255, 0, 255));
-                graph.Line(0, 250, 5000, 250, new Scalar(255, 255, 255));
-                prevMeasurement = (int)measure;
-                prevPrediction = (int)prediction;
-                prevControl = (int)control;
-                prevFilteredVelocity = filteredVelocity;
+                float position_predicted = k.StatePost.At<float>(0, 0);
+                float velocity_predicted = k.StatePost.At<float>(0, 1);
+                acceleration_predicted = k.StatePost.At<float>(0, 2);
+                float position_measured = (float)points[i].Item1;
+
+                if ((i / 50)%2 == 0)
+                {
+                    matMeasure.Set(0, 0, position_measured);
+                    k.Correct(matMeasure);
+                }
+                int xratio = 1;
+                int xoffset = 0 * xratio;
+                foreach (var plot in plots)
+                {
+                    graph.Line(i * xratio + xoffset, 2*plot.prevValue + 250, (i + 1) * xratio + xoffset, 2*plot.currentValue + 250, plot.color);
+                    plot.prevValue = plot.currentValue;
+                }
+                plots[0].currentValue = (int)(position_measured);
+                plots[1].currentValue = (int)position_predicted;
+                plots[2].currentValue = (int)control;
+                plots[3].currentValue = (int)(20*velocity_predicted);
+                plots[4].currentValue = (int)(20*acceleration_predicted);
+                plots[5].currentValue = (int)(controlGain * 1000); // typical 0.03 -> 30
             }
             Window w1 = new Window(graph);
         }
