@@ -310,30 +310,32 @@ namespace EDAP
             // http://dsp.stackexchange.com/a/8869/25966 -- example of how good they can be
             // https://en.wikipedia.org/wiki/Kalman_filter -- technical description
             // http://www.morethantechnical.com/2011/06/17/simple-kalman-filter-for-tracking-using-opencv-2-2-w-code/ -- example implementation for a kinematic system
-
-            // control theory https://www.cds.caltech.edu/~murray/courses/cds101/fa02/caltech/astrom-ch4.pdf
-            // http://www-bcf.usc.edu/~ioannou/RobustAdaptiveBook95pdf/Robust_Adaptive_Control.pdf
-
+            // http://dsp.stackexchange.com/questions/3292/estimating-velocity-from-known-position-and-acceleration
+            // https://www.researchgate.net/post/What_are_the_most_efficient_methods_for_tuning_Kalman_Filter_process_noise_covariance_matrix_Q
             // A kalman filter with three state variables (position, velocity, acceleration); one measurement (position); and one control input (acceleration input)
             KalmanFilter k = new KalmanFilter(dynamParams: 3, measureParams: 1, controlParams: 1);
-            float timedelta = 1f;
-
+            float timedelta = 0.03f;
+            
             // this matrix is used to update our state estimate at each step
             k.TransitionMatrix.SetArray(row: 0, col: 0, data: new float[,] {
-                { 1, timedelta, timedelta * timedelta / 2 }, // position = old position + v Δt + a Δt^2 /2
+                { 1f, timedelta, timedelta * timedelta / 2 }, // position = old position + v Δt + a Δt^2 /2
                 { 0, 0.98f, timedelta }, // velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
-                { 0, 0, 0.8f} }); // acceleration = old acceleration * 0.9 (natural decay due to relative mouse)
+                { 0, 0, 0.8f } }); // acceleration = old acceleration * 0.8 (natural decay due to relative mouse)
 
             // this matrix indicates how much each control parameter affects each state variable
-            k.ControlMatrix.SetArray(row: 0, col: 0, data: new float[,] { { 0 }, { 0 }, { 0.03f } });
+            // 0.01*mouseinput = Δa at 0 or full throttle; 0.024*mouseinput = Δa at 50% throttle.
+            k.ControlMatrix.SetArray(row: 0, col: 0, data: new float[,] { { 0 }, { 0 }, { 40f } });
 
             // No idea what these are, messed around with values until they seemed good
             k.MeasurementMatrix.SetIdentity();
-            k.ProcessNoiseCov.SetIdentity(0.001); // stddev^2 of Transition error gaussian distribution. increase this for faster but noiser response
+            k.ProcessNoiseCov.SetArray(row: 0, col: 0, data: new float[,] {
+                { 1f, 0, 0 }, // position prediction is pretty rough (avg. 1 px error)
+                { 0, 1/(float)(Math.Pow(timedelta, 1)), 0 }, // velocity prediction is okay (avg. 1 px/(0.03s) error)
+                { 0, 0, 1/(float)(Math.Pow(timedelta, 2))} }); // acceleration prediction is good (avg. 1 px/(0.03s)^2 error)
             k.MeasurementNoiseCov.SetIdentity(1); // stddev^2 of measurement gaussian distribution. increase this for slower and smoother response
-            k.ErrorCovPost.SetIdentity(0.1); // large values (100) make initial transients huge
-            k.ErrorCovPre.SetTo(0.1); // large values make initial transients huge
-
+            k.ErrorCovPost.SetIdentity(1); // large values (100) make initial transients huge
+            k.ErrorCovPre.SetTo(1); // large values make initial transients huge
+            
             // get data {position measurement, accel control input}
             List<Tuple<double, double>> points = new List<Tuple<double, double>>();            
             using (var file = new System.IO.StreamReader(@"C:\users\public\trajectory.txt"))
@@ -359,51 +361,58 @@ namespace EDAP
             graph.SetTo(new Scalar(0,0,0));
 
             List<PlotState> plots = new List<PlotState>();
-            plots.Add(new PlotState { color = new Scalar(255, 0, 0) }); // measured position
-            plots.Add(new PlotState { color = new Scalar(255, 255, 0) }); // predicted position
-            plots.Add(new PlotState { color = new Scalar(255, 0, 255) }); // control signal
-            plots.Add(new PlotState { color = new Scalar(0, 0, 255) }); // predicted velocity
-            plots.Add(new PlotState { color = new Scalar(0, 255, 255) }); // predicted acceleration
+            plots.Add(new PlotState { color = new Scalar(255, 0, 0) }); // measured position -- BLUE
+            plots.Add(new PlotState { color = new Scalar(255, 255, 0) }); // predicted position -- BLUEGREEN
+            plots.Add(new PlotState { color = new Scalar(255, 0, 255) }); // control signal -- PURPLE
+            plots.Add(new PlotState { color = new Scalar(0, 0, 255) }); // predicted velocity -- RED
+            plots.Add(new PlotState { color = new Scalar(0, 255, 255) }); // predicted acceleration -- YELLOW
             plots.Add(new PlotState { color = new Scalar(255, 255, 255) }); // gain (prediction accuracy)
 
-            k.StatePre.SetArray(row: 0, col: 0, data: new double[] { 0, 0, 0 });
+            k.StatePre.SetArray(row: 0, col: 0, data: new float[] { 0, 0, 0 });
             graph.Line(0, 250, 5000, 250, new Scalar(255, 255, 255));
 
-            double controlGain = 0.024;
-
-            float acceleration_predicted = 0;
+            float positionPrev = 0;
             for (int i = 10; i < points.Count && i < 1500; i++)
             {
-                // need to make controlGain adaptive because mouse movement * controlGain => acceleration and this depends on ship translation speed (lol)
-                double measuredControlGain = points[i - 4].Item2 / acceleration_predicted;
-                k.ControlMatrix.SetArray(row: 0, col: 0, data: new double[,] { { 0 }, { 0 }, { controlGain } });
-
                 float control = (float)points[i].Item2;
                 matControl.Set(0, 0, control);
                 k.Predict(matControl);
                 float position_predicted = k.StatePost.At<float>(0, 0);
                 float velocity_predicted = k.StatePost.At<float>(0, 1);
-                acceleration_predicted = k.StatePost.At<float>(0, 2);
+                float acceleration_predicted = k.StatePost.At<float>(0, 2);
                 float position_measured = (float)points[i].Item1;
 
-                if ((i / 50)%2 == 0)
+                if (false || (i / 50)%2 == 0)
                 {
                     matMeasure.Set(0, 0, position_measured);
                     k.Correct(matMeasure);
                 }
-                int xratio = 1;
+                int xratio = 3;
                 int xoffset = 0 * xratio;
                 foreach (var plot in plots)
                 {
                     graph.Line(i * xratio + xoffset, 2*plot.prevValue + 250, (i + 1) * xratio + xoffset, 2*plot.currentValue + 250, plot.color);
                     plot.prevValue = plot.currentValue;
                 }
+                float measuredVelocity = (int)((position_measured - plots[0].prevValue) / timedelta);
                 plots[0].currentValue = (int)(position_measured);
                 plots[1].currentValue = (int)position_predicted;
                 plots[2].currentValue = (int)control;
-                plots[3].currentValue = (int)(20*velocity_predicted);
-                plots[4].currentValue = (int)(20*acceleration_predicted);
-                plots[5].currentValue = (int)(controlGain * 1000); // typical 0.03 -> 30
+                plots[3].currentValue = (int)(velocity_predicted/3);
+                plots[4].currentValue = (int)(acceleration_predicted*.1f);
+                plots[5].currentValue = (int)(measuredVelocity/3);
+                // this should go to 0
+                //plots[5].currentValue = (int)(10*k.ErrorCovPost.Norm()); // typical 0.03 -> 30
+                if (i == 100)
+                {
+                    for (int row = 0; row < 3; row++)
+                    {
+                        // if everything is right, these will go to 0
+                        for (int col = 0; col < 3; col++)
+                            Console.Write(k.ErrorCovPost.At<float>(row, col).ToString() + " ");
+                        Console.WriteLine();
+                    }
+                }
             }
             Window w1 = new Window(graph);
         }

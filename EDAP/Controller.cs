@@ -74,12 +74,15 @@ namespace EDAP
         /// <param name="a"></param>
         /// <param name="lag"></param>
         /// <returns></returns>
-        public double QuadraticControllerDelag(double x, double v, double a, double lag)
+        public double QuadraticControllerDrag(double x, double v, double a, double lag)
         {
-            x = v * lag + 0.5 * a * lag * lag;
-            v = a * lag;
-            a = a * Math.Pow(0.9, lag);
-            return QuadraticController(x, v);
+            var x2 = x + v * lag + 0.5 * a * lag * lag;
+            var v2 = a * lag;
+            var a2 = a * Math.Pow(0.9, lag);
+            if (Math.Abs(v) < 1) // reduce jitter
+                return QuadraticController(x2, v2) / 5;
+            else
+                return QuadraticController(x2, v2);
         }
 
         public double QuadraticControllerDamped(double x, double v)
@@ -91,7 +94,16 @@ namespace EDAP
                 a *= 0.5;
             return a;
         }
-        
+
+        public double LqrController(double x, double v, double a)
+        {
+            // mouseratio=40, p = 0.01
+            return -0.1 * x - 0.03655635 * v - 0.00406005 * a; // from ControllerTest.py            
+
+            // mouseratio=40, p = 0.12
+            return -0.34641016 * x - 0.08199053 * v - 0.00748119 * a; // from ControllerTest.py            
+        }
+
         public static double Clamp(double val, double absmax)
         {
             if (val.CompareTo(-absmax) < 0) return -absmax;
@@ -110,30 +122,18 @@ namespace EDAP
         /// </summary>
         public double ComputeAcceleration(double offset)
         {
-            /*
-            DateTime now = ts[0];
-            positionHistory.Insert(0, new Tuple<DateTime, double>(now, offset));
-            if (positionHistory.Count > 10)
-                positionHistory.RemoveAt(10);
-            
-            // if we have the two previous frames of finehistory, use that to estimate velocity
-            if (!(positionHistory.Count > 2 &&
-                  positionHistory[1].Item1 == ts[1] &&
-                  positionHistory[2].Item1 == ts[2]))
-            {
-                return 0; // not enough frames of history
-            }
-            */
             double v, a_current;
             KalmanStep(offset, out offset_fixed, out v, out a_current);
-
-            var a_desired = QuadraticControllerDelag(offset_fixed, v, a_current, 3);
+            /*
+            var a_desired = QuadraticControllerDrag(0, v, a_current, 3);
             a_desired = Clamp(a_desired, maxAccel);
             var a_delta = a_desired - a_current;
-            
-            KalmanInput(a_delta);
-            file.WriteLineAsync(string.Format("{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}", offset, offset_fixed, v, a_delta));
-            return a_delta;
+            */
+            var controlSignal = LqrController(offset_fixed, v, a_current);
+            controlSignal = Clamp(controlSignal, 20); // if we move the mouse more than about 20px, the dot disappears and we lose tracking
+            KalmanInput(controlSignal);
+            file.WriteLineAsync(string.Format("{0:0.00}, {1:0.00}, {2:0.00}, {3:0.00}", offset, offset_fixed, v, controlSignal));
+            return controlSignal;
         }
 
         /// <summary>
@@ -201,10 +201,10 @@ namespace EDAP
         /// </summary>
         /// <param name="measurementError">stddev^2 (in px^2) of measurement's gaussian distribution. increase this for slower and smoother response</param>
         /// <param name="controlGain">how much a control movement affects the current acceleration. Basically the mouse sensitivity: (resulting acceleration px/s/s) / (mouse px)</param>
-        public void KalmanInit(double measurementError = 1, double accelerationGain = 0.01)
+        public void KalmanInit(double measurementError = 1)
         {
-            float timedelta = 1f;
-
+            float timedelta = .03f;
+            
             positionMeasurement.SetIdentity(0); // this tell the filter the position readings
             accelerationInput.SetIdentity(0); // this is how we tell the filter how much acceleration we are applying
 
@@ -215,19 +215,21 @@ namespace EDAP
 
             // this matrix is used to update our state estimate at each step
             k.TransitionMatrix.SetArray(row: 0, col: 0, data: new float[,] {
-                { 1, timedelta, timedelta * timedelta / 2 }, // position = old position + v Δt + a Δt^2 /2
-                { 0, 1, timedelta }, // velocity = old velocity + a Δt
-                { 0, 0, 0.9f } }); // acceleration = old acceleration * 0.9 (natural decay due to relative mouse)
+                { 1f, timedelta, timedelta * timedelta / 2 }, // position = old position + v Δt + a Δt^2 /2
+                { 0, 0.98f, timedelta }, // velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
+                { 0, 0, 0.8f } }); // acceleration = old acceleration * 0.8 (natural decay due to relative mouse)
 
             // this matrix indicates how much each control parameter affects each state variable
-            k.ControlMatrix.SetArray(row: 0, col: 0, data: new double[,] { { 0 }, { 0 }, { accelerationGain } });
+            k.ControlMatrix.SetArray(row: 0, col: 0, data: new double[,] { { 0 }, { 0 }, { 40f } });
 
             // No idea what these are, messed around with values until they seemed good
             k.MeasurementMatrix.SetIdentity();
-            k.ProcessNoiseCov.SetIdentity(0.01); // stddev^2 of Transition error gaussian distribution. increase this to rely more on measurements (faster but noiser response)
-            k.MeasurementNoiseCov.SetIdentity(measurementError);
-            k.ErrorCovPost.SetIdentity(0.01); // large values (100) make initial transients huge
-            k.ErrorCovPre.SetIdentity(0); // large values make initial transients huge
+            k.ProcessNoiseCov.SetArray(row: 0, col: 0, data: new float[,] {
+                { 1f, 0, 0 }, // position prediction is pretty rough (avg. 1 px error)
+                { 0, 1/timedelta, 0 }, // velocity prediction is okay (avg. 1 px/(0.03s) error)
+                { 0, 0, 1/(timedelta * timedelta)} }); // acceleration prediction is good (avg. 1 px/(0.03s)^2 error)k.MeasurementNoiseCov.SetIdentity(measurementError);
+            k.ErrorCovPost.SetIdentity(1); // large values (100) make initial transients huge
+            k.ErrorCovPre.SetIdentity(1); // large values make initial transients huge
         }
     }
 }

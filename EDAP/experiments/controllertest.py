@@ -3,6 +3,7 @@ import matplotlib, pylab
 import collections
 
 tstep = 0.03
+mousepxratio = 40
 ts = [x * tstep for x in range((int)(10 / tstep))] 
 
 pylab.figure()
@@ -16,20 +17,22 @@ def clamp(value, absmax):
 State = collections.namedtuple('State', ['x', 'v', 'a'], verbose=True) # position, velocity, acceleration
 
 def sim(v0, x0, controller):
-	xs = [x0]
-	vs = [v0,v0]
-	accs = [0,0,0,0]
+	xs = [x0]*10
+	vs = [v0]*10
+	accs = [0]*10
 
 	for t in ts[:-1]:
 		xs.append(xs[-1] + vs[-2] * tstep)
 
-		a = controller(State(xs[-1], vs[-2], accs[-4]))
-		#a = clamp(a, max_accel)
+		mousepx = controller(State(xs[-2], vs[-3], accs[-6]))
+		clamp(mousepx, 20)
+		a = accs[-1]*.8 + mousepx*mousepxratio
+		accs.append(a)
 		v = vs[-1] + a * tstep
 		#v = clamp(v, 300)
 		vs.append(vs[-1] + a * tstep)
 	
-	pylab.plot(ts, xs)
+	pylab.plot(ts, xs[0:len(ts)])
 
 def controllerPlacebo(state):
 	return -state.x
@@ -102,18 +105,17 @@ def controllerModern(state):
 	"""
 	global K
 	if K is None:
-		timedelta = 1
 		A = np.matrix([
-			[ 0, timedelta, timedelta * timedelta / 2 ], # position = old position + v Δt + a Δt^2 /2
-	        [ 0, -0.02, timedelta ], # velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
-	        [ 0, 0, -0.2 ], # acceleration = old acceleration * 0.9 (natural decay due to relative mouse)
+			[ 0, tstep, tstep * tstep / 2 ], # position = old position + v Δt + a Δt^2 /2
+	        [ 0, -0.02, tstep ], # velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
+	        [ 0, 0, -0.2 ], # acceleration = old acceleration * 0.8 (natural decay due to relative mouse)
 	    ]);
-		B = np.matrix([[0],[0],[1]]) # control directly modifies acceleration
+		B = np.matrix([[0],[0], [mousepxratio]]) # control directly modifies acceleration
 		C = np.matrix([[1],[0], [0]]) # position is the only observable
 		D = np.matrix([[0],[0], [0]]) # control does not bypass system to directly affect output
 
 		# Define our costs:
-		p = 10 # controls how quickly we respond (measure of control effort vs. response time)
+		p = 0.01 # controls how quickly we respond (measure of control effort vs. response time)
 		Q = p * C * C.transpose()
 		R = np.matrix([[1]]) # no idea what this is
 		
@@ -128,13 +130,13 @@ def controllerModern(state):
 
 	
 controller = controllerModern
-for i in range(-500, 500, 100):
+for i in range(-100, 100, 10):
 	sim(0, i, controller)
-	sim(200, i, controller)
-	sim(-200, i, controller)
-	sim(-500, i, controller)
-	sim(500, i, controller)
+	sim(20, i, controller)
+	sim(-20, i, controller)
+	sim(-50, i, controller)
+	sim(50, i, controller)
 
 pylab.plot([ts[0], ts[-1]], [0, 0])
-pylab.ylim([-30, 30])
+pylab.ylim([-10, 10])
 pylab.show()
