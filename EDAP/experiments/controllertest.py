@@ -24,7 +24,7 @@ def sim(v0, x0, controller):
 	for t in ts[:-1]:
 		xs.append(xs[-1] + vs[-2] * tstep)
 
-		mousepx = controller(State(xs[-2], vs[-3], accs[-6]))
+		mousepx = controller(State(xs[-1], vs[-1], accs[-1]))
 		clamp(mousepx, 20)
 		a = accs[-1]*.8 + mousepx*mousepxratio
 		accs.append(a)
@@ -86,7 +86,29 @@ def controllerQuadraticDamped(state):
 import controlpy
 import numpy as np
 K = None
-def controllerModern(state):
+def initK(p):
+	global K
+	A = np.matrix([
+		[ 0, tstep, tstep * tstep / 2 ], # position = old position + v Δt + a Δt^2 /2
+        [ 0, -0.02, tstep ], # velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
+        [ 0, 0, -0.2 ], # acceleration = old acceleration * 0.8 (natural decay due to relative mouse)
+    ]);
+	B = np.matrix([[0],[0], [mousepxratio]]) # control directly modifies acceleration
+	C = np.matrix([[1],[0], [0]]) # position is the only observable
+	D = np.matrix([[0],[0], [0]]) # control does not bypass system to directly affect output
+
+	# Define our costs:
+	#p = 1 # controls how quickly we respond (measure of control effort vs. response time)
+	Q = p * C * C.transpose()
+	R = np.matrix([[1]]) # cost weighting of the various controllers. Only one so no effect.
+	
+	# Compute the LQR controller
+	K, X, closedLoopEigVals = controlpy.synthesis.controller_lqr(A,B,Q,R)
+	with open('C:/users/public/controllers.txt', 'a') as f:
+		print("Control matrix for p={}: ".format(p), file=f)
+		print(K, file=f)
+
+def controllerModern(state, p=1):
 	"""
 	Got my shit together and learned control theory:
     	control theory https://www.cds.caltech.edu/~murray/courses/cds101/fa02/caltech/astrom-ch4.pdf
@@ -103,32 +125,11 @@ def controllerModern(state):
 	    http://ctms.engin.umich.edu/CTMS/index.php?example=AircraftPitch&section=ControlStateSpace
 
 	"""
-	global K
-	if K is None:
-		A = np.matrix([
-			[ 0, tstep, tstep * tstep / 2 ], # position = old position + v Δt + a Δt^2 /2
-	        [ 0, -0.02, tstep ], # velocity = old velocity + a Δt, with slight damping in FA off (MUCH MORE IN FA-ON)
-	        [ 0, 0, -0.2 ], # acceleration = old acceleration * 0.8 (natural decay due to relative mouse)
-	    ]);
-		B = np.matrix([[0],[0], [mousepxratio]]) # control directly modifies acceleration
-		C = np.matrix([[1],[0], [0]]) # position is the only observable
-		D = np.matrix([[0],[0], [0]]) # control does not bypass system to directly affect output
-
-		# Define our costs:
-		p = 0.01 # controls how quickly we respond (measure of control effort vs. response time)
-		Q = p * C * C.transpose()
-		R = np.matrix([[1]]) # no idea what this is
-		
-		# Compute the LQR controller
-		K, X, closedLoopEigVals = controlpy.synthesis.controller_lqr(A,B,Q,R)
-		print("Control matrix: ")
-		print(K)
-
 	controlvector = - K * np.matrix(state).transpose()
 	controlvalue = controlvector.item((0,0))
 	return controlvalue
 
-	
+initK(p=0.3)
 controller = controllerModern
 for i in range(-100, 100, 10):
 	sim(0, i, controller)

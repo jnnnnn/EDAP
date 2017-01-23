@@ -97,11 +97,15 @@ namespace EDAP
 
         public double LqrController(double x, double v, double a)
         {
-            // mouseratio=40, p = 0.01
-            return -0.1 * x - 0.03655635 * v - 0.00406005 * a; // from ControllerTest.py            
-
-            // mouseratio=40, p = 0.12
-            return -0.34641016 * x - 0.08199053 * v - 0.00748119 * a; // from ControllerTest.py            
+            // see experiments/controllertest.py
+            // return -3.16227766 * x - 0.33941269 * v - 0.01960224 * a; // p=10
+             return -1.73205081 * x - 0.23136882 * v - 0.01527374 * a; // p=3
+            //   return -1.00000000 * x - 0.16264945 * v - 0.01207261 * a; // p=1
+            // return -0.70710678 * x - 0.13009033 * v - 0.01036377 * a; // p=0.5
+            // return -0.54772256 * x - 0.11030226 * v - 0.00923998 * a; // p=0.3
+            // return -0.44721360 * x - 0.09674310 * v - 0.00842300 * a; // p=0.2
+            // return -0.31622777 * x - 0.07728505 * v - 0.00716728 * a; // p=0.1
+            // return -0.22360680 * x - 0.06171860 * v - 0.00607290 * a; // p=0.05            
         }
 
         public static double Clamp(double val, double absmax)
@@ -226,8 +230,9 @@ namespace EDAP
             k.MeasurementMatrix.SetIdentity();
             k.ProcessNoiseCov.SetArray(row: 0, col: 0, data: new float[,] {
                 { 1f, 0, 0 }, // position prediction is pretty rough (avg. 1 px error)
-                { 0, 1/timedelta, 0 }, // velocity prediction is okay (avg. 1 px/(0.03s) error)
-                { 0, 0, 1/(timedelta * timedelta)} }); // acceleration prediction is good (avg. 1 px/(0.03s)^2 error)k.MeasurementNoiseCov.SetIdentity(measurementError);
+                { 0, (float)(Math.Pow(timedelta, -2)), 0 }, // velocity prediction is okay (avg. 1 px/(0.03s) error)
+                { 0, 0, (float)(Math.Pow(timedelta, -3))} }); // acceleration prediction is good (avg. 1 px/(0.03s)^2 error)
+            k.MeasurementNoiseCov.SetIdentity(measurementError);
             k.ErrorCovPost.SetIdentity(1); // large values (100) make initial transients huge
             k.ErrorCovPre.SetIdentity(1); // large values make initial transients huge
         }

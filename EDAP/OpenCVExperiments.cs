@@ -330,8 +330,8 @@ namespace EDAP
             k.MeasurementMatrix.SetIdentity();
             k.ProcessNoiseCov.SetArray(row: 0, col: 0, data: new float[,] {
                 { 1f, 0, 0 }, // position prediction is pretty rough (avg. 1 px error)
-                { 0, 1/(float)(Math.Pow(timedelta, 1)), 0 }, // velocity prediction is okay (avg. 1 px/(0.03s) error)
-                { 0, 0, 1/(float)(Math.Pow(timedelta, 2))} }); // acceleration prediction is good (avg. 1 px/(0.03s)^2 error)
+                { 0, (float)(Math.Pow(timedelta, -2)), 0 }, // velocity prediction is okay (avg. 1 px/(0.03s) error)
+                { 0, 0, (float)(Math.Pow(timedelta, -3))} }); // acceleration prediction is good (avg. 1 px/(0.03s)^2 error)
             k.MeasurementNoiseCov.SetIdentity(1); // stddev^2 of measurement gaussian distribution. increase this for slower and smoother response
             k.ErrorCovPost.SetIdentity(1); // large values (100) make initial transients huge
             k.ErrorCovPre.SetTo(1); // large values make initial transients huge
@@ -370,8 +370,7 @@ namespace EDAP
 
             k.StatePre.SetArray(row: 0, col: 0, data: new float[] { 0, 0, 0 });
             graph.Line(0, 250, 5000, 250, new Scalar(255, 255, 255));
-
-            float positionPrev = 0;
+            
             for (int i = 10; i < points.Count && i < 1500; i++)
             {
                 float control = (float)points[i].Item2;
@@ -382,7 +381,7 @@ namespace EDAP
                 float acceleration_predicted = k.StatePost.At<float>(0, 2);
                 float position_measured = (float)points[i].Item1;
 
-                if (false || (i / 50)%2 == 0)
+                if (true || (i / 50)%2 == 0)
                 {
                     matMeasure.Set(0, 0, position_measured);
                     k.Correct(matMeasure);
