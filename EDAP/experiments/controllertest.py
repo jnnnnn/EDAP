@@ -107,6 +107,7 @@ def initK(p):
 	with open('C:/users/public/controllers.txt', 'a') as f:
 		print("Control matrix for p={}: ".format(p), file=f)
 		print(K, file=f)
+		print(K)
 
 def controllerModern(state, p=1):
 	"""
@@ -129,7 +130,11 @@ def controllerModern(state, p=1):
 	controlvalue = controlvector.item((0,0))
 	return controlvalue
 
-initK(p=0.3)
+mousepxratio = 150
+initK(p=3)
+initK(p=1)
+initK(p=0.5)
+
 controller = controllerModern
 for i in range(-100, 100, 10):
 	sim(0, i, controller)
