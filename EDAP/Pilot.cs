@@ -83,6 +83,7 @@ namespace EDAP
             HonkComplete = 1 << 18, // have we fired the discovery scanner yet
             SkipThisScoop = 1 << 19, // we want to skip scooping for this jump
             SlowJump = 1 << 20, // Have we raised a warning about this jump taking longer than usual?
+            DisengageStarted = 1 << 21, // have we pressed the Safe Disengage key?
         }
 
         public PilotState state;
@@ -685,12 +686,21 @@ namespace EDAP
             if (!state.HasFlag(PilotState.CruiseEnd) && cruiseSensor.MatchSafDisengag())
             {
                 keyboard.Tap(keyHyperspace); // "Safe Disengage"
+                state |= PilotState.DisengageStarted;
+                return;
+            }
+
+            // disengage can take a while so wait for it to finish before continuing
+            if (!state.HasFlag(PilotState.CruiseEnd) && 
+                state.HasFlag(PilotState.DisengageStarted) && 
+                !cruiseSensor.MatchSafDisengag())
+            {                
                 state |= PilotState.CruiseEnd;
                 state &= ~PilotState.Enabled; // disable! we've arrived!
                 // these commands will initiate docking if we have a computer
-                Task.Delay(6000).ContinueWith(t => keyboard.Tap(keyBoost)); // boost
-                Task.Delay(10000).ContinueWith(t => keyboard.Tap(keyThrottle0)); // cut throttle
-                Task.Delay(12000).ContinueWith(t => // request docking
+                Task.Delay(1000).ContinueWith(t => keyboard.Tap(keyBoost)); // boost
+                Task.Delay(5000).ContinueWith(t => keyboard.Tap(keyThrottle0)); // cut throttle
+                Task.Delay(8000).ContinueWith(t => // request docking
                 {
                     if (!state.HasFlag(PilotState.Cruise))
                         return; // abort docking request if cruise gets turned off
