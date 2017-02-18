@@ -225,26 +225,14 @@ namespace EDAP
             else
             {
                 // swoop a bit more if last jump because slow ship kept hitting star
-                if (SecondsSinceFaceplant < (jumps_remaining < 1 ? 10 : 5))
+                if (SecondsSinceFaceplant < 30)
                 {
                     Swoop();
                     return;
                 }
-
-                if (OncePerJump(PilotState.swoopEnd))
-                {
-                    keyboard.Tap(keyThrottle100);
-                }
             }
-
-            // cruise away from the star for an extra ten seconds after the last jump to make it less likely that manual intervention is required to dodge the star
-            if (SecondsSinceFaceplant < 15 && jumps_remaining < 1 && state.HasFlag(PilotState.Cruise))
-            {
-                keyboard.Clear();
-                return;
-            }
-
-            // make sure we are travelling directly away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
+            
+            // make sure we are travelling away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
             // don't do it for the supcruz at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
             {
@@ -445,7 +433,7 @@ namespace EDAP
             
             // press whichever keys will point us toward the target. Coordinate system origin is bottom right
             const float align_margin = 0.15f;
-            double xMargin = compass.Y > -0.1 ? 0.3 : 0.0; // always roll if target is above us
+            double xMargin = compass.Y > -0.1 ? 0.15 : 0.0; // always roll if target is above us
             keyboard.SetKeyState(keyRollRight, bRoll && compass.X < -xMargin); // roll right
             keyboard.SetKeyState(keyRollLeft, bRoll && compass.X > xMargin); // roll left
             
@@ -618,13 +606,28 @@ namespace EDAP
         /// </summary>
         private void Swoop()
         {
-            if (SecondsSinceFaceplant > 2 && OncePerJump(PilotState.swoopStart))
-                keyboard.Tap(keyThrottle50); // set throttle to 50%
+            if (SecondsSinceFaceplant < 2)
+                return; 
 
-            keyboard.Keyup(keyPitchUp);
-            Thread.Sleep(10);
-            keyboard.Keydown(keyPitchUp); // pitch up for ~5 seconds on arrival to avoid star.
-            Thread.Sleep(100);
+            if (OncePerJump(PilotState.swoopStart))
+            {
+                keyboard.Tap(keyThrottle50); // set throttle to 50%
+                keyboard.Tap(keyThrottleReduce25); // set throttle to 25%
+                return;
+            }
+
+            // pitch up for ~5 seconds on arrival to avoid star.
+            if (SecondsSinceFaceplant < 7)
+            {
+                keyboard.SetKeyState(keyPitchUp, true);
+                return;
+            }
+            
+            if (OncePerJump(PilotState.swoopEnd))
+                keyboard.Tap(keyThrottle100);
+
+            bool collisionImminent = cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant();
+            keyboard.SetKeyState(keyPitchUp, collisionImminent);
             return;
         }
 
