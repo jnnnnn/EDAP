@@ -320,14 +320,6 @@ namespace EDAP
             if (jumps_remaining < 1)
             {
                 Sounds.PlayOneOf("this is the last jump.mp3", "once more with feeling.mp3", "one jump remaining.mp3");
-                Task.Delay(30000).ContinueWith(t =>
-                {
-                    // 30 seconds after last tap of jump key (after being in witchspace for 10 seconds)
-                    keyboard.Keydown(keyThrottle0);  // cut throttle
-                });
-
-                keyboard.Keyup(keyThrottle0);
-                Sounds.Play("you have arrived.mp3");
                 notifications.messages.Post("You have arrived");
             }
         }
