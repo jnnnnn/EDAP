@@ -607,6 +607,8 @@ namespace EDAP
         /// </summary>
         private void Swoop()
         {
+            status += string.Format("Swoop wait + {0:0.0}\n", SecondsSinceFaceplant);
+
             if (SecondsSinceFaceplant < 2)
                 return; 
 
