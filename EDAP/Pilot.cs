@@ -215,21 +215,23 @@ namespace EDAP
                 return;
             }
 
-            if (state.HasFlag(PilotState.Scoop) 
-                && !state.HasFlag(PilotState.scoopComplete) 
-                && !state.HasFlag(PilotState.SkipThisScoop) 
+            if (!state.HasFlag(PilotState.scoopComplete))
+            {
+                if (state.HasFlag(PilotState.Scoop)
+                && !state.HasFlag(PilotState.SkipThisScoop)
                 && jumps_remaining > 0)
-            {
-                Scoop();
-                return;
-            }
-            else
-            {
-                // swoop a bit more if last jump because slow ship kept hitting star
-                if (SecondsSinceFaceplant < 30)
                 {
-                    Swoop();
+                    Scoop();
                     return;
+                }
+                else
+                {
+                    // swoop a bit more if last jump because slow ship kept hitting star
+                    if (SecondsSinceFaceplant < 30)
+                    {
+                        Swoop();
+                        return;
+                    }
                 }
             }
             
@@ -426,7 +428,7 @@ namespace EDAP
             
             // press whichever keys will point us toward the target. Coordinate system origin is bottom right
             const float align_margin = 0.15f;
-            double xMargin = compass.Y > -0.1 ? 0.15 : 0.0; // always roll if target is above us
+            double xMargin = compass.Y > -0.1 ? 0.3 : 0.0; // always roll if target is above us
             keyboard.SetKeyState(keyRollRight, bRoll && compass.X < -xMargin); // roll right
             keyboard.SetKeyState(keyRollLeft, bRoll && compass.X > xMargin); // roll left
             
