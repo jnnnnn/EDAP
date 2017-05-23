@@ -2,14 +2,19 @@
 
 Demo: https://youtu.be/k5QqXoVuOv8
 
-Instructions:
+A fairly simple autopilot for a game. It uses OpenCV to recognize various GUI elements and a very simple control algorithm to press keyboard buttons.
+
+Unreleased changes include a kalman filter and a linear-quadratic-regulator driving the mouse for smooth and accurate control.
+
+## Installation and Usage
 
 1. click Releases, above, 
 2. download the archive (it's about 8 MB because of the opencv dll) 
 3. modify the key bindings in EDAP.exe.config (or change your in-game bindings to match)
+3. set your game settings as required (see next section)
 3. run EDAP.exe
 
-Required settings:
+## Required settings
 
 0. Key bindings. Edit EDAP.exe.config with your key bindings. A list of recognized keys is in Keyboard.cs and in the readme included with releases.
 1. Resolution is hardcoded to 1920x1080 (changing this is gonna mean changing lots of numbers and template images)
