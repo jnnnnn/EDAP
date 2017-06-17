@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace EDAP
 {
@@ -36,6 +37,14 @@ namespace EDAP
             return bmp;
         }
 
+        public static Bitmap PrintScreen()
+        {
+            var bmpScreenshot = new Bitmap(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height, PixelFormat.Format32bppArgb);
+            var gfxScreenshot = Graphics.FromImage(bmpScreenshot);
+            gfxScreenshot.CopyFromScreen(Screen.PrimaryScreen.Bounds.X, Screen.PrimaryScreen.Bounds.Y, 0, 0, Screen.PrimaryScreen.Bounds.Size, CopyPixelOperation.SourceCopy);
+            return bmpScreenshot;
+        }
+
         public IntPtr hWnd;
         private Bitmap screenshot;
         // a history of screenshot times for interpolation purposes
@@ -49,7 +58,10 @@ namespace EDAP
                 {
                     timestamp_history.Insert(0, DateTime.UtcNow);
                     timestamp_history.RemoveAt(5);
-                    screenshot = PrintWindow(hWnd);         
+                    if (Properties.Settings.Default.ScreenshotWindow)
+                        screenshot = PrintWindow(hWnd);
+                    else
+                        screenshot = PrintScreen();
 
                     if (Math.Abs(screenshot.Height - 1080) > 10)
                         throw new ArgumentException("Error: screenshot resultion wrong");
