@@ -23,7 +23,6 @@ namespace EDAP
         private MenuSensor menuSensor;
         private Relogger relogger;
         private IntPtr hwnd;
-        private Notifications notifications;
         
         private DateTime lastClick = DateTime.UtcNow;
 
@@ -45,14 +44,11 @@ namespace EDAP
             cruiseSensor.debugWindow = pictureBox2;
             compassRecognizer = new CompassSensor(screen, pictureBox2);
             menuSensor = new MenuSensor(screen, pictureBox2);
-            notifications = new EDAP.Notifications();
-            Task.Run(() => notifications.Start());
             pilot = new PilotJumper();
             pilot.keyboard = keyboard;
             pilot.compassRecognizer = compassRecognizer;
             pilot.screen = screen;
             pilot.cruiseSensor = cruiseSensor;
-            pilot.notifications = notifications;
             relogger = new Relogger();
             relogger.keyboard = keyboard;
             relogger.menuSensor = menuSensor;
