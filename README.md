@@ -14,6 +14,13 @@ Unreleased changes include a kalman filter and a linear-quadratic-regulator driv
 3. set your game settings as required (see next section)
 3. run EDAP.exe
 
+## Development
+
+1. Install Visual Studio Community
+2. Clone this repository
+3. Open EDAP.sln
+4. Press F5 to compile and run
+
 ## Required settings
 
 0. Key bindings. Edit EDAP.exe.config with your key bindings. A list of recognized keys is in Keyboard.cs and in the readme included with releases.
