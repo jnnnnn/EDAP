@@ -26,7 +26,9 @@ namespace EDAP
             Graphics gfxBmp = Graphics.FromImage(bmp);
             IntPtr hdcBitmap = gfxBmp.GetHdc();
 
-            PrintWindow(hwnd, hdcBitmap, 0);
+            bool bResult = PrintWindow(hwnd, hdcBitmap, 0);
+            if (!bResult)
+                throw new Exception("PrintWindow() failed");
 
             gfxBmp.ReleaseHdc(hdcBitmap);
             gfxBmp.Dispose();
