@@ -71,7 +71,7 @@ namespace EDAP
             if (circles.Length < 1)
                 throw new Exception("No possible triquadrants.");
 
-            return circles[0].Center;            
+            return circles[0].Center;
         }
 
         Mat templatepointer = new Mat("res3/squaretarget.png", ImreadModes.GrayScale);
@@ -190,6 +190,32 @@ namespace EDAP
             var r = Math.Sqrt(c + x * x + y * y);
 
             return new CircleSegment(new Point2f((float)x, (float)y), (float)r);
+        }
+
+        /// <summary>
+        /// See if the FUEL SCOOPING notification is being displayed
+        /// </summary>
+        public bool MatchScooping()
+        {
+            //Top left corner: 820x45
+            //Size: 238x70
+            //Bitmap cropped = CompassSensor.Crop(screen.bitmap, screen.bitmap.Width - 400, 0, screen.bitmap.Width - 100, 300);
+            Bitmap cropped = CompassSensor.Crop(screen.bitmap, 820, 45, 1058, 115)
+            Mat screenarea = BitmapConverter.ToMat(cropped);            
+            Mat yellow = IsolateYellow(screenarea);
+
+            Mat template = new Mat("res3/scoop_active.png", ImreadModes.GrayScale);
+            Mat result = new Mat(yellow.Size(), yellow.Type());
+            Cv2.MatchTemplate(yellow, template, result, TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            if (maxVal > 0.4)
+            {
+                debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+                return true;
+            }
+            return false;
         }
 
         /// <summary>

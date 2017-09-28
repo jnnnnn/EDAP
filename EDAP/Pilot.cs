@@ -623,6 +623,9 @@ namespace EDAP
         {
             int scoopWaitSeconds = Properties.Settings.Default.scoopWaitSeconds;
             int scoopFinishSeconds = Properties.Settings.Default.scoopFinishSeconds;
+            int scoopCompleteSeconds = 0;
+            bool scoopStarted = false;
+            bool scoopFinished = false;
 
             // if we try to select the star earlier than this, sometimes it selects the wrong thing
             if (SecondsSinceFaceplant < 2)
@@ -633,21 +636,42 @@ namespace EDAP
                 SelectStar();
             AlignCompass(bPitchYaw: false);
                         
-            if (OncePerJump(PilotState.ScoopStart))
+            //Set a value to confirm that we've actually started scooping
+            if (OncePerJump(PilotState.ScoopStart)){
                 keyboard.Tap(keyThrottle50); // 50% throttle
+                scoopStarted = true;
+            }
 
             // (barely) avoid crashing into the star
             bool collisionImminent = cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant();
             keyboard.SetKeyState(keyPitchUp, collisionImminent);
 
             // start speeding up towards the end so we don't crash/overheat
+            // Keep the scoopwaitseconds as a "general idea" of when to start pulling up, at least until maybe a check for "full tank"
             if (SecondsSinceFaceplant > scoopWaitSeconds && OncePerJump(PilotState.ScoopMiddle))
                 keyboard.Tap(keyThrottle100);
 
-            status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
-            
-            if (SecondsSinceFaceplant > scoopWaitSeconds + scoopFinishSeconds)
-                state |= PilotState.scoopComplete;            
+
+            //If we're scooping, at some point we'll start swooping out--
+            // check to see if the FUEL SCOOP ACTIVE text is up 
+            // If not, then we're safe heat-wise to spool up after scoopFinishSeconds more seconds
+            if scoopStarted && !compassRecognizer.MatchScooping() {
+                scoopFinished = true;
+                scoopStarted = false;
+                scoopCompleteSeconds = SecondsSinceFaceplant + scoopFinishSeconds;
+                status += string.Format("Finalizing scoop + {0:0.0}\n", SecondsSinceFaceplant);
+
+            //We've passed the safety point, we're officially totally done scooping and can spool up
+            }else if scoopFinished && SecondsSinceFaceplant > scoopCompleteSeconds {
+                state |= PilotState.scoopComplete;
+                status += string.Format("Jumping out + {0:0.0}\n", SecondsSinceFaceplant)
+
+            //Nothing of interest is happening
+            }else{
+                status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
+            }
+
+
         }
 
         /// <summary>
