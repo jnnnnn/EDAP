@@ -42,6 +42,7 @@ namespace EDAP
             cruiseSensor = new CruiseSensor();
             cruiseSensor.screen = screen;
             cruiseSensor.debugWindow = pictureBox2;
+
             compassRecognizer = new CompassSensor(screen, pictureBox2);
             menuSensor = new MenuSensor(screen, pictureBox2);
             pilot = new PilotJumper();
@@ -62,6 +63,7 @@ namespace EDAP
             //OpenCVExperiments.FindCompasses();
             //OpenCVExperiments.Subtarget();
             //OpenCVExperiments.Kalman();
+            //OpenCVExperiments.CurrentLocationLocked();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)

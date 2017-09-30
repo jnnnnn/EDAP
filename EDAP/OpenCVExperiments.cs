@@ -67,7 +67,8 @@ namespace EDAP
             Mat blues2 = channels[0];
             Mat clean = blues2.EmptyClone();
             clean.SetTo(0);
-            blues2.CopyTo(clean, blues2.InRange(128, 255));
+            blues2.CopyTo(clean, blues2);
+            Window w3 = new Window(blues2);
 
             double minval, maxval_closed, maxval_open;
             OpenCvSharp.Point minloc, maxloc_closed, maxloc_open;
@@ -87,7 +88,29 @@ namespace EDAP
             Window w2 = new Window(result_open);
         }
 
-        internal static void Subtarget()
+        public static void CurrentLocationLocked()
+        {
+            Mat screenarea = new Mat("res3/curloc_test.jpg");
+            //Bitmap cropped = CompassSensor.Crop(screen.bitmap, 460, 220, 1300, 800);
+            //Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat[] channels = screenarea.Split();
+            Mat blue = channels[0];
+
+            Mat template = new Mat("res3/current_location.png", ImreadModes.GrayScale);
+            Mat result = new Mat(blue.Size(), blue.Type());
+            Cv2.MatchTemplate(blue, template, result, TemplateMatchModes.CCoeffNormed);
+
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            //debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(blue), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+            Window w1 = new Window(blue);
+            Window w2 = new Window(template);
+            Console.WriteLine(string.Format("minVal is {0}, maxval is {1}", minVal, maxVal));
+        }
+
+
+            internal static void Subtarget()
         {
             Mat source = new Mat("res3/subtarget-test.png");
             Mat targettemplate = new Mat("res3/subtarget.png");

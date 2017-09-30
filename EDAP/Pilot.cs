@@ -33,12 +33,14 @@ namespace EDAP
         private ScanCode keyNextDestination = parseKeyBinding(Properties.Settings.Default.keyNextDestination);
         private ScanCode keyFire1 = parseKeyBinding(Properties.Settings.Default.keyFire1);
         private ScanCode keyHyperspace = parseKeyBinding(Properties.Settings.Default.keyHyperspace);
+        private ScanCode keySuperCruise = parseKeyBinding(Properties.Settings.Default.keySuperCruise);
 
         private ScanCode keyNavMenu = parseKeyBinding(Properties.Settings.Default.keyNavMenu);
         private ScanCode keyRight = parseKeyBinding(Properties.Settings.Default.keyRight);
         private ScanCode keySelect = parseKeyBinding(Properties.Settings.Default.keySelect);
         private ScanCode keyMenuTabRight = parseKeyBinding(Properties.Settings.Default.keyMenuTabRight);
         private ScanCode keyDown = parseKeyBinding(Properties.Settings.Default.keyDown);
+        private ScanCode keyUp = parseKeyBinding(Properties.Settings.Default.keyUp);
         private ScanCode keySystemMap = parseKeyBinding(Properties.Settings.Default.keySystemMap);
         private ScanCode keySysMapScrollRight = parseKeyBinding(Properties.Settings.Default.keySysMapScrollRight);
         private ScanCode keyScreenshot = parseKeyBinding(Properties.Settings.Default.keyScreenshot);
@@ -75,10 +77,11 @@ namespace EDAP
             Faceplant = 1 << 13, // have we faceplanted the star yet
             ScoopStart = 1 << 14, // have we done the initial setup for scooping yet
             ScoopMiddle = 1 << 15, // are we nearly done with scooping yet
-            scoopComplete = 1 << 16, // have we finished scooping yet
-            Scoop = 1 << 17, // do we want to scoop at each star?
-            HonkComplete = 1 << 18, // have we fired the discovery scanner yet
-            SkipThisScoop = 1 << 19, // we want to skip scooping for this jump
+            ScoopDeactive = 1 << 16, // has our scoop turned off yet
+            scoopComplete = 1 << 17, // have we finished scooping yet
+            Scoop = 1 << 18, // do we want to scoop at each star?
+            HonkComplete = 1 << 19, // have we fired the discovery scanner yet
+            SkipThisScoop = 1 << 20, // we want to skip scooping for this jump
             DisengageStarted = 1 << 21, // have we pressed the Safe Disengage key?
         }
 
@@ -89,6 +92,7 @@ namespace EDAP
 
         double SecondsSinceLastJump { get { return (DateTime.UtcNow - last_jump_time).TotalSeconds; } }
         double SecondsSinceFaceplant {  get { return (DateTime.UtcNow - last_faceplant_time).TotalSeconds; } }
+        double SecondsUntilScoopComplete;
 
         public PilotJumper()
         {
@@ -99,6 +103,7 @@ namespace EDAP
         {
             // soft reset (after every jump)
             last_faceplant_time = DateTime.UtcNow.AddHours(-1);
+            SecondsUntilScoopComplete = 0.0;
             state &= PilotState.Enabled | PilotState.SysMap | PilotState.Cruise | PilotState.Honk | PilotState.Scoop; // clear per-jump flags
             if (soft)
                 return;
@@ -138,6 +143,7 @@ namespace EDAP
                 Idle();
                 return;
             }
+
             // perform the first alignment/jump immediately
             if (state.HasFlag(PilotState.firstjump) && jumps_remaining > 0)
             {
@@ -275,13 +281,56 @@ namespace EDAP
         }
 
         // select star
-        private void SelectStar()
+        private bool SelectStar()
         {
             keyboard.TapWait(keyNavMenu); // nav menu            
-            keyboard.TapWait(keyRight); // right to select nearest object in system (the central star)
+            keyboard.TapWait(keyRight); // right to select the list of stars
+
+            //Initial case: It's the first thing under the cursor
             keyboard.TapWait(keySelect); // open menu            
             keyboard.Tap(keySelect); // select the object
-            keyboard.Tap(keyNavMenu); // close nav menu
+            //keyboard.Tap(keyNavMenu); // close nav menu
+
+            //:toot:
+            if (cruiseSensor.CurrentLocationLocked())
+            {
+                keyboard.Tap(keyNavMenu);
+                return true;
+            }
+
+            //Most initial failure cases seem to involve the current location being above the default
+            keyboard.TapWait(keyUp); // Jump back up the list
+            keyboard.TapWait(keySelect); // open menu            
+            keyboard.Tap(keySelect); // select the object
+            //keyboard.Tap(keyNavMenu); // close nav menu
+            
+            screen.ClearSaved();
+            if (cruiseSensor.CurrentLocationLocked())
+            {
+                keyboard.Tap(keyNavMenu);
+                return true;
+            }
+
+            //Bounce down two so we're past the original default
+            keyboard.TapWait(keyDown);
+            keyboard.TapWait(keyDown);
+
+            for (int i=0; i<5; i++)
+            {
+                keyboard.TapWait(keySelect); // open menu            
+                keyboard.Tap(keySelect); // select the object
+                screen.ClearSaved();
+                if (cruiseSensor.CurrentLocationLocked()) //Check to see if the blue "current location" icon is now hidden
+                {
+                    keyboard.Tap(keyNavMenu);
+                    return true;
+                }
+                keyboard.TapWait(keyDown);
+            }
+
+            //Wehoops
+            //keyboard.Tap(keyNavMenu); // close nav menu
+            return false;
         }
 
         private void Jump()
@@ -623,25 +672,39 @@ namespace EDAP
         {
             int scoopWaitSeconds = Properties.Settings.Default.scoopWaitSeconds;
             int scoopFinishSeconds = Properties.Settings.Default.scoopFinishSeconds;
-            int scoopCompleteSeconds = 0;
-            bool scoopStarted = false;
-            bool scoopFinished = false;
 
+            //RIP-- WIP, I guess
+            if (cruiseSensor.EmergencyDrop())
+            {
+                keyboard.Tap(keyThrottle0); 
+                state &= ~PilotState.Enabled; // disable! we're fucked!
+                Sounds.Play("oh fuck.mp3");
+                return;
+            }
+           
             // if we try to select the star earlier than this, sometimes it selects the wrong thing
             if (SecondsSinceFaceplant < 2)
                 return;
 
             // roll so that the star is below (makes pitch up quicker -- less likely to collide in slow ships)
             if (OncePerJump(PilotState.SelectStar))
-                SelectStar();
+            {
+                if (!SelectStar())
+                {
+                    keyboard.TapWait(keyThrottle0); 
+                    state &= ~PilotState.Enabled; // disable! we're fucked!
+                    keyboard.TapWait(keySupercruise);
+                    Sounds.Play("oh fuck.mp3");
+                    return;
+                }
+
+            }
             AlignCompass(bPitchYaw: false);
                         
             //Set a value to confirm that we've actually started scooping
             if (OncePerJump(PilotState.ScoopStart)){
                 keyboard.Tap(keyThrottle50); // 50% throttle
-                scoopStarted = true;
             }
-
             // (barely) avoid crashing into the star
             bool collisionImminent = cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant();
             keyboard.SetKeyState(keyPitchUp, collisionImminent);
@@ -651,22 +714,27 @@ namespace EDAP
             if (SecondsSinceFaceplant > scoopWaitSeconds && OncePerJump(PilotState.ScoopMiddle))
                 keyboard.Tap(keyThrottle100);
 
+            //If the fueling is complete, we probably want to GTFO
+            if (cruiseSensor.FuelComplete()) {
+                if (OncePerJump(PilotState.ScoopMiddle)) {
+                    keyboard.Tap(keyThrottle100);
+                }
 
-            //If we're scooping, at some point we'll start swooping out--
-            // check to see if the FUEL SCOOP ACTIVE text is up 
-            // If not, then we're safe heat-wise to spool up after scoopFinishSeconds more seconds
-            if scoopStarted && !compassRecognizer.MatchScooping() {
-                scoopFinished = true;
-                scoopStarted = false;
-                scoopCompleteSeconds = SecondsSinceFaceplant + scoopFinishSeconds;
+            }
+
+
+            //If we've passed the expected wait point and the Scoop Active display is gone, flag appropriately and wait for scoopFinishSeconds to pass
+            if (state.HasFlag(PilotState.ScoopMiddle) && !state.HasFlag(PilotState.ScoopDeactive) && !cruiseSensor.MatchScooping()) {
+                SecondsUntilScoopComplete = SecondsSinceFaceplant + scoopFinishSeconds;
+                Console.WriteLine(string.Format("Match scooping is not true at {0}", SecondsSinceFaceplant));
+                OncePerJump(PilotState.ScoopDeactive);
                 status += string.Format("Finalizing scoop + {0:0.0}\n", SecondsSinceFaceplant);
 
-            //We've passed the safety point, we're officially totally done scooping and can spool up
-            }else if scoopFinished && SecondsSinceFaceplant > scoopCompleteSeconds {
-                state |= PilotState.scoopComplete;
-                status += string.Format("Jumping out + {0:0.0}\n", SecondsSinceFaceplant)
 
-            //Nothing of interest is happening
+            //We're far enough away from the scoop range for heat to be a non-issue
+            }else if (state.HasFlag(PilotState.ScoopDeactive) && SecondsSinceFaceplant > SecondsUntilScoopComplete) {
+                state |= PilotState.scoopComplete;
+                status += string.Format("Finalizing scoop + {0:0.0}\n", SecondsSinceFaceplant);
             }else{
                 status += string.Format("Scoop wait + {0:0.0}\n", SecondsSinceFaceplant);
             }
