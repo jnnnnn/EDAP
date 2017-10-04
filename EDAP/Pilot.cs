@@ -3,6 +3,7 @@ using OpenCvSharp;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Drawing.Imaging;
 
 namespace EDAP
 {
@@ -33,12 +34,14 @@ namespace EDAP
         private ScanCode keyNextDestination = parseKeyBinding(Properties.Settings.Default.keyNextDestination);
         private ScanCode keyFire1 = parseKeyBinding(Properties.Settings.Default.keyFire1);
         private ScanCode keyHyperspace = parseKeyBinding(Properties.Settings.Default.keyHyperspace);
+        private ScanCode keySuperCruise = parseKeyBinding(Properties.Settings.Default.keySuperCruise);
 
         private ScanCode keyNavMenu = parseKeyBinding(Properties.Settings.Default.keyNavMenu);
         private ScanCode keyRight = parseKeyBinding(Properties.Settings.Default.keyRight);
         private ScanCode keySelect = parseKeyBinding(Properties.Settings.Default.keySelect);
         private ScanCode keyMenuTabRight = parseKeyBinding(Properties.Settings.Default.keyMenuTabRight);
         private ScanCode keyDown = parseKeyBinding(Properties.Settings.Default.keyDown);
+        private ScanCode keyUp = parseKeyBinding(Properties.Settings.Default.keyUp);
         private ScanCode keySystemMap = parseKeyBinding(Properties.Settings.Default.keySystemMap);
         private ScanCode keySysMapScrollRight = parseKeyBinding(Properties.Settings.Default.keySysMapScrollRight);
         private ScanCode keyScreenshot = parseKeyBinding(Properties.Settings.Default.keyScreenshot);
@@ -141,6 +144,7 @@ namespace EDAP
                 Idle();
                 return;
             }
+
             // perform the first alignment/jump immediately
             if (state.HasFlag(PilotState.firstjump) && jumps_remaining > 0)
             {
@@ -190,13 +194,7 @@ namespace EDAP
             if (SecondsSinceFaceplant < 1)
                 return;
             
-            if (state.HasFlag(PilotState.Honk) && OncePerJump(PilotState.HonkComplete))
-            {
-                keyboard.Keydown(keyFire1); // hooooooooooooonk
-                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(keyFire1)); // stop honking after ten seconds
-                return;
-            }
-                        
+ 
             // If we've finished jumping and are not cruising, just stop and point at the star (scan and makes scooping easier).
             if (jumps_remaining < 1 && !state.HasFlag(PilotState.Cruise))
             {                      
@@ -229,7 +227,14 @@ namespace EDAP
                     }
                 }
             }
-            
+
+            if (state.HasFlag(PilotState.Honk) && OncePerJump(PilotState.HonkComplete))
+            {
+                keyboard.Keydown(keyFire1); // hooooooooooooonk
+                Task.Delay(10000).ContinueWith(t => keyboard.Keyup(keyFire1)); // stop honking after ten seconds
+                return;
+            }
+
             // make sure we are travelling away from the star so that even if our next jump is directly behind it our turn will parallax it out of the way.
             // don't do it for the supcruz at the end because we can't reselect the in-system destination with the "N" key.
             if (!state.HasFlag(PilotState.AwayFromStar) && jumps_remaining > 0)
@@ -278,13 +283,60 @@ namespace EDAP
         }
 
         // select star
-        private void SelectStar()
+        private bool SelectStar()
         {
             keyboard.TapWait(keyNavMenu); // nav menu            
-            keyboard.TapWait(keyRight); // right to select nearest object in system (the central star)
+            keyboard.TapWait(keyRight); // right to select the list of stars
+
+            screen.ClearSaved();
+            //Initial case: It's the first thing under the cursor
             keyboard.TapWait(keySelect); // open menu            
-            keyboard.Tap(keySelect); // select the object
-            keyboard.Tap(keyNavMenu); // close nav menu
+            keyboard.TapWait(keySelect); // select the object
+            //keyboard.Tap(keyNavMenu); // close nav menu
+
+            //:toot:
+            //screen.bitmap.Save(string.Format("C:\\Videos\\Captures\\{0}_attempt_1.png", jumps_remaining), ImageFormat.Png);
+            if (cruiseSensor.CurrentLocationLocked())
+            {
+                keyboard.Tap(keyNavMenu);
+                return true;
+            }
+            screen.ClearSaved();
+
+            //Most initial failure cases seem to involve the current location being above the default
+            keyboard.TapWait(keyUp); // Jump back up the list
+            keyboard.TapWait(keySelect); // open menu            
+            keyboard.TapWait(keySelect); // select the object
+            //keyboard.Tap(keyNavMenu); // close nav menu
+            
+            //screen.bitmap.Save(string.Format("C:\\Videos\\Captures\\{0}_attempt_2.png", jumps_remaining), ImageFormat.Png);
+            if (cruiseSensor.CurrentLocationLocked())
+            {
+                keyboard.Tap(keyNavMenu);
+                return true;
+            }
+
+            //Bounce down two so we're past the original default
+            keyboard.TapWait(keyDown);
+            keyboard.TapWait(keyDown);
+
+            for (int i=0; i<10; i++)
+            {
+                screen.ClearSaved();
+                keyboard.TapWait(keySelect); // open menu            
+                keyboard.TapWait(keySelect); // select the object
+                //screen.bitmap.Save(string.Format("C:\\Videos\\Captures\\{0}_reattempt_{1}.png", jumps_remaining, i), ImageFormat.Png);
+                if (cruiseSensor.CurrentLocationLocked()) //Check to see if the blue "current location" icon is now hidden
+                {
+                    keyboard.Tap(keyNavMenu);
+                    return true;
+                }
+                keyboard.TapWait(keyDown);
+            }
+
+            //Wehoops
+            //keyboard.Tap(keyNavMenu); // close nav menu
+            return false;
         }
 
         private void Jump()
@@ -626,6 +678,15 @@ namespace EDAP
         {
             int scoopWaitSeconds = Properties.Settings.Default.scoopWaitSeconds;
             int scoopFinishSeconds = Properties.Settings.Default.scoopFinishSeconds;
+
+            //RIP-- WIP, I guess
+            if (cruiseSensor.EmergencyDrop())
+            {
+                keyboard.Tap(keyThrottle0); 
+                state &= ~PilotState.Enabled; // disable! we're fucked!
+                Sounds.Play("oh fuck.mp3");
+                return;
+            }
            
             // if we try to select the star earlier than this, sometimes it selects the wrong thing
             if (SecondsSinceFaceplant < 2)
@@ -633,14 +694,23 @@ namespace EDAP
 
             // roll so that the star is below (makes pitch up quicker -- less likely to collide in slow ships)
             if (OncePerJump(PilotState.SelectStar))
-                SelectStar();
+            {
+                if (!SelectStar())
+                {
+                    keyboard.TapWait(keyThrottle0); 
+                    state &= ~PilotState.Enabled; // disable! we're fucked!
+                    keyboard.TapWait(keySuperCruise);
+                    Sounds.Play("oh fuck.mp3");
+                    return;
+                }
+
+            }
             AlignCompass(bPitchYaw: false);
                         
             //Set a value to confirm that we've actually started scooping
             if (OncePerJump(PilotState.ScoopStart)){
                 keyboard.Tap(keyThrottle50); // 50% throttle
             }
-
             // (barely) avoid crashing into the star
             bool collisionImminent = cruiseSensor.MatchImpact() || compassRecognizer.MatchFaceplant();
             keyboard.SetKeyState(keyPitchUp, collisionImminent);

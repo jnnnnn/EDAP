@@ -30,6 +30,41 @@ namespace EDAP
             return valueChannel;
         }
 
+        public static Mat IsolateRed(Mat source)
+        {
+            Mat brightHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redAreas = new Mat();
+            source.CopyTo(redAreas, redMask);
+            Mat red = redAreas.Split()[2];
+            return red;
+        }
+
+        public static void CheckDrop()
+        {
+            //Top Left: 814x298
+            //Size: 295x104
+
+            //Bitmap cropped = CompassSensor.Crop(screen.bitmap, start_x, start_y, start_x + 400, start_y + 300);
+            //Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat screenarea = new Mat("res3/emergency stop test.png");
+            Mat yellow = IsolateYellow(screenarea);
+
+            Mat template = new Mat("res3/estop.png", ImreadModes.GrayScale);
+            Mat result = new Mat(yellow.Size(), yellow.Type());
+            Cv2.MatchTemplate(yellow, template, result, TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+
+            Window w0 = new Window(yellow);
+            Window w1 = new Window(template);
+            Console.WriteLine(string.Format("Estop image matched max: {0}", maxVal));
+            return;
+    
+        }
+
         public static void FindCompasses()
         {
 
@@ -67,7 +102,8 @@ namespace EDAP
             Mat blues2 = channels[0];
             Mat clean = blues2.EmptyClone();
             clean.SetTo(0);
-            blues2.CopyTo(clean, blues2.InRange(128, 255));
+            blues2.CopyTo(clean, blues2);
+            Window w3 = new Window(blues2);
 
             double minval, maxval_closed, maxval_open;
             OpenCvSharp.Point minloc, maxloc_closed, maxloc_open;
@@ -87,7 +123,29 @@ namespace EDAP
             Window w2 = new Window(result_open);
         }
 
-        internal static void Subtarget()
+        public static void CurrentLocationLocked()
+        {
+            Mat screenarea = new Mat("res3/curloc_test.jpg");
+            //Bitmap cropped = CompassSensor.Crop(screen.bitmap, 460, 220, 1300, 800);
+            //Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat[] channels = screenarea.Split();
+            Mat blue = channels[0];
+
+            Mat template = new Mat("res3/current_location.png", ImreadModes.GrayScale);
+            Mat result = new Mat(blue.Size(), blue.Type());
+            Cv2.MatchTemplate(blue, template, result, TemplateMatchModes.CCoeffNormed);
+
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            //debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(blue), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+            Window w1 = new Window(blue);
+            Window w2 = new Window(template);
+            Console.WriteLine(string.Format("minVal is {0}, maxval is {1}", minVal, maxVal));
+        }
+
+
+            internal static void Subtarget()
         {
             Mat source = new Mat("res3/subtarget-test.png");
             Mat targettemplate = new Mat("res3/subtarget.png");
