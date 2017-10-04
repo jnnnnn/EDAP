@@ -6,3 +6,5 @@ release/
 packages/
 /EDAP/EDAP.VC.db
 *.7z
+/EDAP/obj/Experiment
+/EDAP/.vs/EDAP/v15/sqlite3

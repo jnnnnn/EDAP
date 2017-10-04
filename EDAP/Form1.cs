@@ -64,6 +64,7 @@ namespace EDAP
             //OpenCVExperiments.Subtarget();
             //OpenCVExperiments.Kalman();
             //OpenCVExperiments.CurrentLocationLocked();
+            //OpenCVExperiments.CheckDrop();
         }
 
         private void buttonAuto_MouseDown(object sender, MouseEventArgs e)

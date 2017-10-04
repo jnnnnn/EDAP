@@ -30,6 +30,41 @@ namespace EDAP
             return valueChannel;
         }
 
+        public static Mat IsolateRed(Mat source)
+        {
+            Mat brightHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redAreas = new Mat();
+            source.CopyTo(redAreas, redMask);
+            Mat red = redAreas.Split()[2];
+            return red;
+        }
+
+        public static void CheckDrop()
+        {
+            //Top Left: 814x298
+            //Size: 295x104
+
+            //Bitmap cropped = CompassSensor.Crop(screen.bitmap, start_x, start_y, start_x + 400, start_y + 300);
+            //Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat screenarea = new Mat("res3/emergency stop test.png");
+            Mat yellow = IsolateYellow(screenarea);
+
+            Mat template = new Mat("res3/estop.png", ImreadModes.GrayScale);
+            Mat result = new Mat(yellow.Size(), yellow.Type());
+            Cv2.MatchTemplate(yellow, template, result, TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+
+            Window w0 = new Window(yellow);
+            Window w1 = new Window(template);
+            Console.WriteLine(string.Format("Estop image matched max: {0}", maxVal));
+            return;
+    
+        }
+
         public static void FindCompasses()
         {
 

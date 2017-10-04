@@ -300,8 +300,9 @@ namespace EDAP
             double minVal, maxVal;
             OpenCvSharp.Point minLoc, maxLoc;
             result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            Console.WriteLine(string.Format("Current location lock maxval: {0}", maxVal));
 
-            if (maxVal > 0.7)
+            if (maxVal > 0.9)
             {
                 //It's still showing up and therefore not locked.
                 return false;
@@ -320,7 +321,7 @@ namespace EDAP
 
             Bitmap cropped = CompassSensor.Crop(screen.bitmap, start_x, start_y, start_x + 400, start_y + 300);
             Mat screenarea = BitmapConverter.ToMat(cropped);
-            Mat yellow = IsolateRed(screenarea);
+            Mat yellow = IsolateYellow(screenarea);
 
             Mat template = new Mat("res3/estop.png", ImreadModes.GrayScale);
             Mat result = new Mat(yellow.Size(), yellow.Type());
@@ -328,7 +329,7 @@ namespace EDAP
             double minVal, maxVal;
             OpenCvSharp.Point minLoc, maxLoc;
             result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
-            if (maxVal > 0.4)
+            if (maxVal > 0.7)
             {
                 debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
                 return true;
