@@ -284,5 +284,57 @@ namespace EDAP
             }
             return false;
         }
+
+        //The current location is locked if the "locked target" icon is overriding the blue "current location" i
+        public bool CurrentLocationLocked()
+        {
+            Bitmap cropped = CompassSensor.Crop(screen.bitmap, 460, 220, 1300, 800);
+            Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat[] channels = screenarea.Split();
+            Mat blue = channels[0];
+
+            Mat template = new Mat("res3/current_location.png", ImreadModes.GrayScale);
+            Mat result = new Mat(blue.Size(), blue.Type());
+            Cv2.MatchTemplate(blue, template, result, TemplateMatchModes.CCoeffNormed);
+
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            Console.WriteLine(string.Format("Current location lock maxval: {0}", maxVal));
+
+            if (maxVal > 0.9)
+            {
+                //It's still showing up and therefore not locked.
+                return false;
+            }
+            debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(blue), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+            return true;
+
+        }
+
+        public bool EmergencyDrop()
+        {
+            //Top Left: 814x298
+            //Size: 295x104
+            int start_x = 700;
+            int start_y = 200;
+
+            Bitmap cropped = CompassSensor.Crop(screen.bitmap, start_x, start_y, start_x + 400, start_y + 300);
+            Mat screenarea = BitmapConverter.ToMat(cropped);
+            Mat yellow = IsolateYellow(screenarea);
+
+            Mat template = new Mat("res3/estop.png", ImreadModes.GrayScale);
+            Mat result = new Mat(yellow.Size(), yellow.Type());
+            Cv2.MatchTemplate(yellow, template, result, TemplateMatchModes.CCoeffNormed);
+            double minVal, maxVal;
+            OpenCvSharp.Point minLoc, maxLoc;
+            result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
+            if (maxVal > 0.7)
+            {
+                debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+                return true;
+            }
+            return false;
+        }
     }
 }
