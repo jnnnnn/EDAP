@@ -256,16 +256,11 @@ namespace EDAP
 
         public static void MatchImpact()
         {
-            Bitmap screen = new Bitmap("ImpactTest.png");
+            Bitmap screen = new Bitmap("res3/ImpactTest.png");
             //Bitmap cropped = CompassSensor.Crop(screen, screen.Width - 400, 0, screen.Width - 100, 300);
             Mat screenwhole = BitmapConverter.ToMat(screen);
 
-            Mat brightHSV = screenwhole.CvtColor(ColorConversionCodes.BGR2HSV);
-            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
-                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
-            Mat darkAreas = new Mat();
-            screenwhole.CopyTo(darkAreas, redMask);
-            Mat red = darkAreas.Split()[2];
+            Mat red = CruiseSensor.IsolateRed(screenwhole);
             red.SaveImage("impacttemplateraw.png");
             Mat template = new Mat("res3/impacttemplate.png", ImreadModes.GrayScale);
             Mat result = new Mat(red.Size(), red.Type());

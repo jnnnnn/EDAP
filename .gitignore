@@ -4,3 +4,5 @@ release/
 packages/
 /EDAP/EDAP.VC.db
 *.7z
+.vs/
+*.user
