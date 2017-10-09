@@ -32,9 +32,10 @@ namespace EDAP
         /// </summary>
         public static Mat IsolateRed(Mat source)
         {
+
             Mat brightHSV = source.CvtColor(ColorConversionCodes.BGR2HSV);
-            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 250, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
-                + brightHSV.InRange(InputArray.Create(new int[] { 175, 250, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
+            Mat redMask = brightHSV.InRange(InputArray.Create(new int[] { 0, 180, 200 }), InputArray.Create(new int[] { 5, 256, 256 }))
+                + brightHSV.InRange(InputArray.Create(new int[] { 175, 180, 200 }), InputArray.Create(new int[] { 180, 256, 256 }));
             Mat redAreas = new Mat();
             source.CopyTo(redAreas, redMask);
             Mat red = redAreas.Split()[2];
