@@ -9,3 +9,5 @@ packages/
 /EDAP/obj/Experiment
 /EDAP/.vs/EDAP/v15/sqlite3
 /EDAP/publish
+.vs/
+*.user
