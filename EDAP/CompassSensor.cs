@@ -85,7 +85,7 @@ namespace EDAP
 
             if (circles.Length != 1)
             {
-                pictureBox2.Image = image;
+                //pictureBox2.Image = image;
                 if (circles.Length > 1)
                     throw new System.ArgumentException("More than one valid circle...");
                 if (circles.Length < 1)
@@ -177,7 +177,7 @@ namespace EDAP
 
                 Bitmap croppedCompass = Crop(compassArea, compassRect);
                 // work out where the target indicator is
-                pictureBox2.Image = croppedCompass;
+                //pictureBox2.Image = croppedCompass;
 
                 Point2f result = FindTarget2(croppedCompass);
                 history.Insert(0, result);

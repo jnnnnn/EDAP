@@ -13,6 +13,7 @@ namespace EDAP
         public Screenshot screen;
 
         public PictureBox debugWindow;
+        //public PictureBox debugWindow2;
 
         /// <summary>
         /// Filter the given image to select certain yellow hues (returned as grayscale)
@@ -214,7 +215,7 @@ namespace EDAP
             result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
 
             Console.WriteLine(string.Format("Match scooping: minVal {0}, maxVal {1}", minVal, maxVal));
-            //debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+            debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
             //debugWindow2.Image = BitmapConverter.ToBitmap(template);
             if (maxVal > 0.4)
             {
@@ -238,6 +239,7 @@ namespace EDAP
             int start_y = 254;
 
             Bitmap cropped = CompassSensor.Crop(screen.bitmap, start_x, start_y, start_x + 300, start_y + 100);
+            //Bitmap cropped = CompassSensor.Crop(screen.bitmap, new Rectangle(0, 0, screen.bitmap.Width, screen.bitmap.Height / 2));
             Mat screenarea = BitmapConverter.ToMat(cropped);
             Mat yellow = IsolateYellow(screenarea);
 
@@ -248,9 +250,9 @@ namespace EDAP
             OpenCvSharp.Point minLoc, maxLoc;
             result.MinMaxLoc(out minVal, out maxVal, out minLoc, out maxLoc);
 
-            //Console.WriteLine(string.Format("Match fuel capacity: minVal {0}, maxVal {1}", minVal, maxVal));
-            //debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
-            //debugWindow2.Image = BitmapConverter.ToBitmap(template);
+            Console.WriteLine(string.Format("Match fuel capacity: minVal {0}, maxVal {1}", minVal, maxVal));
+            debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(yellow), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+            //debugWindow2.Image = BitmapConverter.ToBitmap(yellow);
             if (maxVal > 0.8)
             {
                 //Console.WriteLine(string.Format("Match fuel full is true: {0}", maxVal));
@@ -307,7 +309,7 @@ namespace EDAP
                 //It's still showing up and therefore not locked.
                 return false;
             }
-            debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(blue), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
+            //debugWindow.Image = CompassSensor.Crop(BitmapConverter.ToBitmap(blue), maxLoc.X, maxLoc.Y, maxLoc.X + template.Width, maxLoc.Y + template.Height);
             return true;
 
         }
