@@ -24,7 +24,7 @@ Unreleased changes include a kalman filter and a linear-quadratic-regulator driv
 ## Required settings
 
 0. Key bindings. Edit EDAP.exe.config with your key bindings. A list of recognized keys is in Keyboard.cs and in the readme included with releases.
-1. Resolution is hardcoded to 1920x1080 (changing this is gonna mean changing lots of numbers and template images)
+1. Resolution is hardcoded to 1920x1080 (changing this is gonna mean changing lots of numbers and template images). Additionally, "1024x768" on a higher-resolution monitor won't cut it-- hope you've still got an old one laying around if you've gotten used to 4k :V
 2. Executable is hardcoded as the 64-bit version
 3. The colours looked for are (if you've changed your HUD colours, these things won't work):
   1. Compass calibration: red channel

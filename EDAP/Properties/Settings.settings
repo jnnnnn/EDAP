@@ -86,14 +86,20 @@
     <Setting Name="keyYawRight" Type="System.String" Scope="Application">
       <Value Profile="(Default)">NUMPAD_6</Value>
     </Setting>
+    <Setting Name="ScreenshotWindow" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
     <Setting Name="scoopWaitSeconds" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">15</Value>
+      <Value Profile="(Default)">30</Value>
     </Setting>
     <Setting Name="scoopFinishSeconds" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">5</Value>
     </Setting>
-    <Setting Name="ScreenshotWindow" Type="System.Boolean" Scope="Application">
-      <Value Profile="(Default)">True</Value>
+    <Setting Name="keyUp" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_W</Value>
+    </Setting>
+    <Setting Name="keySuperCruise" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">KEY_J</Value>
     </Setting>
   </Settings>
 </SettingsFile>

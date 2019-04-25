@@ -1,8 +1,13 @@
 debug/
 release/
 *.suo
+*.swp
+.DS_Store
 packages/
 /EDAP/EDAP.VC.db
 *.7z
+/EDAP/obj/Experiment
+/EDAP/.vs/EDAP/v15/sqlite3
+/EDAP/publish
 .vs/
 *.user
